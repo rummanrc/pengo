@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+
+# export_jlpt_web.py's --output-dir default ("data") when run bare (no
+# --output-dir) from this repo's own root — not a real domain directory,
+# just litter from an invocation meant for a consuming app.
+/data/
+
+# scripts/kyoiku/'s network-mode response caches (resumable, machine-local)
+# and fetch-example-words.js's review-file output (curate then discard, or
+# hand-fold into kanji/kyoiku-gradeN.json's `examples` — never commit as-is)
+scripts/kyoiku/.kanjiapi-cache.json
+scripts/kyoiku/.kanjiapi-words-cache.json
+/example-words-report.json
