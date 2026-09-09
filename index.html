@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KnowKanji - JLPT Kanji Study App</title>
+<meta name="description" content="Learn Japanese kanji by JLPT level with components, mnemonics, stroke order, vocabulary and SRS review.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#view">Skip to content</a>
+<div class="app">
+  <aside class="sidebar" aria-label="Main navigation">
+    <a class="brand" href="#/" aria-label="KnowKanji home">
+      <span class="brand-mark" aria-hidden="true">漢</span>
+      <span class="brand-name">KnowKanji</span>
+    </a>
+    <nav class="side-nav" id="sideNav"></nav>
+    <div class="side-foot">
+      <div class="due-pill" id="duePill" hidden></div>
+      <button class="theme-btn" id="themeBtn" aria-label="Toggle dark mode">🌙</button>
+    </div>
+  </aside>
+  <div class="main-col">
+    <header class="topbar">
+      <a class="brand small" href="#/"><span class="brand-mark" aria-hidden="true">漢</span><span class="brand-name">KnowKanji</span></a>
+      <form class="top-search" id="topSearch" role="search" aria-label="Quick search">
+        <input type="search" id="topSearchInput" placeholder="Search kanji, meaning, reading..." aria-label="Search kanji" autocomplete="off">
+      </form>
+      <button class="theme-btn" id="themeBtn2" aria-label="Toggle dark mode">🌙</button>
+    </header>
+    <main id="view" class="view" tabindex="-1"></main>
+    <footer class="footer">
+      <span>Data: KANJIDIC2, KRADFILE/EDRDG, KanjiVG, Tanaka Corpus, Kanjium. See <a href="resources/CREDITS.md">credits</a>.</span>
+    </footer>
+  </div>
+  <nav class="bottom-nav" id="bottomNav" aria-label="Mobile navigation"></nav>
+</div>
+<noscript><p style="padding:2rem;text-align:center">KnowKanji needs JavaScript to run.</p></noscript>
+<script src="app.js"></script>
+</body>
+</html>

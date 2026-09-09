@@ -1,0 +1,32 @@
+{
+ "levels": {
+  "N5": {
+   "count": 103,
+   "stroke": 103
+  },
+  "N4": {
+   "count": 181,
+   "stroke": 181
+  },
+  "N3": {
+   "count": 361,
+   "stroke": 361
+  },
+  "N2": {
+   "count": 739,
+   "stroke": 739
+  },
+  "N1": {
+   "count": 1232,
+   "stroke": 1232
+  }
+ },
+ "total": 2616,
+ "strokeCoverage": {
+  "N5": 103,
+  "N4": 181,
+  "N3": 361,
+  "N2": 739,
+  "N1": 1232
+ }
+}
