@@ -58,3 +58,65 @@ Then `python scripts/build_bundle.py` to refresh the file:// fallback bundle.
 - Progress dashboard, export/import backup, dark mode, responsive + keyboard accessible
 - All user data persists in localStorage; mnemonic engine exposes
   `KanjiMnemonic.generateViaModel` for future LLM-generated stories.
+
+## Offline Android app
+
+The web app above is already server-free (static files + `localStorage`), so the
+Android build is a thin offline shell around it: a native `WebView` loads the
+bundled files, no Python/backend/server/internet at any point.
+
+    Web:      index.html + app.js + platform.js + styles.css
+              + data/*.json (+ data/bundle.js fallback) + resources/stroke-order/*.svg
+    Android:  android/ (native WebView shell, no INTERNET permission)
+    Bundle:   www/ (generated) -> android/app/src/main/assets/www/ (generated)
+
+### Prerequisites (build machine only)
+
+- JDK 17+
+- Android SDK with platform-34 + build-tools (`ANDROID_HOME` or `ANDROID_SDK_ROOT` set)
+- Gradle on PATH, or `android/gradle/wrapper/gradle-wrapper.jar`
+- Python 3 (no Node needed for the native build)
+
+### Build the APK
+
+    python scripts/build_apk.py
+
+Result:
+
+- `android/app/build/outputs/apk/debug/app-debug.apk`
+- copied to `dist/knowkanji-debug.apk`
+
+Install: copy the APK to your phone/tablet, open it, allow
+"Install unknown apps" for your file manager, and install. Airplane mode works.
+
+### Handy commands
+
+    python scripts/sync_www.py                 # rebuild www/ only (offline check)
+    python scripts/build_apk.py --assets-only  # stage assets without Gradle
+    python -m http.server 8000                 # web smoke test -> http://localhost:8000/
+
+### Optional Capacitor flow
+
+`capacitor.config.json` + `package.json` are included for teams that prefer
+Capacitor: `npm install`, `python scripts/sync_www.py`, `npx cap add android`
+(first time), `npx cap sync android`. The checked-in `android/` project is the
+zero-Node alternative and is what `scripts/build_apk.py` uses.
+
+### Notes
+
+- Persistence stays in `localStorage` (WebView) under key `knowkanji:v1`;
+  export/import lives in Settings and Progress (`platform.js` picks Web Share
+  on Android when available).
+- Android Back navigates in-app history via `window.KKBack` and exits from Home.
+- No analytics, no network permission, no secrets in the app.
+### Docker build (no local toolchain)
+
+If you have Docker Desktop but no JDK/SDK/Gradle installed:
+
+    python scripts/build_apk_docker.py
+
+This builds the `knowkanji-builder` image (`docker/Dockerfile`: Gradle 8.7 +
+JDK 17 + Android SDK platform-34), compiles the APK inside it, and extracts
+the result to `dist/knowkanji-debug.apk`. Needs ~8 GB free for the image and
+network access during the image build only. Start Docker Desktop first; on
+Windows it must use Linux containers.

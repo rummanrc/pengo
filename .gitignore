@@ -1,0 +1,12 @@
+# generated offline web bundle (rebuilt by scripts/sync_www.py)
+www/
+# built APKs
+dist/
+# gradle / android build outputs
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/app/src/main/assets/www/
+# node (only needed for the optional Capacitor flow)
+node_modules/

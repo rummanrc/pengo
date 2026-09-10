@@ -1,0 +1,7 @@
+{
+  "appId": "com.knowkanji.app",
+  "appName": "KnowKanji",
+  "webDir": "www",
+  "server": { "androidScheme": "https" },
+  "android": { "allowMixedContent": false }
+}

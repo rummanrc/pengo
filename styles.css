@@ -247,3 +247,35 @@ table.stats th, table.stats td { text-align: left; padding: .45rem .5rem; border
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+/* ---- Android app + phone/tablet refinements (offline WebView safe) ---- */
+html { height: 100%; }
+body { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+.topbar { padding-top: calc(.6rem + env(safe-area-inset-top)); }
+.view { padding-top: max(1.2rem, env(safe-area-inset-top)); }
+.footer { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+.btn, .chip, .bottom-nav a { min-height: 44px; }
+.bottom-nav a { min-height: calc(48px + env(safe-area-inset-bottom)); justify-content: center; }
+.toolbar input[type="search"], .toolbar select, .top-search input { font-size: 16px; }
+.stroke-svg { max-width: 100%; }
+.flash { width: 100%; }
+.flash-card { min-height: min(46vh, 340px); }
+.flash-card .big { font-size: clamp(3rem, 18vw, 5rem); }
+textarea.note { font-size: 16px; }
+@media (max-width: 860px) {
+  .kanji-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: .55rem; }
+  .pager { flex-wrap: wrap; }
+  table.stats { display: block; overflow-x: auto; }
+  .stroke-wrap { flex-direction: column; }
+  .stroke-ctrl { flex-direction: row; flex-wrap: wrap; }
+  .level-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}
+@media (min-width: 861px) and (max-width: 1280px) {
+  .kanji-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}
+@media (min-width: 1281px) {
+  .view { max-width: 1200px; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .flash-card { min-height: 220px; }
+  .flash-card .big { font-size: 3rem; }
+}

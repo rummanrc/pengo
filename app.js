@@ -22,6 +22,22 @@ function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) { /* full/blocked */ }
 }
 
+function exportBackup() {
+  const text = JSON.stringify(store);
+  if (window.Platform && window.Platform.exportJson) { window.Platform.exportJson("knowkanji-backup.json", text); return; }
+  const blob = new Blob([text], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "knowkanji-backup.json";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+}
+function storeNote() {
+  if (window.Platform && window.Platform.backingStoreNote) return window.Platform.backingStoreNote();
+  return "Progress is stored privately in this browser (localStorage). Export a backup before switching devices.";
+}
+
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, c => (
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -132,8 +148,10 @@ function loadScript(src) {
 async function loadData() {
   try {
     await loadDataFetch();
+    DB.source = "fetch";
   } catch (e) {
     await loadScript("data/bundle.js");
+    DB.source = "bundle";
     const b = window.KK_DATA;
     if (!b || !b.levels) throw e;
     DB.levels = b.levels;
@@ -442,13 +460,30 @@ async function initStrokeOrder(it) {
     const p = $("#strokePlay"); if (p) p.disabled = true;
     return;
   }
-  let svgText;
+  const svgUrl = STROKE_BASE + it.cp + ".svg";
+  let svgText = "";
+  let diag = "";
   try {
-    const res = await fetch(STROKE_BASE + it.cp + ".svg");
-    if (!res.ok) throw new Error("missing");
+    const res = await fetch(svgUrl);
+    diag += "fetch:s" + res.status + ";";
+    if (!res.ok && res.status !== 0) throw new Error("http" + res.status);
     svgText = await res.text();
   } catch (e) {
-    box.innerHTML = "<p class=\"explain\">Could not load the stroke-order diagram.</p>";
+    diag += "fetchErr:" + (e && e.name ? e.name : "err") + ";";
+    try {
+      svgText = await new Promise((resolve, reject) => {
+        const x = new XMLHttpRequest();
+        x.open("GET", svgUrl, true);
+        x.onload = () => { diag += "xhr:s" + x.status + ";"; resolve(x.responseText || ""); };
+        x.onerror = () => { diag += "xhrErr;"; reject(new Error("xhr")); };
+        x.send();
+      });
+    } catch (e2) { svgText = ""; }
+  }
+  window.KKDiag = window.KKDiag || {};
+  window.KKDiag.stroke = diag + "len" + svgText.length;
+  if (!svgText || svgText.indexOf("<svg") < 0) {
+    box.innerHTML = "<p class=\"explain\">Could not load the stroke-order diagram. (" + esc(diag + "len" + svgText.length) + ")</p>";
     return;
   }
   const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
@@ -752,12 +787,7 @@ function renderProgress(view) {
     "<button class=\"btn soft\" id=\"pExport\">Export my data</button>" +
     "<button class=\"btn soft\" id=\"pReset\">Reset progress</button></div></div>";
   $("#pExport").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(store)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "knowkanji-backup.json";
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    exportBackup();
   });
   $("#pReset").addEventListener("click", () => {
     if (confirm("Reset all progress, favorites, notes and review schedule?")) {
@@ -782,11 +812,13 @@ function renderSettings(view) {
     "<label class=\"btn soft\" for=\"sImport\" style=\"cursor:pointer\">Import backup</label>" +
     "<input type=\"file\" id=\"sImport\" accept=\"application/json\" hidden>" +
     "<button class=\"btn soft\" id=\"sWipe\">Erase everything</button></div>" +
-    "<p class=\"explain\">Progress is stored privately in this browser (localStorage). Export a backup before switching devices.</p></div>" +
+    "<p class=\"explain\">" + storeNote() + "</p></div>" +
     "<div class=\"card\"><h2>About the data</h2>" +
     "<p class=\"explain\">Kanji facts: KANJIDIC2 + curated JLPT files. Components: EDRDG KRADFILE. " +
     "Stroke art: KanjiVG (" + (DB.meta ? LEVELS.map(l => DB.meta.levels[l].stroke + "/" + DB.meta.levels[l].count + " " + l).join(" · ") : "") + "). " +
-    "Sentences: Tanaka Corpus + CSV set. Accents: Kanjium. Full credits in resources/CREDITS.md.</p></div>";
+    "Sentences: Tanaka Corpus + CSV set. Accents: Kanjium. Loader: " + (DB.source || "?") + ". Full credits in resources/CREDITS.md.</p></div>" +
+    "<div class=\"card\"><h2>About this app</h2>" +
+    "<p class=\"explain\">KnowKanji " + (window.APP_VERSION || "1.0.0") + " runs fully offline: all kanji data and stroke diagrams are bundled, with no account or network needed. Sources: KANJIDIC2, KRADFILE (EDRDG), KanjiVG, Tanaka Corpus, Kanjium. See resources/CREDITS.md for full attribution.</p></div>";
   $("#sTheme").addEventListener("click", e => {
     s.theme = s.theme === "dark" ? "light" : "dark";
     save(); applyTheme();
@@ -798,10 +830,7 @@ function renderSettings(view) {
   });
   $("#sAuto").addEventListener("change", e => { s.autoplay = e.target.checked; save(); });
   $("#sExport").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(store)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob); a.download = "knowkanji-backup.json"; a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    exportBackup();
   });
   $("#sImport").addEventListener("change", e => {
     const f = e.target.files[0];
@@ -846,6 +875,14 @@ function initChrome() {
     $("#topSearchInput").value = "";
   });
 }
+window.KKBack = () => (window.Platform ? window.Platform.handleBackPress() : false);
+try {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+    window.Capacitor.Plugins.App.addListener("backButton", () => {
+      if (!window.Platform.handleBackPress()) window.Capacitor.Plugins.App.exitApp();
+    });
+  }
+} catch (e) { /* web: no native back handler */ }
 loadData().then(() => { initChrome(); render(); }).catch(() => {
   $("#view").innerHTML = "<p class=\"empty\">Could not load data files. Serve this folder over HTTP (e.g. <code>python -m http.server</code>) and open it again — browsers block data files on file:// URLs.</p>";
 });

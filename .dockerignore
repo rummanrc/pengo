@@ -1,0 +1,10 @@
+# keep the build context lean; these are regenerated inside the image
+www/
+dist/
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/app/src/main/assets/www/
+node_modules/
+.git/

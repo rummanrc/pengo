@@ -1,0 +1,14 @@
+{
+  "name": "KnowKanji - JLPT Kanji Study",
+  "short_name": "KnowKanji",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#faf7f1",
+  "theme_color": "#b3352b",
+  "description": "Offline JLPT kanji study: components, stroke order, vocabulary, SRS review.",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
