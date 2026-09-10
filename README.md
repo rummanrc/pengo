@@ -1,4 +1,4 @@
-# KnowKanji - JLPT Kanji Study App
+﻿# KnowKanji - JLPT Kanji Study App
 
 A responsive, data-driven Japanese kanji learning web app for JLPT N5-N1.
 No build step, no dependencies: just static files plus prebuilt JSON.
@@ -24,6 +24,7 @@ GitHub Pages works too, but `resources/` is a submodule: enable
     styles.css            theme, layout, responsive rules (mobile bottom nav)
     app.js                hash-router SPA: home/browse/detail/study/review/search/progress/settings
     data/n5..n1.json      per-level kanji records (generated, UTF-8)
+    data/vocab_n5..n1.json per-level vocabulary records with Tatoeba sentences (generated, UTF-8)
     data/radicals.json    the 214 Kangxi radicals, correctly numbered
     data/meta.json        counts + stroke-art coverage per level
     scripts/build_data.py rebuilds data/ from resources/ (the kanji-data submodule)
@@ -43,7 +44,7 @@ GitHub Pages works too, but `resources/` is a submodule: enable
     confusables[] look-alike kanji        hasStroke  KanjiVG diagram available?
     mnemonic     prebuilt original memory aid (memory aid, not etymology)
 
-To update data, replace files under resources/ and run `python scripts/build_data.py`.
+To update data, replace files under resources/ and run `python scripts/build_data.py` (kanji) and `python scripts/build_vocab.py` (vocab + Tatoeba sentences).
 Then `python scripts/build_bundle.py` to refresh the file:// fallback bundle.
 
 ## Features

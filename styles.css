@@ -279,3 +279,7 @@ textarea.note { font-size: 16px; }
   .flash-card { min-height: 220px; }
   .flash-card .big { font-size: 3rem; }
 }
+.vcard .vword { font-family: var(--jp-font); font-size: 1.5rem; font-weight: 700; line-height: 1.3; text-align: center; }
+.vocab-hero { font-size: 2.6rem; line-height: 1.15; text-align: center; overflow-wrap: anywhere; height: auto; min-height: 9rem; padding: .8rem; }
+h2 small { font-weight: 600; font-size: .8rem; }
+h2 small a { font-weight: 600; }

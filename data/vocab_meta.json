@@ -1,0 +1,32 @@
+{
+ "levels": {
+  "N5": {
+   "count": 684,
+   "withSentences": 644,
+   "withKanji": 547
+  },
+  "N4": {
+   "count": 640,
+   "withSentences": 607,
+   "withKanji": 522
+  },
+  "N3": {
+   "count": 1730,
+   "withSentences": 1693,
+   "withKanji": 1532
+  },
+  "N2": {
+   "count": 1812,
+   "withSentences": 1569,
+   "withKanji": 1510
+  },
+  "N1": {
+   "count": 3427,
+   "withSentences": 2877,
+   "withKanji": 3163
+  }
+ },
+ "total": 8293,
+ "withSentences": 7390,
+ "sentencePairs": 232104
+}

@@ -115,3 +115,27 @@ assignments), not transcribed from any commercial workbook or app.
 Any redistribution of this repo's `kanji/`, `radicals/`, `words/`,
 `compounds/`, `sentences/`, or `stroke-order/` directories should carry
 this file along with it.
+
+## JLPT vocabulary lists (`vocab/n{1-5}.csv`)
+
+Word/reading/meaning rows keyed by JMdict sequence number with a
+Waller-style English gloss column (`jmdict_seq,kana,kanji,waller_definition`).
+
+- JMdict-derived word data: EDRDG licence (CC BY-SA 4.0, as above).
+- Normalized (never hand-edited) into `data/vocab_n{1-5}.json` by
+  `scripts/build_vocab.py`; IDs are stable (`{JLPT}-{jmdict_seq}-{n}`).
+
+## Tatoeba example sentences (`vocab/sentence_tatoeba/jp-eng-sentence-pairs.tsv`)
+
+Japanese-English sentence pairs (`jp_id, jp, en_id, en`) from the
+[Tatoeba](https://tatoeba.org/) project. Used to attach up to 3 short,
+pre-matched example sentences to each vocabulary word at build time
+(exact surface-form match; kana-only words only when 3+ characters to
+avoid noise). Words without a match keep an empty list — the app never
+invents sentences.
+
+- Licence: **Creative Commons Attribution 2.0 France (CC BY 2.0 FR)**
+  — <https://creativecommons.org/licenses/by/2.0/fr/>
+- Please keep this attribution when redistributing the app or its data.
+- `resources/vocab/kanji_alive/` stubs (`ka_data.csv`, `audio-mp3.zip`) are
+  placeholders only and are NOT bundled into the app.

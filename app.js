@@ -1,16 +1,17 @@
 "use strict";
 /* KnowKanji - data-driven JLPT kanji study app (no build step).
    Data: data/n5..n1.json + data/radicals.json + data/meta.json (see scripts/build_data.py).
+   Vocab: data/vocab_n5..n1.json + data/vocab_meta.json (see scripts/build_vocab.py).
    Progress: localStorage key "knowkanji:v1". */
 
 const LEVELS = ["N5", "N4", "N3", "N2", "N1"];
 const STORE_KEY = "knowkanji:v1";
 const STROKE_BASE = "resources/stroke-order/kanjivg/";
 
-const DB = { levels: {}, byChar: {}, meta: null, radicals: [], loaded: false };
+const DB = { levels: {}, byChar: {}, vocab: {}, vById: {}, meta: null, vocabMeta: null, radicals: [], loaded: false };
 
-const defaultStore = () => ({ learned: {}, fav: [], notes: {}, srs: {},
-  settings: { theme: "light", dailyGoal: 10, autoplay: true }, quizBest: {} });
+const defaultStore = () => ({ learned: {}, fav: [], notes: {}, srs: {}, vLearned: {}, vFav: [], vNotes: {}, vSrs: {},
+  settings: { theme: "light", dailyGoal: 10, autoplay: true }, quizBest: {}, vQuizBest: {} });
 
 let store = defaultStore();
 try {
@@ -18,6 +19,8 @@ try {
   if (raw) store = Object.assign(defaultStore(), JSON.parse(raw));
 } catch (e) { /* fresh start */ }
 if (!store.settings) store.settings = defaultStore().settings;
+for (const _k of ["vLearned", "vNotes", "vSrs", "vQuizBest"]) if (!store[_k]) store[_k] = {};
+if (!store.vFav) store.vFav = [];
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) { /* full/blocked */ }
 }
@@ -157,23 +160,36 @@ async function loadData() {
     DB.levels = b.levels;
     DB.meta = b.meta;
     DB.radicals = b.radicals || [];
+    DB.vocab = b.vocab || {};
+    DB.vocabMeta = b.vocabMeta || null;
   }
   for (const lv of LEVELS)
     for (const it of DB.levels[lv]) DB.byChar[it.k] = { item: it, level: lv };
+  DB.vById = {};
+  for (const lv of LEVELS)
+    for (const v of (DB.vocab[lv] || [])) DB.vById[v.id] = v;
   DB.loaded = true;
 }
 async function loadDataFetch() {
-  const [n5, n4, n3, n2, n1, meta, radicals] = await Promise.all([
+  const [n5, n4, n3, n2, n1, meta, radicals, v5, v4, v3, v2, v1, vmeta] = await Promise.all([
     fetch("data/n5.json").then(r => r.json()),
     fetch("data/n4.json").then(r => r.json()),
     fetch("data/n3.json").then(r => r.json()),
     fetch("data/n2.json").then(r => r.json()),
     fetch("data/n1.json").then(r => r.json()),
     fetch("data/meta.json").then(r => r.json()),
-    fetch("data/radicals.json").then(r => r.json()).catch(() => [])
+    fetch("data/radicals.json").then(r => r.json()).catch(() => []),
+    fetch("data/vocab_n5.json").then(r => r.json()).catch(() => []),
+    fetch("data/vocab_n4.json").then(r => r.json()).catch(() => []),
+    fetch("data/vocab_n3.json").then(r => r.json()).catch(() => []),
+    fetch("data/vocab_n2.json").then(r => r.json()).catch(() => []),
+    fetch("data/vocab_n1.json").then(r => r.json()).catch(() => []),
+    fetch("data/vocab_meta.json").then(r => r.json()).catch(() => null)
   ]);
   DB.levels = { N5: n5, N4: n4, N3: n3, N2: n2, N1: n1 };
   DB.meta = meta; DB.radicals = radicals;
+  DB.vocab = { N5: v5, N4: v4, N3: v3, N2: v2, N1: v1 };
+  DB.vocabMeta = vmeta;
 }
 function allItems() {
   const out = [];
@@ -191,6 +207,7 @@ function dueCount() {
   const now = Date.now();
   let n = 0;
   for (const k of Object.keys(store.srs)) if (store.srs[k].due <= now) n++;
+  for (const k of Object.keys(store.vSrs || {})) if (store.vSrs[k].due <= now && DB.vById[k]) n++;
   return n;
 }
 
@@ -198,6 +215,7 @@ function dueCount() {
 const NAV = [
   { path: "#/", label: "Home", ico: "🏠", match: "home" },
   { path: "#/kanji", label: "Kanji", ico: "漢", match: "kanji" },
+  { path: "#/vocab", label: "Vocab", ico: "語", match: "vocab" },
   { path: "#/study", label: "Study", ico: "📖", match: "study" },
   { path: "#/review", label: "Review", ico: "🔁", match: "review" },
   { path: "#/search", label: "Search", ico: "🔍", match: "search" },
@@ -221,7 +239,7 @@ function renderNav(active) {
     "<a href=\"" + n.path + "\"" + (n.match === active ? " aria-current=\"page\"" : "") + ">" +
     "<span class=\"ico\" aria-hidden=\"true\">" + n.ico + "</span><span>" + n.label + "</span></a>").join("");
   $("#sideNav").innerHTML = html;
-  $("#bottomNav").innerHTML = NAV.slice(0, 5).map(n =>
+  $("#bottomNav").innerHTML = NAV.filter(n => ["home", "kanji", "vocab", "study", "review"].indexOf(n.match) >= 0).map(n =>
     "<a href=\"" + n.path + "\"" + (n.match === active ? " aria-current=\"page\"" : "") + ">" +
     "<span class=\"ico\" aria-hidden=\"true\">" + n.ico + "</span><span>" + n.label + "</span></a>").join("");
   const d = dueCount();
@@ -237,8 +255,17 @@ async function render() {
   if (name === "kanji" && seg[1] && DB.byChar[seg[1]]) { renderNav("kanji"); renderDetail(view, seg[1]); }
   else if (name === "kanji") { renderNav("kanji"); renderBrowse(view, seg[1], q); }
   else if (name === "k" && seg[1]) { renderNav("kanji"); renderDetail(view, seg[1]); }
-  else if (name === "study") { renderNav("study"); renderStudy(view, seg[1], q); }
-  else if (name === "review") { renderNav("review"); renderReview(view, q); }
+  else if (name === "vocab" && seg[1]) { renderNav("vocab"); renderVocabBrowse(view, seg[1], q); }
+  else if (name === "vocab") { renderNav("vocab"); renderVocabHome(view); }
+  else if (name === "v" && seg[1]) { renderNav("vocab"); renderVocabDetail(view, seg[1]); }
+  else if (name === "study") {
+    if (q.kind === "vocab") { renderNav("study"); renderVStudy(view, seg[1], q); }
+    else { renderNav("study"); renderStudy(view, seg[1], q); }
+  }
+  else if (name === "review") {
+    if (q.kind === "vocab") { renderNav("review"); renderVReview(view, q); }
+    else { renderNav("review"); renderReview(view, q); }
+  }
   else if (name === "search") { renderNav("search"); renderSearch(view, q); }
   else if (name === "progress") { renderNav("progress"); renderProgress(view); }
   else if (name === "settings") { renderNav("settings"); renderSettings(view); }
@@ -288,11 +315,24 @@ function renderHome(view) {
       progressBar(s.pct) + "<div class=\"progress-label\">" + s.pct + "% complete · " + s.left + " left</div></a>";
   }).join("");
   const total = DB.meta ? DB.meta.total : allItems().length;
+  const vTotal = DB.vocabMeta ? DB.vocabMeta.total : vAll().length;
+  const vDue = vDueCount();
+  const vcards = LEVELS.map(lv => {
+    const s = vLevelStats(lv);
+    return "<a class=\"level-card\" href=\"#/vocab/" + lv + "\">" +
+      "<div class=\"lvl\">JLPT <span lang=\"en\">" + lv + "</span> <small>" + s.total + " words</small></div>" +
+      "<div class=\"count\">" + s.learned + " / " + s.total + " learned</div>" +
+      progressBar(s.pct) + "<div class=\"progress-label\">" + s.pct + "% complete</div></a>";
+  }).join("");
   view.innerHTML =
-    "<h1>Learn kanji, one level at a time</h1>" +
-    "<p class=\"lead\">Pick a JLPT level, browse kanji, break each one into components, remember it with a silly mnemonic, then lock it in with study and review. " + total + " kanji included.</p>" +
+    "<h1>Learn kanji and vocabulary, one level at a time</h1>" +
+    "<p class=\"lead\">Pick a JLPT level, browse kanji, break each one into components, remember it with a silly mnemonic, then lock it in with study and review. " + total + " kanji and " + vTotal + " vocabulary words included.</p>" +
     (due > 0 ? "<p><a class=\"btn primary\" href=\"#/review\">🔁 Review now — " + due + " due</a></p>" : "") +
+    "<h2>Kanji</h2>" +
     "<div class=\"level-grid\">" + cards + "</div>" +
+    "<h2>Vocabulary <small><a href=\"#/vocab\">open vocab</a></small></h2>" +
+    (vDue > 0 ? "<p><a class=\"btn primary\" href=\"#/review?tab=srs&kind=vocab\">Review vocab now &mdash; " + vDue + " due</a></p>" : "") +
+    "<div class=\"level-grid\">" + vcards + "</div>" +
     "<div class=\"card\"><h2>How it works</h2>" +
     "<p class=\"explain\">JLPT → Kanji → Components → Funny mnemonic → Vocabulary → Study → Review. " +
     "Components marked with a Kangxi number (e.g. 木 #75) are true Kangxi radicals; the rest are " +
@@ -417,7 +457,7 @@ function renderDetail(view, ch) {
     "<div class=\"comp-list\">" + it.components.map(compRow).join("") + "</div></div>" +
     "<div class=\"card\"><h2>Mnemonic</h2><p class=\"mnemonic\">" + esc(mn.text) + "</p>" +
     "<p class=\"explain\">" + esc(mn.notice) + " Based on: " + (it.components.map(c => esc(c.c) + " (" + esc(c.m || "?") + ")").join(" + ") || "—") + ".</p></div>" +
-    "<div class=\"card\"><h2>Vocabulary</h2><ul class=\"vocab-list\">" + vocab + "</ul></div>" +
+    "<div class=\"card\"><h2>Vocabulary</h2><ul class=\"vocab-list\">" + vocab + "</ul>" + vocabLinksForKanji(ch) + "</div>" +
     "<div class=\"card\"><h2>Example sentences</h2><ul class=\"sent-list\">" + sents + "</ul></div>" +
     "<div class=\"card\"><h2>Similar kanji</h2><p class=\"jp\" lang=\"ja\">" + conf + "</p></div>" +
     "<div class=\"card\"><h2>My note</h2><textarea class=\"note\" id=\"dNote\" aria-label=\"Personal note\">" + esc(store.notes[ch] || "") + "</textarea></div>" +
@@ -563,7 +603,7 @@ function renderStudy(view, level, q) {
     view.innerHTML =
       "<h1>Study " + lv + "</h1>" +
       "<p class=\"explain\">" + modes[mode] + " · card " + (i + 1) + " of " + deck.length +
-      " · <a href=\"#/study/" + lv + "?mode=k2m\">K→M</a> · <a href=\"#/study/" + lv + "?mode=m2k\">M→K</a> · <a href=\"#/study/" + lv + "?mode=r2k\">R→K</a></p>" +
+      " · <a href=\"#/study/" + lv + "?mode=k2m\">K→M</a> · <a href=\"#/study/" + lv + "?mode=m2k\">M→K</a> · <a href=\"#/study/" + lv + "?mode=r2k\">R→K</a> &middot; <a href=\"#/study/" + lv + "?kind=vocab\">Vocab cards</a></p>" +
       "<div class=\"flash\"><div class=\"flash-card\" id=\"fc\" role=\"button\" tabindex=\"0\" aria-label=\"Flashcard, activate to flip\">" +
       (flipped ? back(it) : front(it)) + "</div>" +
       "<div class=\"flash-nav\">" +
@@ -615,7 +655,7 @@ function dueCards() {
 function renderReview(view, q) {
   const tab = q.tab === "quiz" ? "quiz" : "srs";
   view.innerHTML =
-    "<h1>Review</h1>" +
+    "<h1>Review</h1>" + "<p class=\"explain\">Kanji review &middot; <a href=\"#/review?tab=srs&kind=vocab\">Vocabulary review</a></p>" +
     "<div class=\"chip-row\" role=\"group\" aria-label=\"Review mode\">" +
     "<button class=\"chip\" id=\"tabSrs\" aria-pressed=\"" + (tab === "srs") + "\">🔁 Spaced review</button>" +
     "<button class=\"chip\" id=\"tabQuiz\" aria-pressed=\"" + (tab === "quiz") + "\">❓ Quiz</button></div>" +
@@ -744,20 +784,30 @@ function renderSearch(view, q) {
   const query = q.q || "";
   view.innerHTML =
     "<h1>Search</h1>" +
-    "<div class=\"toolbar\"><input type=\"search\" id=\"sq\" placeholder=\"Kanji, English meaning, or reading...\" value=\"" + esc(query) + "\" aria-label=\"Search all kanji\"></div>" +
+    "<div class=\"toolbar\"><input type=\"search\" id=\"sq\" placeholder=\"Kanji, word, English meaning, or reading...\" value=" + esc(query) + "\" aria-label=\"Search kanji and vocabulary\"></div>" +
     "<div id=\"sRes\"></div>";
   const box = $("#sRes"), input = $("#sq");
   function run() {
     const v = input.value.trim();
     if (!v) { box.innerHTML = "<p class=\"empty\">Try “tree”, “き”, “木”, “mori”... (English, kana, or the character itself).</p>"; return; }
     const out = [];
+    const vout = [];
+    for (const lid of LEVELS) {
+      for (const vv of (DB.vocab[lid] || [])) {
+        if (matchVQuery(vv, v)) vout.push(vv);
+        if (vout.length >= 120) break;
+      }
+      if (vout.length >= 120) break;
+    }
     for (const lv of LEVELS)
       for (const it of DB.levels[lv]) {
         if (matchQuery({ item: it }, v)) out.push({ item: it, level: lv });
         if (out.length >= 120) break;
       }
-    box.innerHTML = "<p class=\"result-count\">" + out.length + (out.length >= 120 ? "+" : "") + " results</p>" +
-      (out.length ? "<div class=\"kanji-grid\">" + out.map(r => kanjiCard(r.item, r.level)).join("") + "</div>" : "<p class=\"empty\">No matches.</p>");
+    box.innerHTML = "<p class=\"result-count\">" + out.length + (out.length >= 120 ? "+" : "") + " kanji &middot; " + vout.length + (vout.length >= 120 ? "+" : "") + " words</p>" +
+      (out.length ? "<h2>Kanji</h2><div class=\"kanji-grid\">" + out.map(r => kanjiCard(r.item, r.level)).join("") + "</div>" : "") +
+      (vout.length ? "<h2>Vocabulary</h2><div class=\"kanji-grid\">" + vout.map(vocabCard).join("") + "</div>" : "") +
+      ((!out.length && !vout.length) ? "<p class=\"empty\">No matches.</p>" : "");
   }
   let deb = null;
   input.addEventListener("input", () => { clearTimeout(deb); deb = setTimeout(run, 250); });
@@ -774,15 +824,24 @@ function renderProgress(view) {
   }).join("");
   const tot = LEVELS.reduce((a, lv) => a + levelStats(lv).total, 0);
   const learned = Object.keys(store.learned).length;
+  const vTot = LEVELS.reduce((a, lv) => a + vLevelStats(lv).total, 0);
+  const vLearned = Object.keys(store.vLearned).length;
+  const vrows = LEVELS.map(lv => {
+    const s = vLevelStats(lv);
+    return "<tr><td><a href=\"#/vocab/" + lv + "\">" + lv + "</a></td><td>" + s.total + "</td>" +
+      "<td>" + s.learned + "</td><td>" + s.left + "</td><td style=\"min-width:140px\">" + progressBar(s.pct) + "</td><td>" + s.pct + "%</td></tr>";
+  }).join("");
   view.innerHTML =
     "<h1>Progress</h1>" +
     "<div class=\"card\"><h2>Overall</h2>" +
-    "<p>" + learned + " / " + tot + " kanji learned · " + dueCount() + " due for review · " +
-    store.fav.length + " favorites · " + Object.keys(store.notes).length + " notes</p>" +
+    "<p>" + learned + " / " + tot + " kanji learned &middot; " + vLearned + " / " + vTot + " words learned · " + dueCount() + " due for review · " +
+    (store.fav.length + store.vFav.length) + " favorites · " + (Object.keys(store.notes).length + Object.keys(store.vNotes).length) + " notes</p>" +
     progressBar(tot ? Math.round(learned / tot * 100) : 0) + "</div>" +
     "<div class=\"card\"><h2>By level</h2><table class=\"stats\"><tr><th>Level</th><th>Total</th><th>Learned</th><th>Left</th><th></th><th>%</th></tr>" + rows + "</table></div>" +
+    "<div class=\"card\"><h2>Vocabulary by level</h2><table class=\"stats\"><tr><th>Level</th><th>Total</th><th>Learned</th><th>Left</th><th></th><th>%</th></tr>" + vrows + "</table></div>" +
     "<div class=\"card\"><h2>Quiz best scores</h2><p>" +
-    LEVELS.map(lv => lv + ": " + (store.quizBest[lv] != null ? store.quizBest[lv] + " / 10" : "—")).join(" · ") + "</p></div>" +
+    LEVELS.map(lv => lv + ": " + (store.quizBest[lv] != null ? store.quizBest[lv] + " / 10" : "—")).join(" · ") + "</p>" +
+    "<p>Vocab: " + LEVELS.map(lv => lv + ": " + (store.vQuizBest[lv] != null ? store.vQuizBest[lv] + " / 10" : "-")).join(" | ") + "</p></div>" +
     "<div class=\"card\"><h2>Data</h2><div class=\"settings-row\">" +
     "<button class=\"btn soft\" id=\"pExport\">Export my data</button>" +
     "<button class=\"btn soft\" id=\"pReset\">Reset progress</button></div></div>";
@@ -816,9 +875,9 @@ function renderSettings(view) {
     "<div class=\"card\"><h2>About the data</h2>" +
     "<p class=\"explain\">Kanji facts: KANJIDIC2 + curated JLPT files. Components: EDRDG KRADFILE. " +
     "Stroke art: KanjiVG (" + (DB.meta ? LEVELS.map(l => DB.meta.levels[l].stroke + "/" + DB.meta.levels[l].count + " " + l).join(" · ") : "") + "). " +
-    "Sentences: Tanaka Corpus + CSV set. Accents: Kanjium. Loader: " + (DB.source || "?") + ". Full credits in resources/CREDITS.md.</p></div>" +
+    "Sentences: Tanaka Corpus + CSV set. Accents: Kanjium. Loader: " + (DB.source || "?") + ". Vocab: JLPT lists (" + (DB.vocabMeta ? DB.vocabMeta.total : vAll().length) + " words) + Tatoeba sentences (" + (DB.vocabMeta ? DB.vocabMeta.withSentences : 0) + " with matches). Full credits in resources/CREDITS.md.</p></div>" +
     "<div class=\"card\"><h2>About this app</h2>" +
-    "<p class=\"explain\">KnowKanji " + (window.APP_VERSION || "1.0.0") + " runs fully offline: all kanji data and stroke diagrams are bundled, with no account or network needed. Sources: KANJIDIC2, KRADFILE (EDRDG), KanjiVG, Tanaka Corpus, Kanjium. See resources/CREDITS.md for full attribution.</p></div>";
+    "<p class=\"explain\">KnowKanji " + (window.APP_VERSION || "1.0.0") + " runs fully offline: all kanji and vocabulary data (incl. example sentences) plus stroke diagrams are bundled, with no account or network needed. Sources: KANJIDIC2, KRADFILE (EDRDG), KanjiVG, Tanaka Corpus, Kanjium. See resources/CREDITS.md for full attribution.</p></div>";
   $("#sTheme").addEventListener("click", e => {
     s.theme = s.theme === "dark" ? "light" : "dark";
     save(); applyTheme();
@@ -852,6 +911,428 @@ function renderSettings(view) {
       store = defaultStore(); save(); applyTheme(); render();
     }
   });
+}
+
+﻿/* ---------- Vocabulary (JLPT N5..N1, Tatoeba example sentences) ----------
+   Data: data/vocab_n5..n1.json + data/vocab_meta.json (see scripts/build_vocab.py).
+   Sentences are pre-matched at build time by exact-substring search of the
+   vocab surface form (kanji form preferred, kana-only only when len>=3);
+   see build_vocab.py. Unmatched items keep sentences=[] (never invented). */
+function vAll() {
+  const out = [];
+  for (const lv of LEVELS) for (const v of (DB.vocab[lv] || [])) out.push(v);
+  return out;
+}
+function vById(id) { return DB.vById[id] || null; }
+function isVLearned(id) { return !!store.vLearned[id]; }
+function isVFav(id) { return store.vFav.indexOf(id) !== -1; }
+function vStatusDot(id) {
+  if (isVLearned(id)) return "<span class=\"dot learned\" title=\"Learned\"></span>";
+  if (store.vSrs[id]) return "<span class=\"dot learning\" title=\"Learning\"></span>";
+  return "<span class=\"dot\" title=\"Not started\"></span>";
+}
+function vLevelStats(lv) {
+  const items = DB.vocab[lv] || [];
+  let learned = 0;
+  for (const v of items) if (store.vLearned[v.id]) learned++;
+  return { total: items.length, learned, left: items.length - learned,
+    pct: items.length ? Math.round(learned / items.length * 100) : 0 };
+}
+function vDueCount() {
+  const now = Date.now();
+  let n = 0;
+  for (const k of Object.keys(store.vSrs || {})) {
+    if (store.vSrs[k].due <= now && DB.vById[k]) n++;
+  }
+  return n;
+}
+function vDueCards() {
+  const now = Date.now();
+  return Object.keys(store.vSrs || {}).filter(k => store.vSrs[k].due <= now && DB.vById[k]);
+}
+function vSrsGrade(id, ok) {
+  const s = store.vSrs[id] || { box: 0, due: 0 };
+  if (ok) {
+    s.box = Math.min(SRS_STEPS.length - 1, s.box + 1);
+    s.due = Date.now() + SRS_STEPS[s.box] * 864e5;
+    store.vLearned[id] = store.vLearned[id] || Date.now();
+  } else {
+    s.box = 0;
+    s.due = Date.now() + 6e5;
+  }
+  store.vSrs[id] = s;
+  save();
+}
+function toggleVLearned(id) {
+  if (store.vLearned[id]) {
+    delete store.vLearned[id];
+  } else {
+    store.vLearned[id] = Date.now();
+    if (!store.vSrs[id]) store.vSrs[id] = { box: 1, due: Date.now() + 864e5 };
+  }
+  save();
+}
+function toggleVFav(id) {
+  const i = store.vFav.indexOf(id);
+  if (i >= 0) store.vFav.splice(i, 1); else store.vFav.push(id);
+  save();
+}
+function kanjiCharsOf(v) {
+  const out = [];
+  const s = v.word || "";
+  for (const ch of s) {
+    if (DB.byChar[ch] && out.indexOf(ch) < 0) out.push(ch);
+  }
+  return out;
+}
+function vocabForKanji(ch, limit) {
+  const out = [];
+  for (const lv of LEVELS) {
+    for (const v of (DB.vocab[lv] || [])) {
+      if ((v.word || "").indexOf(ch) >= 0) {
+        out.push(v);
+        if (out.length >= (limit || 12)) return out;
+      }
+    }
+  }
+  return out;
+}
+function matchVQuery(v, q) {
+  if (!q) return true;
+  const t = String(q).trim();
+  if (!t) return true;
+  if (v.word === t) return true;
+  const f = foldEnglish(t);
+  if (f) {
+    if (foldEnglish(v.meaning).indexOf(f) >= 0) return true;
+    if ((v.meanings || []).some(m => foldEnglish(m).indexOf(f) >= 0)) return true;
+  }
+  const rq = foldReading(t);
+  if (rq) {
+    if (foldReading(v.reading).indexOf(rq) >= 0) return true;
+    if (foldReading(v.word).indexOf(rq) >= 0) return true;
+  }
+  return false;
+}
+function vocabCard(v) {
+  const fav = isVFav(v.id) ? "<span class=\"fav-star\" aria-label=\"Favorite\">*</span>" : "";
+  return "<a class=\"kcard vcard\" href=\"#/v/" + encodeURIComponent(v.id) + "\">" + fav +
+    "<span class=\"vword jp\" lang=\"ja\">" + esc(v.word) + "</span>" +
+    "<span class=\"read\" lang=\"ja\">" + esc(v.reading) + "</span>" +
+    "<span class=\"mean\">" + esc(v.meaning) + "</span>" +
+    "<span class=\"meta\"><span class=\"badge " + levelClass(v.jlpt) + "\">" + v.jlpt + "</span>" + vStatusDot(v.id) + "</span></a>";
+}
+function renderVocabHome(view) {
+  const due = vDueCount();
+  const cards = LEVELS.map(lv => {
+    const s = vLevelStats(lv);
+    return "<a class=\"level-card\" href=\"#/vocab/" + lv + "\">" +
+      "<div class=\"lvl\">JLPT <span lang=\"en\">" + lv + "</span> <small>" + s.total + " words</small></div>" +
+      "<div class=\"count\">" + s.learned + " / " + s.total + " learned</div>" +
+      progressBar(s.pct) + "<div class=\"progress-label\">" + s.pct + "% complete · " + s.left + " left</div></a>";
+  }).join("");
+  const total = DB.vocabMeta ? DB.vocabMeta.total : vAll().length;
+  view.innerHTML =
+    "<h1>JLPT vocabulary</h1>" +
+    "<p class=\"lead\">Learn the words behind the kanji. " + total + " words across N5 to N1, each with reading, meaning and real Tatoeba example sentences — all offline.</p>" +
+    (due > 0 ? "<p><a class=\"btn primary\" href=\"#/review?tab=srs&kind=vocab\">Review now — " + due + " due</a></p>" : "") +
+    "<div class=\"level-grid\">" + cards + "</div>" +
+    "<div class=\"card\"><h2>How vocab study works</h2>" +
+    "<p class=\"explain\">Browse a level, open a word to see its kanji links and example sentences, mark it learned, then lock it in with flashcards and spaced review. Words you favorite or annotate sync into the same backup as your kanji progress.</p>" +
+    "<p><a class=\"btn\" href=\"#/vocab/N5\">Browse N5 words</a> <a class=\"btn soft\" href=\"#/search?q=\">Search words</a></p></div>";
+}
+function renderVocabBrowse(view, level, q) {
+  const lv = LEVELS.includes((level || "").toUpperCase()) ? level.toUpperCase() : "N5";
+  const query = q.q || "", filt = q.f || "all", sort = q.s || "default";
+  const link = (over) => "#/vocab/" + lv + "?" + new URLSearchParams(Object.assign({ q: query, f: filt, s: sort }, over)).toString();
+  let recs = (DB.vocab[lv] || []).slice();
+  recs = recs.filter(v => matchVQuery(v, query));
+  if (filt === "learned") recs = recs.filter(v => isVLearned(v.id));
+  else if (filt === "unlearned") recs = recs.filter(v => !isVLearned(v.id));
+  else if (filt === "fav") recs = recs.filter(v => isVFav(v.id));
+  else if (filt === "nosent") recs = recs.filter(v => !(v.sentences && v.sentences.length));
+  if (sort === "alpha") recs.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
+  else if (sort === "reading") recs.sort((a, b) => (a.reading < b.reading ? -1 : 1));
+  else if (sort === "progress") recs.sort((a, b) => ((store.vLearned[a.id] ? 1 : 0) - (store.vLearned[b.id] ? 1 : 0)));
+  const chips = LEVELS.map(l =>
+    "<button class=\"chip\" data-lv=\"" + l + "\" aria-pressed=\"" + (l === lv) + "\">" + l + "</button>").join("");
+  const grid = recs.length ? recs.map(vocabCard).join("") :
+    "<p class=\"empty\">No words match. Try a different search or filter.</p>";
+  view.innerHTML =
+    "<h1>Vocabulary " + lv + "</h1>" +
+    "<div class=\"chip-row\" role=\"group\" aria-label=\"JLPT level\">" + chips + "</div>" +
+    "<div class=\"toolbar\">" +
+    "<input type=\"search\" id=\"vq\" placeholder=\"Search word, reading, meaning...\" value=\"" + esc(query) + "\" aria-label=\"Search vocabulary\">" +
+    "<select id=\"vf\" aria-label=\"Filter\">" +
+    "<option value=\"all\"" + (filt === "all" ? " selected" : "") + ">All</option>" +
+    "<option value=\"learned\"" + (filt === "learned" ? " selected" : "") + ">Learned</option>" +
+    "<option value=\"unlearned\"" + (filt === "unlearned" ? " selected" : "") + ">Unlearned</option>" +
+    "<option value=\"fav\"" + (filt === "fav" ? " selected" : "") + ">Favorites</option>" +
+    "<option value=\"nosent\"" + (filt === "nosent" ? " selected" : "") + ">No sentence yet</option>" +
+    "</select>" +
+    "<select id=\"vs\" aria-label=\"Sort\">" +
+    "<option value=\"default\"" + (sort === "default" ? " selected" : "") + ">Default</option>" +
+    "<option value=\"alpha\"" + (sort === "alpha" ? " selected" : "") + ">A-Z</option>" +
+    "<option value=\"reading\"" + (sort === "reading" ? " selected" : "") + ">Reading</option>" +
+    "<option value=\"progress\"" + (sort === "progress" ? " selected" : "") + ">Unlearned first</option>" +
+    "</select></div>" +
+    "<p class=\"result-count\">" + recs.length + " words · <a href=\"#/study/" + lv + "?kind=vocab\">Study " + lv + " flashcards</a> · <a href=\"#/review?tab=quiz&kind=vocab&lv=" + lv + "\">Quiz " + lv + "</a></p>" +
+    "<div class=\"kanji-grid\">" + grid + "</div>";
+  $$(".chip", view).forEach(c => c.addEventListener("click", () => go("#/vocab/" + c.dataset.lv + "?" + new URLSearchParams({ q: query, f: filt, s: sort }).toString())));
+  let deb = null;
+  $("#vq").addEventListener("input", e => {
+    clearTimeout(deb);
+    deb = setTimeout(() => go(link({ q: e.target.value })), 350);
+  });
+  $("#vf").addEventListener("change", e => go(link({ f: e.target.value })));
+  $("#vs").addEventListener("change", e => go(link({ s: e.target.value })));
+}
+function renderVocabDetail(view, id) {
+  const v = vById(id);
+  if (!v) { view.innerHTML = "<p class=\"empty\">Word not found. <a href=\"#/vocab\">Back to vocabulary</a></p>"; return; }
+  const list = DB.vocab[v.jlpt] || [];
+  const idx = list.findIndex(x => x.id === id);
+  const prev = list[(idx - 1 + list.length) % list.length], next = list[(idx + 1) % list.length];
+  const learned = isVLearned(id), fav = isVFav(id);
+  const klinks = kanjiCharsOf(v).map(ch =>
+    "<a class=\"btn soft\" href=\"#/k/" + encodeURIComponent(ch) + "\" lang=\"ja\">" + esc(ch) + "</a>").join(" ") || "<span class=\"explain\">No kanji links — kana word.</span>";
+  const sents = (v.sentences || []).map(s =>
+    "<li><div class=\"jp\" lang=\"ja\">" + esc(s.jp) + "</div>" +
+    "<div class=\"en\" lang=\"en\">" + esc(s.en) + "</div></li>").join("") ||
+    "<li class=\"explain\">No Tatoeba example sentence matched this word yet. The word itself is still fully searchable and reviewable.</li>";
+  const meanings = (v.meanings || []).map(esc).join("; ");
+  view.innerHTML =
+    "<p><a href=\"#/vocab/" + v.jlpt + "\">← " + v.jlpt + " vocabulary</a></p>" +
+    "<div class=\"detail-head\"><div class=\"kanji-hero vocab-hero\" lang=\"ja\">" + esc(v.word) + "</div>" +
+    "<div class=\"detail-title\"><h1><span lang=\"ja\">" + esc(v.word) + "</span></h1>" +
+    "<div class=\"readings\"><span><span class=\"lab\">Reading </span><span lang=\"ja\">" + esc(v.reading) + "</span></span></div>" +
+    "<p class=\"lead\" style=\"margin:.4rem 0\">" + esc(v.meaning) + "</p>" +
+    "<div class=\"stat-row\">" +
+    "<span class=\"badge " + levelClass(v.jlpt) + "\">JLPT " + v.jlpt + "</span>" +
+    "<span class=\"badge\">JMdict #" + esc(v.seq) + "</span>" +
+    "</div>" +
+    "<div class=\"action-row\">" +
+    "<button class=\"btn " + (learned ? "good\" aria-pressed=\"true" : "primary\" aria-pressed=\"false") + "\" id=\"vLearn\">" + (learned ? "Learned" : "Mark as learned") + "</button>" +
+    "<button class=\"btn\" id=\"vFav\" aria-pressed=\"" + fav + "\">" + (fav ? "Favorited" : "Favorite") + "</button>" +
+    "<a class=\"btn soft\" href=\"#/study/" + v.jlpt + "?kind=vocab\">Study " + v.jlpt + "</a>" +
+    "</div></div></div>" +
+    "<div class=\"card\"><h2>Meanings</h2><p>" + meanings + "</p>" +
+    "<h2>Kanji in this word</h2><p>" + klinks + "</p>" +
+    "<p class=\"explain\">Tap a kanji to open its stroke order, components and mnemonic.</p></div>" +
+    "<div class=\"card\"><h2>Example sentences</h2><ul class=\"sent-list\">" + sents + "</ul>" +
+    "<p class=\"explain\">Sentences: Tatoeba JP-EN pairs matched by exact word occurrence at build time (CC BY 2.0 FR). Shortest matches kept; quality varies.</p></div>" +
+    "<div class=\"card\"><h2>My note</h2><textarea class=\"note\" id=\"vNote\" aria-label=\"Personal note\">" + esc(store.vNotes[id] || "") + "</textarea></div>" +
+    "<div class=\"pager\"><a class=\"btn soft\" href=\"#/v/" + encodeURIComponent(prev.id) + "\">← " + esc(prev.word) + "</a>" +
+    "<a class=\"btn soft\" href=\"#/v/" + encodeURIComponent(next.id) + "\">" + esc(next.word) + " →</a></div>";
+  $("#vLearn").addEventListener("click", e => {
+    toggleVLearned(id);
+    const on = isVLearned(id);
+    e.target.textContent = on ? "Learned" : "Mark as learned";
+    e.target.setAttribute("aria-pressed", on);
+    e.target.className = "btn " + (on ? "good" : "primary");
+    renderNav("vocab");
+  });
+  $("#vFav").addEventListener("click", e => {
+    toggleVFav(id);
+    const on = isVFav(id);
+    e.target.textContent = on ? "Favorited" : "Favorite";
+    e.target.setAttribute("aria-pressed", on);
+  });
+  let noteT = null;
+  $("#vNote").addEventListener("input", e => {
+    clearTimeout(noteT);
+    noteT = setTimeout(() => {
+      const val = e.target.value.trim();
+      if (val) store.vNotes[id] = val; else delete store.vNotes[id];
+      save();
+    }, 400);
+  });
+}
+function renderVStudy(view, level, q) {
+  const lv = LEVELS.includes((level || "").toUpperCase()) ? level.toUpperCase() : "N5";
+  const mode = ["w2m", "m2w", "r2w"].includes(q.mode) ? q.mode : "w2m";
+  const size = Math.min(50, Math.max(5, parseInt(q.n || store.settings.dailyGoal || 10, 10) || 10));
+  const pool = shuffle((DB.vocab[lv] || []).slice());
+  const deck = pool.slice(0, Math.min(size, pool.length));
+  if (!deck.length) { view.innerHTML = "<p class=\"empty\">No cards.</p>"; return; }
+  let i = 0, flipped = false;
+  const modes = { w2m: "Word to meaning", m2w: "Meaning to word", r2w: "Reading to word" };
+  function front(v) {
+    if (mode === "m2w") return "<div class=\"mid\">" + esc(v.meaning) + "</div>";
+    if (mode === "r2w") return "<div class=\"mid jp\" lang=\"ja\">" + esc(v.reading) + "</div>";
+    return "<div class=\"big jp\" lang=\"ja\">" + esc(v.word) + "</div>";
+  }
+  function back(v) {
+    if (mode === "w2m") return "<div class=\"mid\">" + esc(v.meaning) + "</div><div class=\"sub\" lang=\"ja\">" + esc(v.reading) + "</div>";
+    return "<div class=\"big jp\" lang=\"ja\">" + esc(v.word) + "</div><div class=\"mid\">" + esc(v.meaning) + "</div>" +
+      "<div class=\"sub\" lang=\"ja\">" + esc(v.reading) + "</div>";
+  }
+  function draw() {
+    const v = deck[i];
+    view.innerHTML =
+      "<h1>Study vocab " + lv + "</h1>" +
+      "<p class=\"explain\">" + modes[mode] + " · card " + (i + 1) + " of " + deck.length +
+      " · <a href=\"#/study/" + lv + "?kind=vocab&mode=w2m\">W-M</a> · <a href=\"#/study/" + lv + "?kind=vocab&mode=m2w\">M-W</a> · <a href=\"#/study/" + lv + "?kind=vocab&mode=r2w\">R-W</a>" +
+      " · <a href=\"#/study/" + lv + "\">Kanji cards</a></p>" +
+      "<div class=\"flash\"><div class=\"flash-card\" id=\"fc\" role=\"button\" tabindex=\"0\" aria-label=\"Flashcard, activate to flip\">" +
+      (flipped ? back(v) : front(v)) + "</div>" +
+      "<div class=\"flash-nav\">" +
+      "<button class=\"btn soft\" id=\"fPrev\">Prev</button>" +
+      "<button class=\"btn\" id=\"fFlip\">Flip</button>" +
+      "<button class=\"btn soft\" id=\"fNext\">Next</button>" +
+      "<button class=\"btn\" id=\"fKnow\">" + (isVLearned(v.id) ? "Learned" : "Mark learned") + "</button>" +
+      "<a class=\"btn soft\" href=\"#/v/" + encodeURIComponent(v.id) + "\">Open</a>" +
+      "</div></div>";
+    const flip = () => { flipped = !flipped; draw(); };
+    $("#fFlip").addEventListener("click", flip);
+    $("#fc").addEventListener("click", flip);
+    $("#fc").addEventListener("keydown", e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); flip(); } });
+    $("#fPrev").addEventListener("click", () => { i = (i - 1 + deck.length) % deck.length; flipped = false; draw(); });
+    $("#fNext").addEventListener("click", () => { i = (i + 1) % deck.length; flipped = false; draw(); });
+    $("#fKnow").addEventListener("click", e => {
+      toggleVLearned(v.id);
+      e.target.textContent = isVLearned(v.id) ? "Learned" : "Mark learned";
+    });
+    document.onkeydown = (e) => {
+      if (parseHash().seg[0] !== "study") { document.onkeydown = null; return; }
+      if (e.key === "ArrowRight") { i = (i + 1) % deck.length; flipped = false; draw(); }
+      else if (e.key === "ArrowLeft") { i = (i - 1 + deck.length) % deck.length; flipped = false; draw(); }
+      else if (e.key === " ") { e.preventDefault(); flip(); }
+    };
+  }
+  draw();
+}
+function renderVReview(view, q) {
+  const tab = q.tab === "quiz" ? "quiz" : "srs";
+  view.innerHTML =
+    "<h1>Vocab review</h1>" +
+    "<p class=\"explain\"><a href=\"#/review\">Kanji review</a> · Vocabulary review (same SRS schedule)</p>" +
+    "<div class=\"chip-row\" role=\"group\" aria-label=\"Review mode\">" +
+    "<button class=\"chip\" id=\"tabSrs\" aria-pressed=\"" + (tab === "srs") + "\">Spaced review</button>" +
+    "<button class=\"chip\" id=\"tabQuiz\" aria-pressed=\"" + (tab === "quiz") + "\">Quiz</button></div>" +
+    "<div id=\"revBody\"></div>";
+  $("#tabSrs").addEventListener("click", () => go("#/review?tab=srs&kind=vocab"));
+  $("#tabQuiz").addEventListener("click", () => go("#/review?tab=quiz&kind=vocab"));
+  if (tab === "quiz") renderVQuiz($("#revBody"), q);
+  else renderVSrs($("#revBody"));
+}
+function renderVSrs(body) {
+  const due = shuffle(vDueCards());
+  const fresh = [];
+  for (const lv of ["N5", "N4"]) {
+    for (const v of (DB.vocab[lv] || [])) {
+      if (fresh.length >= store.settings.dailyGoal) break;
+      if (!store.vLearned[v.id] && !store.vSrs[v.id]) fresh.push(v.id);
+    }
+  }
+  const queue = due.concat(fresh.filter(k => due.indexOf(k) < 0)).slice(0, 30);
+  if (!queue.length) {
+    body.innerHTML = "<div class=\"card\"><h2>All caught up</h2>" +
+      "<p class=\"explain\">Nothing is due. Mark more words as learned and they will appear here on schedule.</p>" +
+      "<p><a class=\"btn\" href=\"#/vocab/N5\">Browse N5 words</a> <a class=\"btn soft\" href=\"#/review?tab=quiz&kind=vocab\">Take a vocab quiz</a></p></div>";
+    return;
+  }
+  let i = 0, show = false, right = 0;
+  function draw() {
+    const id = queue[i], v = vById(id);
+    if (!v) { i++; if (i < queue.length) draw(); return; }
+    body.innerHTML =
+      "<p class=\"explain\">Card " + (i + 1) + " of " + queue.length + " · " + right + " correct</p>" +
+      "<div class=\"flash\"><div class=\"flash-card\" id=\"rc\" role=\"button\" tabindex=\"0\" aria-label=\"Review card\">" +
+      (show
+        ? "<div class=\"big jp\" lang=\"ja\">" + esc(v.word) + "</div><div class=\"mid\">" + esc(v.meaning) + "</div><div class=\"sub\" lang=\"ja\">" + esc(v.reading) + "</div>"
+        : "<div class=\"mid\">What does this mean?<br><br></div><div class=\"big jp\" lang=\"ja\">" + esc(v.word) + "</div>") +
+      "</div><div class=\"flash-nav\">" +
+      (show
+        ? "<button class=\"btn\" id=\"rNo\">Forgot</button><button class=\"btn good\" id=\"rYes\">Remembered</button>"
+        : "<button class=\"btn primary\" id=\"rShow\">Show answer</button>") +
+      "</div></div>";
+    if (!show) {
+      const go2 = () => { show = true; draw(); };
+      $("#rShow").addEventListener("click", go2);
+      $("#rc").addEventListener("click", go2);
+    } else {
+      $("#rYes").addEventListener("click", () => { vSrsGrade(id, true); right++; next(); });
+      $("#rNo").addEventListener("click", () => { vSrsGrade(id, false); queue.push(id); next(); });
+    }
+  }
+  function next() {
+    i++; show = false;
+    if (i >= queue.length) {
+      body.innerHTML = "<div class=\"card\"><h2>Session done</h2><p>" + right + " remembered this round.</p>" +
+        "<p><a class=\"btn\" href=\"#/progress\">See progress</a> <a class=\"btn soft\" href=\"#/review?tab=quiz&kind=vocab\">Take a quiz</a></p></div>";
+      renderNav("review");
+    } else draw();
+  }
+  draw();
+}
+function renderVQuiz(body, q) {
+  const lv = LEVELS.includes((q.lv || "").toUpperCase()) ? q.lv.toUpperCase() : "N5";
+  const pool = DB.vocab[lv] || [];
+  const N = Math.min(10, pool.length);
+  const qs = shuffle(pool.slice()).slice(0, N).map((v, n) => {
+    const type = n % 3;
+    const others = shuffle(pool.filter(x => x.id !== v.id)).slice(0, 3);
+    return { v, type, opts: shuffle([v].concat(others)) };
+  });
+  let i = 0, score = 0, answered = false;
+  function draw() {
+    if (i >= qs.length) {
+      const best = (store.vQuizBest || {})[lv] || 0;
+      if (score > best) { store.vQuizBest[lv] = score; save(); }
+      body.innerHTML = "<div class=\"card\"><h2>Quiz result: " + score + " / " + qs.length + "</h2>" +
+        "<p class=\"explain\">Best vocab " + lv + ": " + Math.max(best, score) + " / " + qs.length + "</p>" +
+        "<p><button class=\"btn primary\" id=\"qRetry\">Retry</button> <a class=\"btn soft\" href=\"#/review?tab=srs&kind=vocab\">Spaced review</a></p></div>";
+      $("#qRetry").addEventListener("click", () => renderVQuiz(body, q));
+      return;
+    }
+    const cur = qs[i], v = cur.v;
+    const prompt = cur.type === 0
+      ? "What does this mean?<span class=\"big jp\" lang=\"ja\">" + esc(v.word) + "</span>"
+      : cur.type === 1
+      ? "Which word means: " + esc(v.meaning) + "?"
+      : "Which word reads: <span lang=\"ja\">" + esc(v.reading) + "</span>?";
+    const opts = cur.opts.map(o => {
+      const label = cur.type === 0 ? o.meaning : (cur.type === 1 ? o.word : o.word);
+      const cls = cur.type === 0 ? "" : " jp";
+      return "<button class=\"btn quiz-opt" + cls + "\" data-k=\"" + esc(o.id) + "\"" + (cur.type !== 0 ? " lang=\"ja\"" : "") + ">" + esc(label) + "</button>";
+    }).join("");
+    body.innerHTML =
+      "<p class=\"explain\">" + lv + " vocab quiz · question " + (i + 1) + " of " + qs.length + " · score " + score + "</p>" +
+      "<div class=\"card\"><p class=\"quiz-q\">" + prompt + "</p><div class=\"quiz-opts\">" + opts + "</div>" +
+      "<p id=\"qFb\" class=\"explain\"></p></div>";
+    $$(".quiz-opt", body).forEach(b => b.addEventListener("click", () => {
+      if (answered) return;
+      answered = true;
+      const ok = b.dataset.k === v.id;
+      if (ok) { score++; b.classList.add("correct"); $("#qFb").textContent = "Correct! " + v.word + " = " + v.meaning; }
+      else {
+        b.classList.add("wrong");
+        $$(".quiz-opt", body).forEach(x => { if (x.dataset.k === v.id) x.classList.add("correct"); });
+        $("#qFb").innerHTML = "Not quite — <a href=\"#/v/" + encodeURIComponent(v.id) + "\">" + esc(v.word) + "</a> means " + esc(v.meaning) + ".";
+      }
+      const nx = document.createElement("button");
+      nx.className = "btn primary"; nx.textContent = i + 1 >= qs.length ? "See result" : "Next";
+      nx.addEventListener("click", () => { i++; answered = false; draw(); });
+      $("#qFb").after(nx);
+    }));
+  }
+  const wrap = document.createElement("div");
+  wrap.innerHTML = "<div class=\"chip-row\" role=\"group\" aria-label=\"Quiz level\">" + LEVELS.map(l => "<button class=\"chip\" data-lv=\"" + l + "\" aria-pressed=\"" + (l === lv) + "\">" + l + "</button>").join("") + "</div>";
+  body.innerHTML = "";
+  body.appendChild(wrap);
+  const holder = document.createElement("div");
+  body.appendChild(holder);
+  body = holder;
+  $$(".chip", wrap).forEach(c => c.addEventListener("click", () => go("#/review?tab=quiz&kind=vocab&lv=" + c.dataset.lv)));
+  draw();
+}
+function vocabLinksForKanji(ch) {
+  try {
+    const rel = vocabForKanji(ch, 12);
+    if (!rel.length) return "";
+    return "<p class=\"explain\">JLPT vocabulary with this kanji:</p><p>" + rel.map(v => "<a class=\"btn soft\" style=\"margin:.15rem\" href=\"#/v/" + encodeURIComponent(v.id) + "\" lang=\"ja\">" + esc(v.word) + "</a>").join(" ") + "</p><p><a href=\"#/search?q=" + encodeURIComponent(ch) + "\">Search all words with " + esc(ch) + "</a></p>";
+  } catch (e) { return ""; }
 }
 
 /* ---------- Theme, search box, init ---------- */
