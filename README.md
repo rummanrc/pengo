@@ -1,6 +1,6 @@
-﻿# KnowKanji - JLPT Kanji Study App
+﻿# KnowKanji - JLPT Kanji, Vocabulary and Grammar Study App
 
-A responsive, data-driven Japanese kanji learning web app for JLPT N5-N1.
+A responsive, data-driven Japanese learning web app for JLPT N5-N1: kanji, vocabulary and grammar.
 No build step, no dependencies: just static files plus prebuilt JSON.
 
 ## Run it
@@ -25,6 +25,7 @@ GitHub Pages works too, but `resources/` is a submodule: enable
     app.js                hash-router SPA: home/browse/detail/study/review/search/progress/settings
     data/n5..n1.json      per-level kanji records (generated, UTF-8)
     data/vocab_n5..n1.json per-level vocabulary records with Tatoeba sentences (generated, UTF-8)
+    data/grammar_n5..n1.json per-level grammar records with examples + readings (generated, UTF-8)
     data/radicals.json    the 214 Kangxi radicals, correctly numbered
     data/meta.json        counts + stroke-art coverage per level
     scripts/build_data.py rebuilds data/ from resources/ (the kanji-data submodule)
@@ -44,7 +45,7 @@ GitHub Pages works too, but `resources/` is a submodule: enable
     confusables[] look-alike kanji        hasStroke  KanjiVG diagram available?
     mnemonic     prebuilt original memory aid (memory aid, not etymology)
 
-To update data, replace files under resources/ and run `python scripts/build_data.py` (kanji) and `python scripts/build_vocab.py` (vocab + Tatoeba sentences).
+To update data, replace files under resources/ and run `python scripts/build_data.py` (kanji), `python scripts/build_vocab.py` (vocab + Tatoeba sentences) and `python scripts/build_grammar.py` (grammar from the Anki deck, text only, no audio).
 Then `python scripts/build_bundle.py` to refresh the file:// fallback bundle.
 
 ## Features
@@ -55,6 +56,10 @@ Then `python scripts/build_bundle.py` to refresh the file:// fallback bundle.
 - Detail: readings, stats, animated KanjiVG stroke order with replay,
   component breakdown with Kangxi-vs-helper badges, original mnemonic,
   vocabulary, sentences, similar kanji, notes, prev/next navigation
+- Vocabulary section: 8,293 JLPT words with readings, Tatoeba sentences, kanji links, flashcards, SRS + quiz
+- Grammar section: 399 JLPT grammar points (N5 79, N4 95, N3 100, N2 61, N1 64) with explanations,
+  formation notes, ruby-reading examples (translations tap-to-reveal), related points, kanji/vocab links,
+  flashcards (3 modes), SRS review queue, 10-question quiz (meaning, point, translation + fill-in-blank)
 - Study flashcards (3 modes, keyboard support), SRS review queue, 10-question quiz
 - Progress dashboard, export/import backup, dark mode, responsive + keyboard accessible
 - All user data persists in localStorage; mnemonic engine exposes

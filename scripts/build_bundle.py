@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data"
 
-payload = {"levels": {}, "vocab": {}}
+payload = {"levels": {}, "vocab": {}, "grammar": {}}
 for lv in ["N5", "N4", "N3", "N2", "N1"]:
     with open(OUT / ("%s.json" % lv.lower()), encoding="utf-8") as f:
         payload["levels"][lv] = json.load(f)
@@ -31,9 +31,20 @@ except OSError:
     payload["vocab"] = {}
     payload["vocab_meta"] = None
 
+try:
+    for lv in ["N5", "N4", "N3", "N2", "N1"]:
+        with open(OUT / ("grammar_%s.json" % lv.lower()), encoding="utf-8") as f:
+            payload["grammar"][lv] = json.load(f)
+    with open(OUT / "grammar_meta.json", encoding="utf-8") as f:
+        payload["grammar_meta"] = json.load(f)
+except OSError:
+    payload["grammar"] = {}
+    payload["grammar_meta"] = None
+
 js = "window.KK_DATA = " + json.dumps(payload, ensure_ascii=False) + ";"
 with open(OUT / "bundle.js", "w", encoding="utf-8", newline="") as f:
     f.write(js)
 nk = sum(len(v) for v in payload["levels"].values())
 nv = sum(len(v) for v in payload["vocab"].values()) if payload.get("vocab") else 0
-print("wrote data/bundle.js (%d kanji, %d vocab)" % (nk, nv))
+ng = sum(len(v) for v in payload["grammar"].values()) if payload.get("grammar") else 0
+print("wrote data/bundle.js (%d kanji, %d vocab, %d grammar)" % (nk, nv, ng))

@@ -283,3 +283,15 @@ textarea.note { font-size: 16px; }
 .vocab-hero { font-size: 2.6rem; line-height: 1.15; text-align: center; overflow-wrap: anywhere; height: auto; min-height: 9rem; padding: .8rem; }
 h2 small { font-weight: 600; font-size: .8rem; }
 h2 small a { font-weight: 600; }
+
+/* Grammar */
+.gcard .gpoint { font-family: var(--jp-font); font-size: 1.35rem; font-weight: 700; line-height: 1.35; text-align: center; }
+.gram-hero { font-size: 2.4rem; line-height: 1.2; text-align: center; overflow-wrap: anywhere; height: auto; min-height: 7rem; padding: .8rem; }
+.gram-big { font-size: clamp(2rem, 8vw, 3.2rem); }
+.gsec { font-size: 1rem; margin: 1rem 0 .3rem; color: var(--accent-ink); }
+ruby rt { font-size: .55em; color: var(--ink-soft); }
+.ex-jp { font-size: 1.1rem; }
+.ex-furi { font-family: var(--jp-font); color: var(--ink-soft); margin-top: .15rem; }
+details.trans { margin-top: .3rem; }
+details.trans summary { cursor: pointer; color: var(--blue); font-size: .9rem; }
+details.trans .en { color: var(--ink-soft); font-size: .9rem; margin-top: .2rem; }

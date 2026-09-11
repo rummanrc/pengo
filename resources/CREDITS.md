@@ -139,3 +139,20 @@ invents sentences.
 - Please keep this attribution when redistributing the app or its data.
 - `resources/vocab/kanji_alive/` stubs (`ka_data.csv`, `audio-mp3.zip`) are
   placeholders only and are NOT bundled into the app.
+
+## JLPT grammar deck (`grammar/Japanese_Core_Grammar_JLPT_N5-N1_waudio.apkg`)
+
+Anki package "Japanese Core Grammar JLPT N5-N1" (400 notes, 1 note type).
+Only the textual fields are used: grammar point, JLPT level, frequency,
+example sentences + readings + translations, and the explanation sections.
+Normalized (never hand-edited) into `data/grammar_n{1-5}.json` by
+`scripts/build_grammar.py` (399 entries: N5 79, N4 95, N3 100, N2 61,
+N1 64; the single same-level duplicate point was merged).
+
+- The 399 `hypertts-*.mp3` TTS audio files inside the package are
+  intentionally NOT bundled into the app (text only, keeps the APK small).
+- No author or licence statement was found inside the package; the deck is
+  attributed by name here and in the app Settings. Verify redistribution
+  terms with the deck author before redistributing beyond this project.
+- The `.apkg` itself stays in `resources/` as a read-only build source and
+  is never parsed at runtime or shipped to the app.
