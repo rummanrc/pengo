@@ -9,8 +9,18 @@ Run:  python scripts/build_data.py
 import csv
 import json
 import re
+import sys
 import unicodedata
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    import furigana as _furigana
+    _FURI_LOOKUP, _FURI_MAX = _furigana.get_lookup()
+    if not _FURI_LOOKUP:
+        _furigana = None
+except Exception:
+    _furigana = None
 
 ROOT = Path(__file__).resolve().parent.parent
 RES = ROOT / "resources"
@@ -303,6 +313,12 @@ def build_level(level, metadata, radicals, krad, compounds, sentences, dataset, 
                     break
                 if s["jp"] not in [x["jp"] for x in sents]:
                     sents.append({"jp": s["jp"], "ro": "", "en": s["en"]})
+            if _furigana is not None:
+                for _s in sents:
+                    try:
+                        _furigana.annotate_sentence(_s, _FURI_LOOKUP, _FURI_MAX)
+                    except Exception:
+                        pass
             confus = [c.strip() for c in (row.get("confusables") or "").split(",") if c.strip()][:8]
             cp = "%05x" % ord(k)
             strokes = meta.get("strokes")

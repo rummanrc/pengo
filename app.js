@@ -458,6 +458,7 @@ function renderDetail(view, ch) {
     "<li><span class=\"w\" lang=\"ja\">" + esc(v.w) + "</span> <span class=\"r\" lang=\"ja\">" + esc(v.r) + "</span><br>" + esc(v.m) + "</li>").join("") || "<li class=\"explain\">No example words in the data for this kanji yet.</li>";
   const sents = (it.sentences || []).map(s =>
     "<li><div class=\"jp\" lang=\"ja\">" + esc(s.jp) + "</div>" +
+    (s.furi ? "<div class=\"ex-furi\" lang=\"ja\">" + s.furi + "</div>" : "") +
     (s.ro ? "<div class=\"r jp\" lang=\"ja\">" + esc(s.ro) + "</div>" : "") +
     (s.en ? "<div class=\"en\" lang=\"en\">" + esc(s.en) + "</div>" : "") + "</li>").join("") ||
     "<li class=\"explain\">No example sentences in the data for this kanji yet.</li>";
@@ -1030,6 +1031,7 @@ function renderVocabDetail(view, id) {
     "<a class=\"btn soft\" href=\"#/k/" + encodeURIComponent(ch) + "\" lang=\"ja\">" + esc(ch) + "</a>").join(" ") || "<span class=\"explain\">No kanji links — kana word.</span>";
   const sents = (v.sentences || []).map(s =>
     "<li><div class=\"jp\" lang=\"ja\">" + esc(s.jp) + "</div>" +
+    (s.furi ? "<div class=\"ex-furi\" lang=\"ja\">" + s.furi + "</div>" : "") +
     "<div class=\"en\" lang=\"en\">" + esc(s.en) + "</div></li>").join("") ||
     "<li class=\"explain\">No Tatoeba example sentence matched this word yet. The word itself is still fully searchable and reviewable.</li>";
   const meanings = (v.meanings || []).map(esc).join("; ");

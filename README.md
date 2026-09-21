@@ -41,12 +41,16 @@ GitHub Pages works too, but `resources/` is a submodule: enable
       rad = Kangxi number or null (true radicals vs mnemonic parts are labelled),
       link = dataset kanji to jump to, variantOf = standard form if written as a variant
     vocab[]      { w, r, m } up to 6 JLPT compounds using the kanji
-    sentences[]  { jp, ro, en } CSV sentence + Tanaka-corpus sentences
+    sentences[]  { jp, furi, ro, en } CSV sentence + Tanaka-corpus sentences
+      furi = ruby-furigana HTML (<ruby>base<rt>reading</rt></ruby>, same as grammar examples),
+      generated offline by scripts/furigana.py (dictionary built from vocab + compounds + grammar ruby)
     confusables[] look-alike kanji        hasStroke  KanjiVG diagram available?
     mnemonic     prebuilt original memory aid (memory aid, not etymology)
 
 To update data, replace files under resources/ and run `python scripts/build_data.py` (kanji), `python scripts/build_vocab.py` (vocab + Tatoeba sentences) and `python scripts/build_grammar.py` (grammar from the Anki deck, text only, no audio).
 Then `python scripts/build_bundle.py` to refresh the file:// fallback bundle.
+(`scripts/build_data.py` and `scripts/build_vocab.py` annotate sentence furigana automatically;
+`python scripts/furigana.py` regenerates `furi` across all levels without rebuilding anything else.)
 
 ## Features
 

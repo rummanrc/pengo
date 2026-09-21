@@ -18,8 +18,18 @@ Run:  python scripts/build_vocab.py
 """
 import csv
 import json
+import sys
 from collections import deque
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    import furigana as _furigana
+    _FURI_LOOKUP, _FURI_MAX = _furigana.get_lookup()
+    if not _FURI_LOOKUP:
+        _furigana = None
+except Exception:
+    _furigana = None
 
 ROOT = Path(__file__).resolve().parent.parent
 RES = ROOT / "resources" / "vocab"
@@ -196,6 +206,12 @@ def main():
         lst = cand[vi]
         lst.sort(key=lambda t: (len(t[0]), len(t[1])))
         e["sentences"] = [{"jp": jp, "en": en} for jp, en in lst[:MAX_PER_VOCAB]]
+        if _furigana is not None:
+            for _s in e["sentences"]:
+                try:
+                    _furigana.annotate_sentence(_s, _FURI_LOOKUP, _FURI_MAX)
+                except Exception:
+                    pass
         del e["_key"]
 
     OUT.mkdir(exist_ok=True)
