@@ -1,4 +1,4 @@
-# KnowKanji offline Android builder.
+# Pengo offline Android builder.
 # Network is needed only while building this image (toolchain download);
 # the app it produces is fully offline.
 FROM gradle:8.7-jdk17

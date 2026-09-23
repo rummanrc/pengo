@@ -1,9 +1,9 @@
 "use strict";
-/* KnowKanji - data-driven JLPT kanji study app (no build step).
+/* Pengo - data-driven JLPT study app (no build step).
    Data: data/n5..n1.json + data/radicals.json + data/meta.json (see scripts/build_data.py).
    Vocab: data/vocab_n5..n1.json + data/vocab_meta.json (see scripts/build_vocab.py).
    Grammar: data/grammar_n5..n1.json + data/grammar_meta.json (see scripts/build_grammar.py).
-   Progress: localStorage key "knowkanji:v1". */
+   Pengo progress: localStorage key "knowkanji:v1". */
 
 const LEVELS = ["N5", "N4", "N3", "N2", "N1"];
 const STORE_KEY = "knowkanji:v1";
@@ -29,11 +29,11 @@ function save() {
 
 function exportBackup() {
   const text = JSON.stringify(store);
-  if (window.Platform && window.Platform.exportJson) { window.Platform.exportJson("knowkanji-backup.json", text); return; }
+  if (window.Platform && window.Platform.exportJson) { window.Platform.exportJson("pengo-backup.json", text); return; }
   const blob = new Blob([text], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "knowkanji-backup.json";
+  a.download = "pengo-backup.json";
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
@@ -255,7 +255,7 @@ function renderNav(active) {
     "<a href=\"" + n.path + "\"" + (n.match === active ? " aria-current=\"page\"" : "") + ">" +
     "<span class=\"ico\" aria-hidden=\"true\">" + n.ico + "</span><span>" + n.label + "</span></a>").join("");
   $("#sideNav").innerHTML = html;
-  $("#bottomNav").innerHTML = NAV.filter(n => ["home", "kanji", "vocab", "grammar", "review", "settings"].indexOf(n.match) >= 0).map(n =>
+  $("#bottomNav").innerHTML = NAV.filter(n => ["home", "kanji", "vocab", "grammar", "review", "progress", "settings"].indexOf(n.match) >= 0).map(n =>
     "<a href=\"" + n.path + "\"" + (n.match === active ? " aria-current=\"page\"" : "") + ">" +
     "<span class=\"ico\" aria-hidden=\"true\">" + n.ico + "</span><span>" + n.label + "</span></a>").join("");
   const d = dueCount();
@@ -355,8 +355,9 @@ function renderHome(view) {
       progressBar(s.pct) + "<div class=\"progress-label\">" + s.pct + "% complete</div></a>";
   }).join("");
   view.innerHTML =
-    "<h1>Learn kanji and vocabulary, one level at a time</h1>" +
-    "<p class=\"lead\">Pick a JLPT level, browse kanji, break each one into components, remember it with a silly mnemonic, then lock it in with review quizzes. " + total + " kanji, " + vTotal + " vocabulary words and " + gTotal + " grammar points included.</p>" +
+    "<div class=\"pg-welcome\"><img class=\"pg-welcome-img\" src=\"assets/pengo-mascot.png\" alt=\"Pengo the penguin reading a book\">" +
+    "<div class=\"pg-welcome-text\"><h1>Learn kanji and vocabulary, one level at a time</h1>" +
+    "<p class=\"lead\">Pengo studies with you: pick a JLPT level, break each kanji into components, remember it with a silly mnemonic, then lock it in with review quizzes. " + total + " kanji, " + vTotal + " vocabulary words and " + gTotal + " grammar points included.</p></div></div>" +
     (due > 0 ? "<p><a class=\"btn primary\" href=\"#/review\">🔁 Review now — " + due + " due</a></p>" : "") +
     "<h2>Kanji</h2>" +
     "<div class=\"level-grid\">" + cards + "</div>" +
@@ -745,50 +746,164 @@ function renderSearch(view, q) {
   setTimeout(() => input.focus(), 50);
 }
 
-/* ---------- Progress ---------- */
+/* ---------- Pengo progress (Overview / Kanji / Vocab / Grammar) ---------- */
+var PG_LEVEL_COLORS = { N1: "#c3ccd6", N2: "#a78bfa", N3: "#93b8f0", N4: "#2f80ed", N5: "#34c77b" };
+function combinedLevelStats(lv) {
+  var k = levelStats(lv), v = vLevelStats(lv), g = gLevelStats(lv);
+  var total = k.total + v.total + g.total;
+  var learned = k.learned + v.learned + g.learned;
+  return { total: total, learned: learned, left: total - learned,
+    pct: total ? Math.round(learned / total * 100) : 0,
+    kanji: k, vocab: v, grammar: g };
+}
+function pengoStudyDays() {
+  var days = {}, i, k, t;
+  var maps = [store.learned, store.vLearned, store.gLearned];
+  for (i = 0; i < maps.length; i++) {
+    var map = maps[i] || {};
+    for (k in map) {
+      t = map[k];
+      if (typeof t !== "number" || !(t > 0)) continue;
+      days[new Date(t).toDateString()] = 1;
+    }
+  }
+  return Object.keys(days).length;
+}
+function pengoAccuracy() {
+  var scores = [], i, k;
+  var maps = [store.quizBest, store.vQuizBest, store.gQuizBest];
+  for (i = 0; i < maps.length; i++) {
+    var m = maps[i] || {};
+    for (k in m) if (typeof m[k] === "number") scores.push(m[k] / 10);
+  }
+  if (!scores.length) return null;
+  var sum = 0, j;
+  for (j = 0; j < scores.length; j++) sum += scores[j];
+  return Math.round(sum / scores.length * 100);
+}
+function pengoNum(n) { return Number(n || 0).toLocaleString("en-US"); }
+function pengoCheer(pct) {
+  if (pct >= 100) return "Perfect! Pengo is doing a happy dance.";
+  if (pct >= 70) return "Almost there - keep waddling forward!";
+  if (pct >= 30) return "Great pace! Pengo is cheering for you.";
+  if (pct > 0) return "Nice start! Every small step counts.";
+  return "Let's start! Pengo will study with you.";
+}
 function renderProgress(view) {
-  const rows = LEVELS.map(lv => {
-    const s = levelStats(lv);
-    return "<tr><td><a href=\"#/kanji/" + lv + "\">" + lv + "</a></td><td>" + s.total + "</td>" +
-      "<td>" + s.learned + "</td><td>" + s.left + "</td><td style=\"min-width:140px\">" + progressBar(s.pct) + "</td><td>" + s.pct + "%</td></tr>";
+  var q = {};
+  try {
+    var h = String(location.hash || ""), qi = h.indexOf("?"), i, kv;
+    if (qi >= 0) {
+      var parts = h.slice(qi + 1).split("&");
+      for (i = 0; i < parts.length; i++) {
+        kv = parts[i].split("=");
+        q[decodeURIComponent(kv[0] || "")] = decodeURIComponent(kv[1] || "");
+      }
+    }
+  } catch (e) {}
+  var tab = q.tab || "overview";
+  if (["overview", "kanji", "vocab", "grammar"].indexOf(tab) < 0) tab = "overview";
+  var heroLevel = q.level || "";
+  if (LEVELS.indexOf(heroLevel) < 0) {
+    heroLevel = "N5";
+    for (i = 0; i < LEVELS.length; i++) {
+      var cand = combinedLevelStats(LEVELS[i]);
+      if (cand.total > 0 && cand.pct < 100) { heroLevel = LEVELS[i]; break; }
+    }
+  }
+  var hero = combinedLevelStats(heroLevel);
+  var tabs = [["overview", "Overview"], ["kanji", "Kanji"], ["vocab", "Vocab"], ["grammar", "Grammar"]].map(function (t) {
+    var on = t[0] === tab;
+    return "<a class=\"pg-tab" + (on ? " active" : "") + "\"" + (on ? " aria-current=\"true\"" : "") +
+      " href=\"#/progress?tab=" + t[0] + "&level=" + heroLevel + "\">" + t[1] + "</a>";
   }).join("");
-  const tot = LEVELS.reduce((a, lv) => a + levelStats(lv).total, 0);
-  const learned = Object.keys(store.learned).length;
-  const vTot = LEVELS.reduce((a, lv) => a + vLevelStats(lv).total, 0);
-  const vLearned = Object.keys(store.vLearned).length;
-  const gTot = LEVELS.reduce((a, lv) => a + gLevelStats(lv).total, 0);
-  const gLearned = Object.keys(store.gLearned).length;
-  const vrows = LEVELS.map(lv => {
-    const s = vLevelStats(lv);
-    return "<tr><td><a href=\"#/vocab/" + lv + "\">" + lv + "</a></td><td>" + s.total + "</td>" +
-      "<td>" + s.learned + "</td><td>" + s.left + "</td><td style=\"min-width:140px\">" + progressBar(s.pct) + "</td><td>" + s.pct + "%</td></tr>";
+  var chips = LEVELS.map(function (lv) {
+    return "<a class=\"pg-chip" + (lv === heroLevel ? " active" : "") + "\" href=\"#/progress?tab=" + tab + "&level=" + lv + "\">" + lv + "</a>";
   }).join("");
-  const grows = LEVELS.map(lv => {
-    const s = gLevelStats(lv);
-    return "<tr><td><a href=\"#/grammar/" + lv + "\">" + lv + "</a></td><td>" + s.total + "</td>" +
-      "<td>" + s.learned + "</td><td>" + s.left + "</td><td style=\"min-width:140px\">" + progressBar(s.pct) + "</td><td>" + s.pct + "%</td></tr>";
-  }).join("");
-  view.innerHTML =
-    "<h1>Progress</h1>" +
-    "<div class=\"card\"><h2>Overall</h2>" +
-    "<p>" + learned + " / " + tot + " kanji learned &middot; " + vLearned + " / " + vTot + " words learned &middot; " + gLearned + " / " + gTot + " grammar learned · " + dueCount() + " due for review · " +
-    (store.fav.length + store.vFav.length + store.gFav.length) + " favorites · " + (Object.keys(store.notes).length + Object.keys(store.vNotes).length + Object.keys(store.gNotes).length) + " notes</p>" +
-    progressBar(tot ? Math.round(learned / tot * 100) : 0) + "</div>" +
-    "<div class=\"card\"><h2>By level</h2><table class=\"stats\"><tr><th>Level</th><th>Total</th><th>Learned</th><th>Left</th><th></th><th>%</th></tr>" + rows + "</table></div>" +
-    "<div class=\"card\"><h2>Vocabulary by level</h2><table class=\"stats\"><tr><th>Level</th><th>Total</th><th>Learned</th><th>Left</th><th></th><th>%</th></tr>" + vrows + "</table></div>" +
-    "<div class=\"card\"><h2>Grammar by level</h2><table class=\"stats\"><tr><th>Level</th><th>Total</th><th>Learned</th><th>Left</th><th></th><th>%</th></tr>" + grows + "</table></div>" +
-    "<div class=\"card\"><h2>Quiz best scores</h2><p>" +
-    LEVELS.map(lv => lv + ": " + (store.quizBest[lv] != null ? store.quizBest[lv] + " / 10" : "—")).join(" · ") + "</p>" +
-    "<p>Vocab: " + LEVELS.map(lv => lv + ": " + (store.vQuizBest[lv] != null ? store.vQuizBest[lv] + " / 10" : "-")).join(" | ") + "</p><p>Grammar: " + LEVELS.map(lv => lv + ": " + (store.gQuizBest[lv] != null ? store.gQuizBest[lv] + " / 10" : "-")).join(" | ") + "</p></div>" +
-    "<div class=\"card\"><h2>Data</h2><div class=\"settings-row\">" +
-    "<button class=\"btn soft\" id=\"pExport\">Export my data</button>" +
-    "<button class=\"btn soft\" id=\"pReset\">Reset progress</button></div></div>";
-  $("#pExport").addEventListener("click", () => {
-    exportBackup();
-  });
-  $("#pReset").addEventListener("click", () => {
+  var R = 58, CIRC = 2 * Math.PI * R;
+  var off = (CIRC * (1 - hero.pct / 100)).toFixed(1);
+  var ring = "<svg class=\"pg-ring\" viewBox=\"0 0 140 140\" role=\"img\" aria-label=\"" + hero.pct + " percent complete\">" +
+    "<defs><linearGradient id=\"pgRingGrad\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">" +
+    "<stop offset=\"0\" stop-color=\"#3ddc84\"/><stop offset=\"1\" stop-color=\"#1ea672\"/></linearGradient></defs>" +
+    "<circle cx=\"70\" cy=\"70\" r=\"" + R + "\" fill=\"none\" stroke=\"#e8edf3\" stroke-width=\"14\"/>" +
+    "<circle cx=\"70\" cy=\"70\" r=\"" + R + "\" fill=\"none\" stroke=\"url(#pgRingGrad)\" stroke-width=\"14\" stroke-linecap=\"round\" " +
+    "stroke-dasharray=\"" + CIRC.toFixed(1) + "\" stroke-dashoffset=\"" + off + "\" transform=\"rotate(-90 70 70)\"/>" +
+    "<text x=\"70\" y=\"80\" text-anchor=\"middle\" class=\"pg-ring-pct\">" + hero.pct + "%</text></svg>";
+  var itemsLearned = Object.keys(store.learned).length + Object.keys(store.vLearned || {}).length + Object.keys(store.gLearned || {}).length;
+  var days = pengoStudyDays();
+  var acc = pengoAccuracy();
+  var accNum = acc == null ? "&#8212;" : acc + "%";
+  var accLbl = acc == null ? "Take a quiz" : "Accuracy";
+  var html = [];
+  html.push("<div class=\"pg-wrap\">");
+  html.push("<div class=\"pg-head\"><a class=\"pg-back\" href=\"#/\" aria-label=\"Back home\">&#8592;</a><h1>Progress</h1><span class=\"pg-head-spacer\"></span></div>");
+  html.push("<div class=\"pg-tabs\" role=\"tablist\">" + tabs + "</div>");
+  html.push("<section class=\"pg-card pg-hero\" aria-label=\"" + heroLevel + " progress\">");
+  html.push("<h2>" + heroLevel + " Progress</h2>");
+  html.push("<div class=\"pg-level-chips\">" + chips + "</div>");
+  html.push("<div class=\"pg-hero-main\">");
+  html.push("<div class=\"pg-ring-block\">" + ring + "<div class=\"pg-count\">" + pengoNum(hero.learned) + " / " + pengoNum(hero.total) + " items</div></div>");
+  html.push("<div class=\"pg-hero-side\"><img class=\"pg-mascot\" src=\"assets/pengo-mascot.png\" alt=\"Pengo cheering you on\">" +
+    "<p class=\"pg-cheer\">" + pengoCheer(hero.pct) + "</p></div>");
+  html.push("</div>");
+  html.push("<p class=\"pg-hero-sub\">" + pengoNum(hero.kanji.learned) + " / " + pengoNum(hero.kanji.total) + " kanji &middot; " +
+    pengoNum(hero.vocab.learned) + " / " + pengoNum(hero.vocab.total) + " words &middot; " +
+    pengoNum(hero.grammar.learned) + " / " + pengoNum(hero.grammar.total) + " grammar &middot; " +
+    "<a href=\"#/kanji/" + heroLevel + "\">study " + heroLevel + "</a></p>");
+  html.push("</section>");
+  html.push("<section class=\"pg-card\" aria-label=\"Study stats\"><h2>Study Stats</h2><div class=\"pg-stats\">" +
+    "<div class=\"pg-stat pink\"><div class=\"pg-stat-ico\">&#128293;</div><div class=\"pg-stat-num\">" + days + "</div><div class=\"pg-stat-lbl\">Days</div></div>" +
+    "<div class=\"pg-stat blue\"><div class=\"pg-stat-ico\">&#128216;</div><div class=\"pg-stat-num\">" + pengoNum(itemsLearned) + "</div><div class=\"pg-stat-lbl\">Items learned</div></div>" +
+    "<div class=\"pg-stat green\"><div class=\"pg-stat-ico\">&#9989;</div><div class=\"pg-stat-num\">" + accNum + "</div><div class=\"pg-stat-lbl\">" + accLbl + "</div></div>" +
+    "</div></section>");
+  if (tab === "overview") {
+    var rows = LEVELS.slice().reverse().map(function (lv) {
+      var s = combinedLevelStats(lv);
+      return "<a class=\"pg-ready-row" + (lv === heroLevel ? " hot" : "") + "\" href=\"#/progress?tab=overview&level=" + lv + "\">" +
+        "<span class=\"pg-lvl\">" + lv + "</span>" +
+        "<span class=\"pg-track\"><span class=\"pg-fill\" style=\"width:" + s.pct + "%;background:" + PG_LEVEL_COLORS[lv] + "\"></span></span>" +
+        "<span class=\"pg-pct\">" + s.pct + "%</span></a>";
+    }).join("");
+    html.push("<section class=\"pg-card\" aria-label=\"JLPT readiness\"><h2>JLPT Readiness</h2>" + rows + "</section>");
+    html.push("<section class=\"pg-card\"><h2>Quiz best scores</h2><p>" +
+      LEVELS.map(function (lv) { return lv + ": " + (store.quizBest[lv] != null ? store.quizBest[lv] + " / 10" : "&#8212;"); }).join(" &middot; ") + "</p>" +
+      "<p>Vocab: " + LEVELS.map(function (lv) { return lv + ": " + (store.vQuizBest[lv] != null ? store.vQuizBest[lv] + " / 10" : "-"); }).join(" | ") + "</p>" +
+      "<p>Grammar: " + LEVELS.map(function (lv) { return lv + ": " + (store.gQuizBest[lv] != null ? store.gQuizBest[lv] + " / 10" : "-"); }).join(" | ") + "</p></section>");
+  } else if (tab === "kanji") {
+    var krows = LEVELS.map(function (lv) {
+      var s = levelStats(lv);
+      return "<tr><td><a href=\"#/kanji/" + lv + "\">" + lv + "</a></td><td>" + s.total + "</td>" +
+        "<td>" + s.learned + "</td><td>" + s.left + "</td><td style=\"min-width:140px\">" + progressBar(s.pct) + "</td><td>" + s.pct + "%</td></tr>";
+    }).join("");
+    html.push("<section class=\"pg-card\"><h2>Kanji by level</h2><table class=\"stats\"><tr><th>Level</th><th>Total</th><th>Learned</th><th>Left</th><th></th><th>%</th></tr>" + krows + "</table></section>");
+  } else if (tab === "vocab") {
+    var vrows = LEVELS.map(function (lv) {
+      var s = vLevelStats(lv);
+      return "<tr><td><a href=\"#/vocab/" + lv + "\">" + lv + "</a></td><td>" + s.total + "</td>" +
+        "<td>" + s.learned + "</td><td>" + s.left + "</td><td style=\"min-width:140px\">" + progressBar(s.pct) + "</td><td>" + s.pct + "%</td></tr>";
+    }).join("");
+    html.push("<section class=\"pg-card\"><h2>Vocabulary by level</h2><table class=\"stats\"><tr><th>Level</th><th>Total</th><th>Learned</th><th>Left</th><th></th><th>%</th></tr>" + vrows + "</table></section>");
+  } else {
+    var grows = LEVELS.map(function (lv) {
+      var s = gLevelStats(lv);
+      return "<tr><td><a href=\"#/grammar/" + lv + "\">" + lv + "</a></td><td>" + s.total + "</td>" +
+        "<td>" + s.learned + "</td><td>" + s.left + "</td><td style=\"min-width:140px\">" + progressBar(s.pct) + "</td><td>" + s.pct + "%</td></tr>";
+    }).join("");
+    html.push("<section class=\"pg-card\"><h2>Grammar by level</h2><table class=\"stats\"><tr><th>Level</th><th>Total</th><th>Learned</th><th>Left</th><th></th><th>%</th></tr>" + grows + "</table></section>");
+  }
+  var tot = LEVELS.reduce(function (a, lv) { return a + levelStats(lv).total; }, 0);
+  html.push("<section class=\"pg-card\"><h2>Data</h2><p class=\"pg-data-line\">" +
+    Object.keys(store.learned).length + " / " + tot + " kanji &middot; " + dueCount() + " due for review &middot; " +
+    (store.fav.length + store.vFav.length + store.gFav.length) + " favorites &middot; " +
+    (Object.keys(store.notes).length + Object.keys(store.vNotes).length + Object.keys(store.gNotes).length) + " notes</p>" +
+    "<div class=\"settings-row\"><button class=\"btn soft\" id=\"pExport\">Export my data</button>" +
+    "<button class=\"btn soft\" id=\"pReset\">Reset progress</button></div></section>");
+  html.push("</div>");
+  view.innerHTML = html.join("");
+  $("#pExport").addEventListener("click", function () { exportBackup(); });
+  $("#pReset").addEventListener("click", function () {
     if (confirm("Reset all progress, favorites, notes and review schedule?")) {
-      const theme = store.settings;
+      var theme = store.settings;
       store = defaultStore(); store.settings = theme; save(); render();
     }
   });
@@ -814,7 +929,7 @@ function renderSettings(view) {
     "Stroke art: KanjiVG (" + (DB.meta ? LEVELS.map(l => DB.meta.levels[l].stroke + "/" + DB.meta.levels[l].count + " " + l).join(" · ") : "") + "). " +
     "Sentences: Tanaka Corpus + CSV set. Accents: Kanjium. Loader: " + (DB.source || "?") + ". Vocab: JLPT lists (" + (DB.vocabMeta ? DB.vocabMeta.total : vAll().length) + " words) + Tatoeba sentences (" + (DB.vocabMeta ? DB.vocabMeta.withSentences : 0) + " with matches). Grammar: Anki deck ‘Japanese Core Grammar JLPT N5-N1’ (" + (DB.grammarMeta ? DB.grammarMeta.total : gAll().length) + " points, text only, no audio used, no licence stated). Full credits in resources/CREDITS.md.</p></div>" +
     "<div class=\"card\"><h2>About this app</h2>" +
-    "<p class=\"explain\">KnowKanji " + (window.APP_VERSION || "1.0.0") + " runs fully offline: all kanji, vocabulary and grammar data (incl. example sentences) plus stroke diagrams are bundled, with no account or network needed. Sources: KANJIDIC2, KRADFILE (EDRDG), KanjiVG, Tanaka Corpus, Kanjium. See resources/CREDITS.md for full attribution.</p></div>";
+    "<p class=\"explain\">Pengo " + (window.APP_VERSION || "1.0.0") + " runs fully offline: all kanji, vocabulary and grammar data (incl. example sentences) plus stroke diagrams are bundled, with no account or network needed. Sources: KANJIDIC2, KRADFILE (EDRDG), KanjiVG, Tanaka Corpus, Kanjium. See resources/CREDITS.md for full attribution.</p></div>";
   $("#sTheme").addEventListener("click", e => {
     s.theme = s.theme === "dark" ? "light" : "dark";
     save(); applyTheme();
@@ -834,7 +949,7 @@ function renderSettings(view) {
         if (data && typeof data === "object") {
           store = Object.assign(defaultStore(), data); save(); applyTheme(); render();
           alert("Backup imported.");
-        } else alert("That file does not look like a KnowKanji backup.");
+        } else alert("That file does not look like a Pengo backup.");
       } catch (err) { alert("Could not read that file."); }
     };
     r.readAsText(f);

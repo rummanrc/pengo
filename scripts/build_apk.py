@@ -1,10 +1,10 @@
-"""Build the offline KnowKanji APK (debug).
+"""Build the offline Pengo APK (debug).
 
 Steps:
   1. python scripts/sync_www.py            -> www/
   2. copy www/ into android assets          -> android/app/src/main/assets/www/
   3. run Gradle assembleDebug               -> android/app/build/outputs/apk/debug/app-debug.apk
-  4. copy APK to dist/knowkanji-debug.apk
+  4. copy APK to dist/pengo-debug.apk
 
 Prerequisites (once): JDK 17+, Android SDK (platform-34 + build-tools),
 and either a system Gradle or the wrapper jar. See README.md.
@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ANDROID = ROOT / "android"
 ASSETS_WWW = ANDROID / "app" / "src" / "main" / "assets" / "www"
 APK = ANDROID / "app" / "build" / "outputs" / "apk" / "debug" / "app-debug.apk"
-DIST = ROOT / "dist" / "knowkanji-debug.apk"
+DIST = ROOT / "dist" / "pengo-debug.apk"
 
 
 def robust_rmtree(path):

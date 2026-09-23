@@ -1,11 +1,11 @@
-"""Build the offline KnowKanji APK inside Docker.
+"""Build the offline Pengo APK inside Docker.
 
 No local JDK / Android SDK / Gradle needed - only Docker Desktop
 (Linux containers) running.
 
 Run:  python scripts/build_apk_docker.py [--tag NAME] [--no-cache]
 
-Result: dist/knowkanji-debug.apk (extracted from the built image).
+Result: dist/pengo-debug.apk (extracted from the built image).
 """
 import shutil
 import subprocess
@@ -14,7 +14,7 @@ from pathlib import Path
 
 TAG = "knowkanji-builder"
 CONTAINER = "kk-apk-extract"
-APK_IN_IMAGE = "/app/dist/knowkanji-debug.apk"
+APK_IN_IMAGE = "/app/dist/pengo-debug.apk"
 
 
 def run(cmd):
@@ -39,11 +39,11 @@ def main():
     run(["docker", "create", "--name", CONTAINER, tag])
     Path("dist").mkdir(parents=True, exist_ok=True)
     try:
-        run(["docker", "cp", "%s:%s" % (CONTAINER, APK_IN_IMAGE), "dist/knowkanji-debug.apk"])
+        run(["docker", "cp", "%s:%s" % (CONTAINER, APK_IN_IMAGE), "dist/pengo-debug.apk"])
     finally:
         subprocess.run(["docker", "rm", "-f", CONTAINER],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print("APK: dist/knowkanji-debug.apk")
+    print("APK: dist/pengo-debug.apk")
 
 
 if __name__ == "__main__":

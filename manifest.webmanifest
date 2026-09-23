@@ -1,14 +1,15 @@
 {
-  "name": "KnowKanji - JLPT Kanji Study",
-  "short_name": "KnowKanji",
+  "name": "Pengo - JLPT Kanji, Vocabulary and Grammar Study",
+  "short_name": "Pengo",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#faf7f1",
-  "theme_color": "#b3352b",
-  "description": "Offline JLPT kanji study: components, stroke order, vocabulary, SRS review.",
+  "background_color": "#eaf5fe",
+  "theme_color": "#14324f",
+  "description": "Learn Japanese with Pengo the penguin: offline JLPT kanji, vocabulary and grammar with SRS review.",
   "icons": [
+    { "src": "assets/pengo-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }

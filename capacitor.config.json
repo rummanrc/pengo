@@ -1,6 +1,6 @@
 {
   "appId": "com.knowkanji.app",
-  "appName": "KnowKanji",
+  "appName": "Pengo",
   "webDir": "www",
   "server": { "androidScheme": "https" },
   "android": { "allowMixedContent": false }

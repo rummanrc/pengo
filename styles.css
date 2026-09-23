@@ -273,6 +273,15 @@ body { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
 textarea.note { font-size: 16px; }
 @media (max-width: 860px) {
   .kanji-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: .55rem; }
+  .kanji-grid > .vcard, .kanji-grid > .gcard {
+    grid-column: 1 / -1;
+    flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start;
+    text-align: left; gap: .1rem .6rem; padding: .7rem .9rem;
+  }
+  .kanji-grid > .vcard .vword, .kanji-grid > .gcard .gpoint { text-align: left; font-size: 1.2rem; }
+  .kanji-grid > .vcard .read { text-align: left; }
+  .kanji-grid > .vcard .mean, .kanji-grid > .gcard .mean { text-align: left; flex: 1 1 100%; }
+  .kanji-grid > .vcard .meta, .kanji-grid > .gcard .meta { margin: 0 0 0 auto; }
   .pager { flex-wrap: wrap; }
   table.stats { display: block; overflow-x: auto; }
   .stroke-wrap { flex-direction: column; }
@@ -305,3 +314,77 @@ ruby rt { font-size: .55em; color: var(--ink-soft); }
 details.trans { margin-top: .3rem; }
 details.trans summary { cursor: pointer; color: var(--blue); font-size: .9rem; }
 details.trans .en { color: var(--ink-soft); font-size: .9rem; margin-top: .2rem; }
+
+/* ---- Pengo brand ---- */
+.brand-img { width: 2.2rem; height: 2.2rem; border-radius: 10px; display: block; }
+.brand.small .brand-img { width: 1.9rem; height: 1.9rem; border-radius: 8px; }
+.brand-name .peng-o { color: #3fa88f; }
+[data-theme="dark"] .brand-name .peng-o { color: #5fc993; }
+
+/* ---- Pengo welcome banner (home) ---- */
+.pg-welcome { display: flex; gap: 1rem; align-items: center; background: linear-gradient(135deg, #e6f3fd, #f2faf4); border: 1px solid #d5e7f7; border-radius: 20px; padding: 1rem 1.2rem; margin: .4rem 0 1.2rem; box-shadow: var(--shadow); }
+.pg-welcome-img { width: 104px; height: 104px; object-fit: contain; flex: none; }
+.pg-welcome-text h1 { margin: 0 0 .3rem; }
+.pg-welcome-text .lead { margin: 0; }
+[data-theme="dark"] .pg-welcome { background: linear-gradient(135deg, #1d2c44, #1d3a2e); border-color: #33445e; }
+@media (max-width: 560px) { .pg-welcome-img { width: 76px; height: 76px; } }
+
+/* ---- Pengo progress makeover ---- */
+.pg-wrap { background: #eef6fd; border-radius: 22px; padding: 1rem clamp(.7rem, 3vw, 1.6rem) 1.3rem; margin: 0 0 1rem; }
+[data-theme="dark"] .pg-wrap { background: #182435; }
+.pg-head { display: flex; align-items: center; gap: .6rem; }
+.pg-back { display: inline-grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: #fff; color: #1c3553; text-decoration: none; font-weight: 800; font-size: 1.2rem; box-shadow: 0 1px 4px rgba(28,53,83,.15); flex: none; }
+[data-theme="dark"] .pg-back { background: #222f45; color: #e8eef6; }
+.pg-head h1 { flex: 1; text-align: center; color: #1c3553; margin: .2rem 0 .6rem; font-size: 1.5rem; }
+[data-theme="dark"] .pg-head h1 { color: #e8eef6; }
+.pg-head-spacer { width: 2.2rem; flex: none; }
+.pg-tabs { display: flex; gap: .3rem; background: #dcebfb; border-radius: 999px; padding: .3rem; margin: .2rem 0 1rem; }
+[data-theme="dark"] .pg-tabs { background: #0f1826; }
+.pg-tab { flex: 1; text-align: center; text-decoration: none; color: #5b7290; font-weight: 700; padding: .5rem .2rem; border-radius: 999px; font-size: .95rem; }
+[data-theme="dark"] .pg-tab { color: #9db1c9; }
+.pg-tab.active { background: #fff; color: #2f80ed; box-shadow: inset 0 -3px 0 #2f80ed, 0 1px 4px rgba(28,53,83,.12); }
+[data-theme="dark"] .pg-tab.active { background: #222f45; color: #7aa7ec; }
+.pg-card { background: #fff; border-radius: 20px; padding: 1.1rem 1.2rem; margin: 0 0 1rem; box-shadow: 0 2px 10px rgba(28,53,83,.07); border: none; }
+.pg-card h2 { color: #1c3553; margin: 0 0 .6rem; font-size: 1.2rem; }
+[data-theme="dark"] .pg-card { background: #222f45; }
+[data-theme="dark"] .pg-card h2 { color: #e8eef6; }
+.pg-level-chips { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .6rem; }
+.pg-chip { text-decoration: none; font-weight: 800; font-size: .8rem; color: #5b7290; background: #eef3f8; border-radius: 999px; padding: .25rem .7rem; }
+.pg-chip.active { background: #1c3553; color: #fff; }
+.pg-hero-main { display: flex; align-items: center; gap: 1rem; }
+.pg-ring-block { text-align: center; }
+.pg-ring { width: 132px; height: 132px; }
+.pg-ring-pct { font-size: 1.7rem; font-weight: 800; fill: #1c3553; }
+[data-theme="dark"] .pg-ring-pct { fill: #e8eef6; }
+.pg-count { color: #5b7290; font-weight: 600; font-size: .9rem; margin-top: .2rem; }
+[data-theme="dark"] .pg-count { color: #9db1c9; }
+.pg-hero-side { flex: 1; text-align: center; }
+.pg-mascot { width: 132px; max-width: 100%; height: auto; }
+.pg-cheer { color: #5b7290; font-size: .9rem; margin: .3rem 0 0; }
+[data-theme="dark"] .pg-cheer { color: #9db1c9; }
+.pg-hero-sub { color: #7a8ca3; font-size: .85rem; margin: .7rem 0 0; }
+.pg-hero-sub a { color: #2f80ed; font-weight: 700; }
+.pg-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; }
+.pg-stat { border-radius: 16px; padding: .8rem .3rem; text-align: center; }
+.pg-stat.pink { background: #fdf0f3; }
+.pg-stat.blue { background: #ebf3fe; }
+.pg-stat.green { background: #e9f8ef; }
+[data-theme="dark"] .pg-stat.pink { background: #3a2530; }
+[data-theme="dark"] .pg-stat.blue { background: #22334f; }
+[data-theme="dark"] .pg-stat.green { background: #1d3a2a; }
+.pg-stat-ico { font-size: 1.4rem; }
+.pg-stat-num { font-size: 1.3rem; font-weight: 800; color: #1c3553; }
+[data-theme="dark"] .pg-stat-num { color: #e8eef6; }
+.pg-stat-lbl { color: #7a8ca3; font-size: .85rem; }
+.pg-ready-row { display: grid; grid-template-columns: 2.2rem 1fr 3rem; align-items: center; gap: .7rem; padding: .45rem .6rem; border-radius: 12px; text-decoration: none; }
+.pg-ready-row.hot { background: #e9f8ef; }
+[data-theme="dark"] .pg-ready-row.hot { background: #1d3a2a; }
+.pg-lvl { font-weight: 800; color: #5b7290; }
+[data-theme="dark"] .pg-lvl { color: #9db1c9; }
+.pg-track { height: .7rem; background: #edf1f6; border-radius: 999px; overflow: hidden; }
+[data-theme="dark"] .pg-track { background: #0f1826; }
+.pg-fill { display: block; height: 100%; border-radius: 999px; }
+.pg-pct { text-align: right; font-weight: 800; color: #5b7290; }
+[data-theme="dark"] .pg-pct { color: #c4d3e5; }
+.pg-data-line { color: #5b7290; font-size: .9rem; }
+@media (max-width: 480px) { .pg-hero-main { gap: .5rem; } .pg-ring { width: 112px; height: 112px; } .pg-mascot { width: 108px; } }

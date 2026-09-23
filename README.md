@@ -1,4 +1,4 @@
-﻿# KnowKanji - JLPT Kanji, Vocabulary and Grammar Study App
+﻿# Pengo - JLPT Kanji, Vocabulary and Grammar Study App
 
 A responsive, data-driven Japanese learning web app for JLPT N5-N1: kanji, vocabulary and grammar.
 No build step, no dependencies: just static files plus prebuilt JSON.
@@ -94,7 +94,7 @@ bundled files, no Python/backend/server/internet at any point.
 Result:
 
 - `android/app/build/outputs/apk/debug/app-debug.apk`
-- copied to `dist/knowkanji-debug.apk`
+- copied to `dist/pengo-debug.apk`
 
 Install: copy the APK to your phone/tablet, open it, allow
 "Install unknown apps" for your file manager, and install. Airplane mode works.
@@ -127,6 +127,6 @@ If you have Docker Desktop but no JDK/SDK/Gradle installed:
 
 This builds the `knowkanji-builder` image (`docker/Dockerfile`: Gradle 8.7 +
 JDK 17 + Android SDK platform-34), compiles the APK inside it, and extracts
-the result to `dist/knowkanji-debug.apk`. Needs ~8 GB free for the image and
+the result to `dist/pengo-debug.apk`. Needs ~8 GB free for the image and
 network access during the image build only. Start Docker Desktop first; on
 Windows it must use Linux containers.
