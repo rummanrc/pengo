@@ -5,7 +5,7 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#eaf5fe",
+  "background_color": "#eef6fd",
   "theme_color": "#14324f",
   "description": "Learn Japanese with Pengo the penguin: offline JLPT kanji, vocabulary and grammar with SRS review.",
   "icons": [

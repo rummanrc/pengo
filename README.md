@@ -1,4 +1,4 @@
-﻿# Pengo - JLPT Kanji, Vocabulary and Grammar Study App
+# Pengo - JLPT Kanji, Vocabulary and Grammar Study App
 
 A responsive, data-driven Japanese learning web app for JLPT N5-N1: kanji, vocabulary and grammar.
 No build step, no dependencies: just static files plus prebuilt JSON.
@@ -22,7 +22,7 @@ GitHub Pages works too, but `resources/` is a submodule: enable
 
     index.html            app shell (sidebar + topbar + bottom nav + view)
     styles.css            theme, layout, responsive rules (mobile bottom nav)
-    app.js                hash-router SPA: home/browse/detail/study/review/search/progress/settings
+    app.js                hash-router SPA: home/learn/browse/detail/review/search/progress/settings
     data/n5..n1.json      per-level kanji records (generated, UTF-8)
     data/vocab_n5..n1.json per-level vocabulary records with Tatoeba sentences (generated, UTF-8)
     data/grammar_n5..n1.json per-level grammar records with examples + readings (generated, UTF-8)
