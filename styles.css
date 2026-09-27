@@ -467,11 +467,6 @@ body.ob-open { overflow: hidden; }
 .ob-feat-ico.purple { background: #e9e4fb; }
 .ob-feat b { display: block; color: #1c3553; font-size: .98rem; }
 .ob-feat span { display: block; color: #5b7290; font-size: .82rem; }
-.ob-load { margin: 0 auto; width: min(72%, 280px); }
-.ob-load-track { height: .6rem; background: rgba(255,255,255,.7); border-radius: 999px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(28,53,83,.15); }
-.ob-load-fill { display: block; height: 100%; width: 30%; border-radius: 999px; background: linear-gradient(90deg, #2f80ed, #3fb598); animation: ob-load 1.4s ease-in-out infinite; }
-@keyframes ob-load { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
-.ob-load-lbl { color: #416084; font-size: .9rem; margin: .4rem 0 0; }
 .ob-cta {
   display: block; width: 100%; border: none; cursor: pointer;
   background: #1c3553; color: #fff; font-weight: 700; font-size: 1.05rem;
@@ -486,13 +481,13 @@ body.ob-open { overflow: hidden; }
 .ob-dots { display: flex; gap: .45rem; justify-content: center; margin: .9rem 0 .2rem; }
 .ob-dots i { width: .55rem; height: .55rem; border-radius: 50%; background: rgba(28,53,83,.18); }
 .ob-dots i.on { background: #1c3553; width: 1.2rem; border-radius: 999px; }
+html.ob-boot .app { visibility: hidden; }
 @media (max-height: 640px) {
   .ob-brand { font-size: 2.2rem; margin-top: 1.2rem; }
   .ob-title { font-size: 1.3rem; margin-top: 1.2rem; }
   .ob-scene { min-height: 210px; }
   .ob-mascot { width: min(52%, 190px); }
 }
-@media (prefers-reduced-motion: reduce) { .ob-load-fill { animation: none; width: 100%; } }
 
 /* ---- Dismissible home banner ---- */
 .pg-welcome { position: relative; }

@@ -2,7 +2,7 @@
 /* First-launch onboarding (Android app only).
    Startup sequence:
    0. Native splash (android res/drawable/splash.xml) covers the cold start.
-   1. Slide 0 "Splash": pengo brand + mascot reading, loading bar.
+   1. Slide 0 "Splash": pengo brand + mascot reading, button to continue.
    2. Slide 1 "Welcome": journey pitch + encouragement bubble.
    3. Slide 2 "Features": JLPT success cards + Start learning.
    Shown once (localStorage ONBOARD_KEY). The web build never shows it,
@@ -49,16 +49,13 @@ function showOnboarding(onDone) {
         "<p class=\"ob-tag\">Small steps. Big Japanese.</p>" +
         "<div class=\"ob-scene\" aria-hidden=\"true\"><div class=\"ob-cloud c1\"></div><div class=\"ob-cloud c2\"></div>" +
         "<div class=\"ob-fuji\"></div><div class=\"ob-fuji-cap\"></div><div class=\"ob-ice\"></div>" +
-        "<img class=\"ob-mascot\" src=\"assets/pengo-mascot.png\" alt=\"\"></div>" +
-        "<div class=\"ob-load\"><div class=\"ob-load-track\"><span class=\"ob-load-fill\"></span></div>" +
-        "<p class=\"ob-load-lbl\">Loading...</p></div></div>";
+        "<img class=\"ob-mascot\" src=\"assets/pengo-mascot.png\" alt=\"\"></div></div>";
     }
     if (idx === 1) {
       return "<div class=\"ob-slide\">" +
         "<h2 class=\"ob-title\">Learn Japanese<br>for your next journey</h2>" +
         "<p class=\"ob-sub\">Kanji &bull; Vocabulary &bull; JLPT<small>All in one place</small></p>" +
         "<div class=\"ob-scene\" aria-hidden=\"true\"><div class=\"ob-cloud c1\"></div><div class=\"ob-cloud c2\"></div>" +
-        "<div class=\"ob-bubble\"><span class=\"jp\" lang=\"ja\">&#x4E00;&#x6B69;&#x305A;&#x3064;&#x3001;&#x304D;&#x3063;&#x3068;&#x3067;&#x304D;&#x308B;</span><small>You can do it!</small></div>" +
         "<div class=\"ob-fuji\"></div><div class=\"ob-fuji-cap\"></div><div class=\"ob-ice\"></div>" +
         "<img class=\"ob-mascot flip\" src=\"assets/pengo-mascot.png\" alt=\"\"></div></div>";
     }
@@ -101,6 +98,7 @@ function showOnboarding(onDone) {
     window.OBBack = null;
     root.remove();
     document.body.classList.remove("ob-open");
+    try { document.documentElement.classList.remove("ob-boot"); } catch (e) {}
     if (typeof onDone === "function") onDone();
   }
   var touchX = null;

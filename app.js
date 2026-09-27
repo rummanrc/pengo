@@ -1712,6 +1712,16 @@ try {
     });
   }
 } catch (e) { /* web: no native back handler */ }
-loadData().then(() => { initChrome(); if (shouldShowOnboarding()) { renderNav("home"); renderHome($("#view")); showOnboarding(() => render()); } else { render(); } }).catch(() => {
-  $("#view").innerHTML = "<p class=\"empty\">Could not load data files. Serve this folder over HTTP (e.g. <code>python -m http.server</code>) and open it again — browsers block data files on file:// URLs.</p>";
-});
+function clearBootGate() { try { document.documentElement.classList.remove("ob-boot"); } catch (e) {} }
+function bootFailed() { clearBootGate(); $("#view").innerHTML = "<p class=\"empty\">Could not load data files. Serve this folder over HTTP (e.g. <code>python -m http.server</code>) and open it again — browsers block data files on file:// URLs.</p>"; }
+var bootData = loadData();
+var bootOnboard = false;
+try { bootOnboard = (typeof shouldShowOnboarding === "function") && shouldShowOnboarding(); } catch (e) { bootOnboard = false; }
+if (bootOnboard) {
+  initChrome();
+  showOnboarding(() => { bootData.then(() => { clearBootGate(); render(); }).catch(bootFailed); });
+  bootData.catch(() => {});
+} else {
+  clearBootGate();
+  bootData.then(() => { initChrome(); render(); }).catch(bootFailed);
+}
