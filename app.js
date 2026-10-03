@@ -484,7 +484,7 @@ function matchQuery(rec, q) {
 }
 function renderBrowse(view, level, q) {
   const lv = LEVELS.includes((level || "").toUpperCase()) ? level.toUpperCase() : "N5";
-  const query = q.q || "", filt = q.f || "all", sort = q.s || "default";
+  const query = q.q || "", filt = q.f || "all", sort = q.s || "freq";
   const link = (over) => "#/kanji/" + lv + "?" + new URLSearchParams(Object.assign({ q: query, f: filt, s: sort }, over)).toString();
   let recs = DB.levels[lv].map(item => ({ item, level: lv }));
   recs = recs.filter(r => matchQuery(r, query));
@@ -508,9 +508,9 @@ function renderBrowse(view, level, q) {
     "<option value=\"learned\"" + (filt === "learned" ? " selected" : "") + ">Learned</option>" +
     "<option value=\"unlearned\"" + (filt === "unlearned" ? " selected" : "") + ">Unlearned</option>" +
     "<option value=\"fav\"" + (filt === "fav" ? " selected" : "") + ">★ Favorites</option></select>" +
-    "<select id=\"bs\" aria-label=\"Sort\"><option value=\"default\">Default order</option>" +
-    "<option value=\"strokes\"" + (sort === "strokes" ? " selected" : "") + ">Fewest strokes</option>" +
+    "<select id=\"bs\" aria-label=\"Sort\"><option value=\"default\"" + (sort === "default" ? " selected" : "") + ">Dataset order</option>" +
     "<option value=\"freq\"" + (sort === "freq" ? " selected" : "") + ">Most frequent</option>" +
+    "<option value=\"strokes\"" + (sort === "strokes" ? " selected" : "") + ">Fewest strokes</option>" +
     "<option value=\"alpha\"" + (sort === "alpha" ? " selected" : "") + ">Meaning A–Z</option>" +
     "<option value=\"progress\"" + (sort === "progress" ? " selected" : "") + ">Unlearned first</option></select>" +
     "</div>" +
@@ -1265,7 +1265,7 @@ function renderVocabHome(view) {
 }
 function renderVocabBrowse(view, level, q) {
   const lv = LEVELS.includes((level || "").toUpperCase()) ? level.toUpperCase() : "N5";
-  const query = q.q || "", filt = q.f || "all", sort = q.s || "default";
+  const query = q.q || "", filt = q.f || "all", sort = q.s || "freq";
   const link = (over) => "#/vocab/" + lv + "?" + new URLSearchParams(Object.assign({ q: query, f: filt, s: sort }, over)).toString();
   let recs = (DB.vocab[lv] || []).slice();
   recs = recs.filter(v => matchVQuery(v, query));
@@ -1273,7 +1273,8 @@ function renderVocabBrowse(view, level, q) {
   else if (filt === "unlearned") recs = recs.filter(v => !isVLearned(v.id));
   else if (filt === "fav") recs = recs.filter(v => isVFav(v.id));
   else if (filt === "nosent") recs = recs.filter(v => !(v.sentences && v.sentences.length));
-  if (sort === "alpha") recs.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
+  if (sort === "freq") recs = Course.sortVocab(recs, courseKanjiFreqMap(), courseKanjiMedian(lv));
+  else if (sort === "alpha") recs.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
   else if (sort === "reading") recs.sort((a, b) => (a.reading < b.reading ? -1 : 1));
   else if (sort === "progress") recs.sort((a, b) => ((store.vLearned[a.id] ? 1 : 0) - (store.vLearned[b.id] ? 1 : 0)));
   const chips = LEVELS.map(l =>
@@ -1293,7 +1294,8 @@ function renderVocabBrowse(view, level, q) {
     "<option value=\"nosent\"" + (filt === "nosent" ? " selected" : "") + ">No sentence yet</option>" +
     "</select>" +
     "<select id=\"vs\" aria-label=\"Sort\">" +
-    "<option value=\"default\"" + (sort === "default" ? " selected" : "") + ">Default</option>" +
+    "<option value=\"default\"" + (sort === "default" ? " selected" : "") + ">Dataset order</option>" +
+    "<option value=\"freq\"" + (sort === "freq" ? " selected" : "") + ">Most frequent</option>" +
     "<option value=\"alpha\"" + (sort === "alpha" ? " selected" : "") + ">A-Z</option>" +
     "<option value=\"reading\"" + (sort === "reading" ? " selected" : "") + ">Reading</option>" +
     "<option value=\"progress\"" + (sort === "progress" ? " selected" : "") + ">Unlearned first</option>" +
@@ -1307,7 +1309,8 @@ function renderVocabBrowse(view, level, q) {
     else if (filt === "unlearned") matches = matches.filter(v => !isVLearned(v.id));
     else if (filt === "fav") matches = matches.filter(v => isVFav(v.id));
     else if (filt === "nosent") matches = matches.filter(v => !(v.sentences && v.sentences.length));
-    if (sort === "alpha") matches.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
+    if (sort === "freq") matches = Course.sortVocab(matches, courseKanjiFreqMap(), courseKanjiMedian(lv));
+    else if (sort === "alpha") matches.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
     else if (sort === "reading") matches.sort((a, b) => (a.reading < b.reading ? -1 : 1));
     else if (sort === "progress") matches.sort((a, b) => ((store.vLearned[a.id] ? 1 : 0) - (store.vLearned[b.id] ? 1 : 0)));
     return matches;
@@ -1556,14 +1559,15 @@ function renderGrammarHome(view) {
 }
 function renderGrammarBrowse(view, level, q) {
   const lv = LEVELS.includes((level || "").toUpperCase()) ? level.toUpperCase() : "N5";
-  const query = q.q || "", filt = q.f || "all", sort = q.s || "default";
+  const query = q.q || "", filt = q.f || "all", sort = q.s || "freq";
   const link = (over) => "#/grammar/" + lv + "?" + new URLSearchParams(Object.assign({ q: query, f: filt, s: sort }, over)).toString();
   let recs = (DB.grammar[lv] || []).slice();
   recs = recs.filter(g => matchGQuery(g, query));
   if (filt === "learned") recs = recs.filter(g => isGLearned(g.id));
   else if (filt === "unlearned") recs = recs.filter(g => !isGLearned(g.id));
   else if (filt === "fav") recs = recs.filter(g => isGFav(g.id));
-  if (sort === "alpha") recs.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
+  if (sort === "freq") recs = Course.sortGrammar(recs);
+  else if (sort === "alpha") recs.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
   else if (sort === "progress") recs.sort((a, b) => ((store.gLearned[a.id] ? 1 : 0) - (store.gLearned[b.id] ? 1 : 0)));
   const chips = LEVELS.map(l =>
     "<button class=\"chip\" data-lv=\"" + l + "\" aria-pressed=\"" + (l === lv) + "\">" + l + "</button>").join("");
@@ -1581,7 +1585,8 @@ function renderGrammarBrowse(view, level, q) {
     "<option value=\"fav\"" + (filt === "fav" ? " selected" : "") + ">Favorites</option>" +
     "</select>" +
     "<select id=\"gs\" aria-label=\"Sort\">" +
-    "<option value=\"default\"" + (sort === "default" ? " selected" : "") + ">Default</option>" +
+    "<option value=\"default\"" + (sort === "default" ? " selected" : "") + ">Dataset order</option>" +
+    "<option value=\"freq\"" + (sort === "freq" ? " selected" : "") + ">Most frequent</option>" +
     "<option value=\"alpha\"" + (sort === "alpha" ? " selected" : "") + ">A-Z</option>" +
     "<option value=\"progress\"" + (sort === "progress" ? " selected" : "") + ">Unlearned first</option>" +
     "</select></div>" +
@@ -1593,7 +1598,8 @@ function renderGrammarBrowse(view, level, q) {
     if (filt === "learned") matches = matches.filter(g => isGLearned(g.id));
     else if (filt === "unlearned") matches = matches.filter(g => !isGLearned(g.id));
     else if (filt === "fav") matches = matches.filter(g => isGFav(g.id));
-    if (sort === "alpha") matches.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
+    if (sort === "freq") matches = Course.sortGrammar(matches);
+    else if (sort === "alpha") matches.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
     else if (sort === "progress") matches.sort((a, b) => ((store.gLearned[a.id] ? 1 : 0) - (store.gLearned[b.id] ? 1 : 0)));
     return matches;
   }, grammarCard, "grammar", lv, link);
@@ -1814,14 +1820,17 @@ function courseKanjiFreqMap() {
   });
   return map;
 }
-function courseLists(lv) {
-  var kanjiRecs = Course.sortKanji(DB.levels[lv] || []);
+function courseKanjiMedian(lv) {
   var freqs = [];
   (DB.levels[lv] || []).forEach(function (it) {
     var f = Number(it.freq);
     if (f > 0) freqs.push(f);
   });
-  var vocabRecs = Course.sortVocab(DB.vocab[lv] || [], courseKanjiFreqMap(), Course.median(freqs));
+  return Course.median(freqs);
+}
+function courseLists(lv) {
+  var kanjiRecs = Course.sortKanji(DB.levels[lv] || []);
+  var vocabRecs = Course.sortVocab(DB.vocab[lv] || [], courseKanjiFreqMap(), courseKanjiMedian(lv));
   var grammarRecs = Course.sortGrammar(DB.grammar[lv] || []);
   return {
     kanji: kanjiRecs.map(function (it) { return it.k; }),
