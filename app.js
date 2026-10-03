@@ -484,7 +484,7 @@ function renderHomeDash(view) {
     "<div class=\"dash-cont-row\"><span class=\"dash-badge\">" + esc(c.target) + "</span>" +
     "<div class=\"dash-cont-meta\"><b>" + esc(contTitle) + "</b><span>" + esc(contSub) + "</span></div>" +
     "<a class=\"btn primary\" href=\"" + contHref + "\">Start &rarr;</a></div>" +
-    progressBar(batchPct) + "</div>" +
+    (batchPct > 0 ? progressBar(batchPct) : "") + "</div>" +
     "<div class=\"dash-tiles\">" + tiles.map(function (t) {
       return "<a class=\"dash-tile " + t.cls + "\" href=\"" + t.href + "\">" +
         "<span class=\"dash-tile-ico\" aria-hidden=\"true\">" + t.ch + "</span>" + t.t + "</a>";
