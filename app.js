@@ -353,6 +353,8 @@ async function render() {
   const { seg, q } = parseHash();
   const view = $("#view");
   const name = seg[0] || "home";
+  const creditsFooter = $("#creditsFooter");
+  if (creditsFooter) creditsFooter.hidden = name !== "settings";
   if (name === "kanji" && seg[1] && DB.byChar[seg[1]]) { renderNav("learn"); renderDetail(view, seg[1]); }
   else if (name === "kanji") { renderNav("learn"); renderBrowse(view, seg[1], q); }
   else if (name === "k" && seg[1]) { renderNav("learn"); renderDetail(view, seg[1]); }
