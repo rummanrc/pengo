@@ -1325,6 +1325,17 @@ function renderVocabDetail(view, id) {
   const idx = list.findIndex(x => x.id === id);
   const prev = list[(idx - 1 + list.length) % list.length], next = list[(idx + 1) % list.length];
   const learned = isVLearned(id), fav = isVFav(id);
+  const exampleReadings = new Set();
+  for (const s of (v.sentences || [])) {
+    const rubyRe = /<ruby>(.*?)<rt>(.*?)<\/rt><\/ruby>/g;
+    let match;
+    while ((match = rubyRe.exec(s.furi || ""))) {
+      const base = match[1].replace(/<[^>]*>/g, "");
+      const reading = match[2].replace(/<[^>]*>/g, "");
+      if (base === v.word && reading && reading !== v.reading) exampleReadings.add(reading);
+    }
+  }
+  const alternateReadings = Array.from(exampleReadings);
   const klinks = kanjiCharsOf(v).map(ch =>
     "<a class=\"btn soft\" href=\"#/k/" + encodeURIComponent(ch) + "\" lang=\"ja\">" + esc(ch) + "</a>").join(" ") || "<span class=\"explain\">No kanji links — kana word.</span>";
   const sents = (v.sentences || []).map(s =>
@@ -1337,7 +1348,8 @@ function renderVocabDetail(view, id) {
     "<p><a href=\"#/vocab/" + v.jlpt + "\">← " + v.jlpt + " vocabulary</a></p>" +
     "<div class=\"detail-head\"><div class=\"kanji-hero vocab-hero\" lang=\"ja\">" + esc(v.word) + "</div>" +
     "<div class=\"detail-title\"><h1><span lang=\"ja\">" + esc(v.word) + "</span></h1>" +
-    "<div class=\"readings\"><span><span class=\"lab\">Reading </span><span lang=\"ja\">" + esc(v.reading) + "</span></span></div>" +
+    "<div class=\"readings\"><span><span class=\"lab\">Reading </span><span lang=\"ja\">" + esc(v.reading) + "</span></span>" +
+    (alternateReadings.length ? "<span><span class=\"lab\">Also read in examples </span><span lang=\"ja\">" + esc(alternateReadings.join("、 ")) + "</span></span>" : "") + "</div>" +
     "<p class=\"lead\" style=\"margin:.4rem 0\">" + esc(v.meaning) + "</p>" +
     "<div class=\"stat-row\">" +
     "<span class=\"badge " + levelClass(v.jlpt) + "\">JLPT " + v.jlpt + "</span>" +
