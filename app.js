@@ -12,7 +12,8 @@ const STROKE_BASE = "resources/stroke-order/kanjivg/";
 const DB = { levels: {}, byChar: {}, vocab: {}, vById: {}, grammar: {}, gById: {}, meta: null, vocabMeta: null, grammarMeta: null, radicals: [], loaded: false };
 
 const defaultStore = () => ({ learned: {}, fav: [], notes: {}, srs: {}, vLearned: {}, vFav: [], vNotes: {}, vSrs: {}, gLearned: {}, gFav: [], gNotes: {}, gSrs: {},
-  settings: { theme: "light", dailyGoal: 10, autoplay: true, hideBanner: false }, quizBest: {}, vQuizBest: {}, gQuizBest: {}, course: null });
+  settings: { theme: "light", dailyGoal: 10, autoplay: true, hideBanner: false }, quizBest: {}, vQuizBest: {}, gQuizBest: {}, course: null,
+  study: { days: {}, loggedLearned: {} } });
 
 let store = defaultStore();
 try {
@@ -24,9 +25,58 @@ if (store.settings.hideBanner == null) store.settings.hideBanner = false;
 for (const _k of ["vLearned", "vNotes", "vSrs", "vQuizBest", "gLearned", "gNotes", "gSrs", "gQuizBest"]) if (!store[_k]) store[_k] = {};
 if (!store.vFav) store.vFav = [];
 if (!store.gFav) store.gFav = [];
+if (!store.study || typeof store.study !== "object") store.study = { days: {}, loggedLearned: {} };
+if (!store.study.days || typeof store.study.days !== "object") store.study.days = {};
+if (!store.study.loggedLearned || typeof store.study.loggedLearned !== "object") store.study.loggedLearned = {};
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) { /* full/blocked */ }
 }
+
+function studyDateKey(date) {
+  return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
+}
+function studyDay(key) {
+  if (!store.study.days[key]) store.study.days[key] = { seconds: 0, learned: 0 };
+  return store.study.days[key];
+}
+function recordStudyItem(type, id) {
+  var key = type + ":" + id;
+  if (store.study.loggedLearned[key]) return;
+  store.study.loggedLearned[key] = true;
+  studyDay(studyDateKey(new Date())).learned++;
+  save();
+}
+function migrateStudyItems() {
+  if (store.study.migratedLearned) return;
+  [["kanji", store.learned], ["vocab", store.vLearned], ["grammar", store.gLearned]].forEach(function (pair) {
+    Object.keys(pair[1] || {}).forEach(function (id) {
+      var stamp = pair[1][id], date = new Date(typeof stamp === "number" ? stamp : Date.now());
+      var itemKey = pair[0] + ":" + id;
+      if (store.study.loggedLearned[itemKey]) return;
+      store.study.loggedLearned[itemKey] = true;
+      studyDay(studyDateKey(date)).learned++;
+    });
+  });
+  store.study.migratedLearned = true;
+  save();
+}
+migrateStudyItems();
+
+var studyTimeTick = Date.now();
+var studyWasVisible = document.visibilityState !== "hidden";
+var progressStatsTimer = null;
+function flushStudyTime() {
+  var now = Date.now(), elapsed = Math.min(30, Math.max(0, Math.floor((now - studyTimeTick) / 1000)));
+  studyTimeTick = now;
+  if (elapsed && studyWasVisible) {
+    studyDay(studyDateKey(new Date(now))).seconds += elapsed;
+    save();
+  }
+  studyWasVisible = document.visibilityState !== "hidden";
+}
+setInterval(flushStudyTime, 15000);
+document.addEventListener("visibilitychange", flushStudyTime);
+window.addEventListener("pagehide", flushStudyTime);
 
 function exportBackup() {
   const text = JSON.stringify(store);
@@ -58,10 +108,14 @@ function importBackupText(text) {
     store = Object.assign(defaultStore(), data);
     store.settings = Object.assign(defaultStore().settings,
       data.settings && typeof data.settings === "object" && !Array.isArray(data.settings) ? data.settings : {});
+    if (!store.study || typeof store.study !== "object" || Array.isArray(store.study)) store.study = { days: {}, loggedLearned: {} };
+    if (!store.study.days || typeof store.study.days !== "object" || Array.isArray(store.study.days)) store.study.days = {};
+    if (!store.study.loggedLearned || typeof store.study.loggedLearned !== "object" || Array.isArray(store.study.loggedLearned)) store.study.loggedLearned = {};
     for (const key of ["learned", "notes", "srs", "vLearned", "vNotes", "vSrs", "gLearned", "gNotes", "gSrs", "quizBest", "vQuizBest", "gQuizBest"]) {
       if (!store[key] || typeof store[key] !== "object" || Array.isArray(store[key])) store[key] = {};
     }
     for (const key of ["fav", "vFav", "gFav"]) if (!Array.isArray(store[key])) store[key] = [];
+    migrateStudyItems();
     save(); applyTheme(); render();
     message("Backup imported.");
     return true;
@@ -344,6 +398,7 @@ function toggleLearned(ch) {
     delete store.learned[ch];
   } else {
     store.learned[ch] = Date.now();
+    recordStudyItem("kanji", ch);
     if (!store.srs[ch]) store.srs[ch] = { box: 1, due: Date.now() + 864e5 };
   }
   save();
@@ -744,7 +799,7 @@ function srsGrade(ch, ok) {
   if (ok) {
     s.box = Math.min(SRS_STEPS.length - 1, s.box + 1);
     s.due = Date.now() + SRS_STEPS[s.box] * 864e5;
-    store.learned[ch] = store.learned[ch] || Date.now();
+    if (!store.learned[ch]) { store.learned[ch] = Date.now(); recordStudyItem("kanji", ch); }
   } else {
     s.box = 0;
     s.due = Date.now() + 6e5;
@@ -934,8 +989,7 @@ function renderSearch(view, q) {
   setTimeout(() => input.focus(), 50);
 }
 
-/* ---------- Pengo progress (Overview / Kanji / Vocab / Grammar) ---------- */
-var PG_LEVEL_COLORS = { N1: "#c3ccd6", N2: "#a78bfa", N3: "#93b8f0", N4: "#2f80ed", N5: "#34c77b" };
+/* ---------- Pengo progress ---------- */
 function combinedLevelStats(lv) {
   var k = levelStats(lv), v = vLevelStats(lv), g = gLevelStats(lv);
   var total = k.total + v.total + g.total;
@@ -944,38 +998,42 @@ function combinedLevelStats(lv) {
     pct: total ? Math.round(learned / total * 100) : 0,
     kanji: k, vocab: v, grammar: g };
 }
-function pengoStudyDays() {
-  var days = {}, i, k, t;
-  var maps = [store.learned, store.vLearned, store.gLearned];
-  for (i = 0; i < maps.length; i++) {
-    var map = maps[i] || {};
-    for (k in map) {
-      t = map[k];
-      if (typeof t !== "number" || !(t > 0)) continue;
-      days[new Date(t).toDateString()] = 1;
-    }
-  }
-  return Object.keys(days).length;
-}
-function pengoAccuracy() {
-  var scores = [], i, k;
-  var maps = [store.quizBest, store.vQuizBest, store.gQuizBest];
-  for (i = 0; i < maps.length; i++) {
-    var m = maps[i] || {};
-    for (k in m) if (typeof m[k] === "number") scores.push(m[k] / 10);
-  }
-  if (!scores.length) return null;
-  var sum = 0, j;
-  for (j = 0; j < scores.length; j++) sum += scores[j];
-  return Math.round(sum / scores.length * 100);
-}
 function pengoNum(n) { return Number(n || 0).toLocaleString("en-US"); }
-function pengoCheer(pct) {
-  if (pct >= 100) return "Perfect! Pengo is doing a happy dance.";
-  if (pct >= 70) return "Almost there - keep waddling forward!";
-  if (pct >= 30) return "Great pace! Pengo is cheering for you.";
-  if (pct > 0) return "Nice start! Every small step counts.";
-  return "Let's start! Pengo will study with you.";
+function studyDuration(seconds) {
+  var mins = Math.floor(seconds / 60), hours = Math.floor(mins / 60), rem = mins % 60;
+  if (seconds > 0 && mins === 0) return "&lt;1m";
+  return hours ? hours + "h " + rem + "m" : mins + "m";
+}
+function studyStatsHTML(period) {
+  var count = period === "month" ? 30 : 7;
+  var today = new Date(), days = [], totalLearned = 0, totalSeconds = 0, studied = 0, maxLearned = 0;
+  for (var i = count - 1; i >= 0; i--) {
+    var date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
+    var key = studyDateKey(date), data = store.study.days[key] || { learned: 0, seconds: 0 };
+    var learned = Number(data.learned || 0), seconds = Number(data.seconds || 0);
+    days.push({ date: date, learned: learned, seconds: seconds });
+    totalLearned += learned; totalSeconds += seconds;
+    if (learned || seconds) studied++;
+    if (learned > maxLearned) maxLearned = learned;
+  }
+  var bars = days.map(function (day) {
+    var label = period === "week" ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day.date.getDay()] : String(day.date.getDate());
+    var value = day.learned;
+    var height = value ? Math.max(5, Math.round(value / Math.max(maxLearned, 1) * 100)) : 0;
+    var dateLabel = day.date.toLocaleDateString("en", { weekday: "long", month: "long", day: "numeric" });
+    return "<div class=\"study-bar-col\" title=\"" + dateLabel + ": " + value + " items learned\" aria-label=\"" + dateLabel + ": " + value + " items learned\">" +
+      "<div class=\"study-bar-area\"><span class=\"study-bar\" style=\"height:" + height + "%\"></span></div>" +
+      "<span class=\"study-bar-label\">" + label + "</span><span class=\"study-bar-value\">" + value + "</span></div>";
+  }).join("");
+  var periodLabel = period === "month" ? "This Month" : "This Week";
+  return "<section class=\"pg-card study-stats\" aria-label=\"Study stats for " + periodLabel + "\">" +
+    "<div class=\"study-stats-head\"><h2>Study Stats</h2><label class=\"sr-only\" for=\"studyPeriod\">Time period</label>" +
+    "<select id=\"studyPeriod\"><option value=\"week\"" + (period === "week" ? " selected" : "") + ">This Week</option>" +
+    "<option value=\"month\"" + (period === "month" ? " selected" : "") + ">This Month</option></select></div>" +
+    "<div class=\"study-chart-scroll\"><div class=\"study-chart study-chart-" + period + "\" role=\"group\" aria-label=\"Items learned each day\">" + bars + "</div></div>" +
+    "<div class=\"study-summary\"><div><span class=\"study-summary-icon books\" aria-hidden=\"true\">▤</span><span><strong>" + pengoNum(totalLearned) + "</strong><small>Items learned</small></span></div>" +
+    "<div><span class=\"study-summary-icon time\" aria-hidden=\"true\">◷</span><span><strong>" + studyDuration(totalSeconds) + "</strong><small>Study time</small></span></div>" +
+    "<div><span class=\"study-summary-icon calendar\" aria-hidden=\"true\">▦</span><span><strong>" + studied + " / " + count + "</strong><small>Days studied</small></span></div></div></section>";
 }
 function renderProgress(view) {
   var q = {};
@@ -989,9 +1047,7 @@ function renderProgress(view) {
       }
     }
   } catch (e) {}
-  var tab = q.tab || "overview";
-  if (["overview", "kanji", "vocab", "grammar"].indexOf(tab) < 0) tab = "overview";
-  var heroLevel = q.level || "";
+  var heroLevel = q.level || (store.course && store.course.target) || "";
   if (LEVELS.indexOf(heroLevel) < 0) {
     heroLevel = "N5";
     for (i = 0; i < LEVELS.length; i++) {
@@ -1000,87 +1056,50 @@ function renderProgress(view) {
     }
   }
   var hero = combinedLevelStats(heroLevel);
-  var tabs = [["overview", "Overview"], ["kanji", "Kanji"], ["vocab", "Vocab"], ["grammar", "Grammar"]].map(function (t) {
-    var on = t[0] === tab;
-    return "<a class=\"pg-tab" + (on ? " active" : "") + "\"" + (on ? " aria-current=\"true\"" : "") +
-      " href=\"#/progress?tab=" + t[0] + "&level=" + heroLevel + "\">" + t[1] + "</a>";
-  }).join("");
+  var period = q.period === "month" ? "month" : "week";
   var chips = LEVELS.map(function (lv) {
-    return "<a class=\"pg-chip" + (lv === heroLevel ? " active" : "") + "\" href=\"#/progress?tab=" + tab + "&level=" + lv + "\">" + lv + "</a>";
+    return "<a class=\"pg-chip" + (lv === heroLevel ? " active" : "") + "\" href=\"#/progress?level=" + lv + "&period=" + period + "\">" + lv + "</a>";
   }).join("");
-  var R = 58, CIRC = 2 * Math.PI * R;
-  var off = (CIRC * (1 - hero.pct / 100)).toFixed(1);
-  var ring = "<svg class=\"pg-ring\" viewBox=\"0 0 140 140\" role=\"img\" aria-label=\"" + hero.pct + " percent complete\">" +
-    "<defs><linearGradient id=\"pgRingGrad\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">" +
-    "<stop offset=\"0\" stop-color=\"#3ddc84\"/><stop offset=\"1\" stop-color=\"#1ea672\"/></linearGradient></defs>" +
-    "<circle cx=\"70\" cy=\"70\" r=\"" + R + "\" fill=\"none\" stroke=\"#e8edf3\" stroke-width=\"14\"/>" +
-    "<circle cx=\"70\" cy=\"70\" r=\"" + R + "\" fill=\"none\" stroke=\"url(#pgRingGrad)\" stroke-width=\"14\" stroke-linecap=\"round\" " +
-    "stroke-dasharray=\"" + CIRC.toFixed(1) + "\" stroke-dashoffset=\"" + off + "\" transform=\"rotate(-90 70 70)\"/>" +
-    "<text x=\"70\" y=\"80\" text-anchor=\"middle\" class=\"pg-ring-pct\">" + hero.pct + "%</text></svg>";
-  var itemsLearned = Object.keys(store.learned).length + Object.keys(store.vLearned || {}).length + Object.keys(store.gLearned || {}).length;
-  var days = pengoStudyDays();
-  var acc = pengoAccuracy();
-  var accNum = acc == null ? "&#8212;" : acc + "%";
-  var accLbl = acc == null ? "Take a quiz" : "Accuracy";
+  function categoryRing(label, stats, color) {
+    var R = 48, CIRC = 2 * Math.PI * R;
+    var pct = stats.pct || 0;
+    var off = (CIRC * (1 - pct / 100)).toFixed(1);
+    return "<div class=\"pg-ring-block\"><svg class=\"pg-ring\" viewBox=\"0 0 120 120\" role=\"img\" aria-label=\"" + label + ": " + pct + "% complete\">" +
+      "<circle cx=\"60\" cy=\"60\" r=\"" + R + "\" fill=\"none\" class=\"pg-ring-track\" stroke-width=\"11\"/>" +
+      "<circle cx=\"60\" cy=\"60\" r=\"" + R + "\" fill=\"none\" stroke=\"" + color + "\" stroke-width=\"11\" stroke-linecap=\"round\" " +
+      "stroke-dasharray=\"" + CIRC.toFixed(1) + "\" stroke-dashoffset=\"" + off + "\" transform=\"rotate(-90 60 60)\"/>" +
+      "<text x=\"60\" y=\"67\" text-anchor=\"middle\" class=\"pg-ring-pct\">" + pct + "%</text></svg>" +
+      "<div class=\"pg-ring-label\">" + label + "</div><div class=\"pg-count\">" + pengoNum(stats.learned) + " / " + pengoNum(stats.total) + "</div></div>";
+  }
   var html = [];
   html.push("<div class=\"pg-wrap\">");
   html.push("<div class=\"pg-head\"><a class=\"pg-back\" href=\"#/\" aria-label=\"Back home\">&#8592;</a><h1>Progress</h1><span class=\"pg-head-spacer\"></span></div>");
-  html.push("<div class=\"pg-tabs\" role=\"tablist\">" + tabs + "</div>");
   html.push("<section class=\"pg-card pg-hero\" aria-label=\"" + heroLevel + " progress\">");
   html.push("<h2>" + heroLevel + " Progress</h2>");
   html.push("<div class=\"pg-level-chips\">" + chips + "</div>");
-  html.push("<div class=\"pg-hero-main\">");
-  html.push("<div class=\"pg-ring-block\">" + ring + "<div class=\"pg-count\">" + pengoNum(hero.learned) + " / " + pengoNum(hero.total) + " items</div></div>");
-  html.push("<div class=\"pg-hero-side\"><img class=\"pg-mascot\" src=\"assets/pengo-mascot.png\" alt=\"Pengo cheering you on\">" +
-    "<p class=\"pg-cheer\">" + pengoCheer(hero.pct) + "</p></div>");
-  html.push("</div>");
-  html.push("<p class=\"pg-hero-sub\">" + pengoNum(hero.kanji.learned) + " / " + pengoNum(hero.kanji.total) + " kanji &middot; " +
-    pengoNum(hero.vocab.learned) + " / " + pengoNum(hero.vocab.total) + " words &middot; " +
-    pengoNum(hero.grammar.learned) + " / " + pengoNum(hero.grammar.total) + " grammar &middot; " +
-    "<a href=\"#/kanji/" + heroLevel + "\">study " + heroLevel + "</a></p>");
+  html.push("<div class=\"pg-category-rings\">" +
+    categoryRing("Kanji", hero.kanji, "#2f80ed") +
+    categoryRing("Vocab", hero.vocab, "#9b6ce0") +
+    categoryRing("Grammar", hero.grammar, "#34a875") + "</div>");
+  html.push("<p class=\"pg-hero-sub\"><a href=\"#/kanji/" + heroLevel + "\">Study " + heroLevel + "</a></p>");
   html.push("</section>");
-  html.push("<section class=\"pg-card\" aria-label=\"Study stats\"><h2>Study Stats</h2><div class=\"pg-stats\">" +
-    "<div class=\"pg-stat pink\"><div class=\"pg-stat-num\">" + days + "</div><div class=\"pg-stat-lbl\">Days</div></div>" +
-    "<div class=\"pg-stat blue\"><div class=\"pg-stat-num\">" + pengoNum(itemsLearned) + "</div><div class=\"pg-stat-lbl\">Items learned</div></div>" +
-    "<div class=\"pg-stat green\"><div class=\"pg-stat-num\">" + accNum + "</div><div class=\"pg-stat-lbl\">" + accLbl + "</div></div>" +
-    "</div></section>");
-  if (tab === "overview") {
-    var rows = LEVELS.slice().reverse().map(function (lv) {
-      var s = combinedLevelStats(lv);
-      return "<a class=\"pg-ready-row" + (lv === heroLevel ? " hot" : "") + "\" href=\"#/progress?tab=overview&level=" + lv + "\">" +
-        "<span class=\"pg-lvl\">" + lv + "</span>" +
-        "<span class=\"pg-track\"><span class=\"pg-fill\" style=\"width:" + s.pct + "%;background:" + PG_LEVEL_COLORS[lv] + "\"></span></span>" +
-        "<span class=\"pg-pct\">" + s.pct + "%</span></a>";
-    }).join("");
-    html.push("<section class=\"pg-card\" aria-label=\"JLPT readiness\"><h2>JLPT Readiness</h2>" + rows + "</section>");
-    html.push("<section class=\"pg-card\"><h2>Quiz best scores</h2><p>" +
-      LEVELS.map(function (lv) { return lv + ": " + (store.quizBest[lv] != null ? store.quizBest[lv] + " / 10" : "&#8212;"); }).join(" &middot; ") + "</p>" +
-      "<p>Vocab: " + LEVELS.map(function (lv) { return lv + ": " + (store.vQuizBest[lv] != null ? store.vQuizBest[lv] + " / 10" : "-"); }).join(" | ") + "</p>" +
-      "<p>Grammar: " + LEVELS.map(function (lv) { return lv + ": " + (store.gQuizBest[lv] != null ? store.gQuizBest[lv] + " / 10" : "-"); }).join(" | ") + "</p></section>");
-  } else if (tab === "kanji") {
-    var krows = LEVELS.map(function (lv) {
-      var s = levelStats(lv);
-      return "<tr><td><a href=\"#/kanji/" + lv + "\">" + lv + "</a></td><td>" + s.total + "</td>" +
-        "<td>" + s.learned + "</td><td>" + s.left + "</td><td style=\"min-width:140px\">" + progressBar(s.pct) + "</td><td>" + s.pct + "%</td></tr>";
-    }).join("");
-    html.push("<section class=\"pg-card\"><h2>Kanji by level</h2><table class=\"stats\"><tr><th>Level</th><th>Total</th><th>Learned</th><th>Left</th><th></th><th>%</th></tr>" + krows + "</table></section>");
-  } else if (tab === "vocab") {
-    var vrows = LEVELS.map(function (lv) {
-      var s = vLevelStats(lv);
-      return "<tr><td><a href=\"#/vocab/" + lv + "\">" + lv + "</a></td><td>" + s.total + "</td>" +
-        "<td>" + s.learned + "</td><td>" + s.left + "</td><td style=\"min-width:140px\">" + progressBar(s.pct) + "</td><td>" + s.pct + "%</td></tr>";
-    }).join("");
-    html.push("<section class=\"pg-card\"><h2>Vocabulary by level</h2><table class=\"stats\"><tr><th>Level</th><th>Total</th><th>Learned</th><th>Left</th><th></th><th>%</th></tr>" + vrows + "</table></section>");
-  } else {
-    var grows = LEVELS.map(function (lv) {
-      var s = gLevelStats(lv);
-      return "<tr><td><a href=\"#/grammar/" + lv + "\">" + lv + "</a></td><td>" + s.total + "</td>" +
-        "<td>" + s.learned + "</td><td>" + s.left + "</td><td style=\"min-width:140px\">" + progressBar(s.pct) + "</td><td>" + s.pct + "%</td></tr>";
-    }).join("");
-    html.push("<section class=\"pg-card\"><h2>Grammar by level</h2><table class=\"stats\"><tr><th>Level</th><th>Total</th><th>Learned</th><th>Left</th><th></th><th>%</th></tr>" + grows + "</table></section>");
-  }
+  html.push(studyStatsHTML(period));
   html.push("</div>");
   view.innerHTML = html.join("");
+  if (progressStatsTimer) clearInterval(progressStatsTimer);
+  function bindStudyPeriod() {
+    var picker = $("#studyPeriod", view);
+    if (picker) picker.addEventListener("change", function (e) {
+      go("#/progress?level=" + heroLevel + "&period=" + e.target.value);
+    });
+  }
+  bindStudyPeriod();
+  progressStatsTimer = setInterval(function () {
+    if (String(location.hash || "").indexOf("#/progress") !== 0) { clearInterval(progressStatsTimer); progressStatsTimer = null; return; }
+    flushStudyTime();
+    var card = $(".study-stats", view);
+    if (card) { card.outerHTML = studyStatsHTML(period); bindStudyPeriod(); }
+  }, 15000);
 }
 
 /* ---------- Settings ---------- */
@@ -1177,7 +1196,7 @@ function vSrsGrade(id, ok) {
   if (ok) {
     s.box = Math.min(SRS_STEPS.length - 1, s.box + 1);
     s.due = Date.now() + SRS_STEPS[s.box] * 864e5;
-    store.vLearned[id] = store.vLearned[id] || Date.now();
+    if (!store.vLearned[id]) { store.vLearned[id] = Date.now(); recordStudyItem("vocab", id); }
   } else {
     s.box = 0;
     s.due = Date.now() + 6e5;
@@ -1190,6 +1209,7 @@ function toggleVLearned(id) {
     delete store.vLearned[id];
   } else {
     store.vLearned[id] = Date.now();
+    recordStudyItem("vocab", id);
     if (!store.vSrs[id]) store.vSrs[id] = { box: 1, due: Date.now() + 864e5 };
   }
   save();
@@ -1500,7 +1520,7 @@ function gSrsGrade(id, ok) {
   if (ok) {
     s.box = Math.min(SRS_STEPS.length - 1, s.box + 1);
     s.due = Date.now() + SRS_STEPS[s.box] * 864e5;
-    store.gLearned[id] = store.gLearned[id] || Date.now();
+    if (!store.gLearned[id]) { store.gLearned[id] = Date.now(); recordStudyItem("grammar", id); }
   } else {
     s.box = 0;
     s.due = Date.now() + 6e5;
@@ -1513,6 +1533,7 @@ function toggleGLearned(id) {
     delete store.gLearned[id];
   } else {
     store.gLearned[id] = Date.now();
+    recordStudyItem("grammar", id);
     if (!store.gSrs[id]) store.gSrs[id] = { box: 1, due: Date.now() + 864e5 };
   }
   save();
@@ -1914,9 +1935,11 @@ function courseRecordDay() {
   store.course.studyDays = Course.recordStudyDay(store.course.studyDays || [], Course.todayStr());
 }
 function courseMarkStudied(type, id) {
+  var wasLearned = courseIsLearned(type, id);
   if (type === "kanji") store.learned[id] = store.learned[id] || Date.now();
   else if (type === "vocab") { store.vLearned = store.vLearned || {}; store.vLearned[id] = store.vLearned[id] || Date.now(); }
   else { store.gLearned = store.gLearned || {}; store.gLearned[id] = store.gLearned[id] || Date.now(); }
+  if (!wasLearned) recordStudyItem(type, id);
   var map = type === "kanji" ? store.srs : type === "vocab" ? (store.vSrs || {}) : (store.gSrs || {});
   if (!map[id]) map[id] = { box: 1, due: Date.now() + 864e5 };
   courseRecordDay();
