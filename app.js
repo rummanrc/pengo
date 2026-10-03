@@ -500,7 +500,9 @@ function renderHomeDash(view) {
 }
 /* ---------- Learn (one tab for Kanji, Vocabulary, Grammar) ---------- */
 function renderLearn(view, q) {
-  const lv = LEVELS.includes((q.lv || "").toUpperCase()) ? q.lv.toUpperCase() : "N5";
+  const defaultLv = store.course && LEVELS.includes(String(store.course.target || "").toUpperCase())
+    ? String(store.course.target).toUpperCase() : "N5";
+  const lv = LEVELS.includes((q.lv || "").toUpperCase()) ? q.lv.toUpperCase() : defaultLv;
   const ks = levelStats(lv), vs = vLevelStats(lv), gs = gLevelStats(lv);
   const lvBtns = LEVELS.map(l => "<button class=\"chip\" data-lv=\"" + l + "\" aria-pressed=\"" + (l === lv) + "\">" + l + "</button>").join("");
   view.innerHTML =
