@@ -289,6 +289,42 @@ def main():
     print("furigana dictionary: %d surfaces (max_len=%d)" % (len(lookup), max_len))
     changed_files = 0
     total_sent, ruby_sent = 0, 0
+    # Grammar examples have their own curated furi markup (and often wrap
+    # pieces of it in <b>). Preserve that markup, then annotate only the
+    # uncovered parts of each sentence.
+    for lv in ["n5", "n4", "n3", "n2", "n1"]:
+        p = DATA / ("grammar_%s.json" % lv)
+        try:
+            items = json.load(open(p, encoding="utf-8"))
+        except OSError:
+            continue
+        dirty = False
+        for g in items:
+            for ex in g.get("examples", []) or []:
+                jp = (ex.get("jp") or "").strip()
+                furi = ex.get("furi") or ""
+                if not jp or not has_cjk(jp):
+                    continue
+                # Preserve emphasis boundaries while regenerating readings
+                # from the JP sentence. Grammar source markup can have partial
+                # ruby coverage, and retaining those readings risks duplicates
+                # where the source furigana is stale.
+                tags = []
+                def mark_tag(m):
+                    tags.append(m.group(0))
+                    return "\u0000TAG%d\u0000" % (len(tags) - 1)
+                marked = re.sub(r"</?(?:b|i)>", mark_tag, jp)
+                updated = annotate(marked, lookup, max_len)
+                for i, tag in enumerate(tags):
+                    updated = updated.replace("\u0000TAG%d\u0000" % i, tag)
+                if updated != furi:
+                    ex["furi"] = updated
+                    dirty = True
+        if dirty and not check_only:
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump(items, f, ensure_ascii=False)
+            changed_files += 1
+            print("wrote %s" % p.name)
     for lv in ["n5", "n4", "n3", "n2", "n1"]:
         for name in ("%s.json" % lv, "vocab_%s.json" % lv):
             p = DATA / name
