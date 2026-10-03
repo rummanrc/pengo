@@ -1117,7 +1117,7 @@ function renderSettings(view) {
     "<button class=\"btn soft\" id=\"sExport\">Export my data</button>" +
     "<button class=\"btn soft\" id=\"sImportButton\" type=\"button\">Import backup</button>" +
     "<input type=\"file\" id=\"sImport\" accept=\"application/json\" hidden>" +
-    "<button class=\"btn soft\" id=\"sWipe\">Erase everything</button></div>" +
+    "<button class=\"btn soft danger\" id=\"sWipe\">Erase everything</button></div>" +
     "<p class=\"explain\">" + storeNote() + "</p></div>" +
     courseSettingsCard() +
     "<div class=\"card\"><h2>About the data</h2>" +
@@ -1148,9 +1148,23 @@ function renderSettings(view) {
     r.readAsText(f);
   });
   $("#sWipe").addEventListener("click", () => {
-    if (confirm("Erase ALL data including settings?")) {
-      store = defaultStore(); save(); applyTheme(); try { localStorage.removeItem(ONBOARD_KEY); } catch (e) {} render();
-    }
+    const actions = $("#wipeActions");
+    if (actions) return;
+    const panel = document.createElement("div");
+    panel.id = "wipeActions";
+    panel.className = "wipe-confirm";
+    panel.setAttribute("role", "alertdialog");
+    panel.setAttribute("aria-labelledby", "wipeTitle");
+    panel.innerHTML = "<p id=\"wipeTitle\"><strong>Erase all data, including settings?</strong><br>This cannot be undone.</p>" +
+      "<button class=\"btn danger\" id=\"sWipeConfirm\">Erase all data</button> " +
+      "<button class=\"btn soft\" id=\"sWipeCancel\">Cancel</button>";
+    $("#sWipe").closest(".card").appendChild(panel);
+    $("#sWipeConfirm").addEventListener("click", () => {
+      store = defaultStore(); save(); applyTheme();
+      try { localStorage.removeItem(ONBOARD_KEY); } catch (e) {}
+      render();
+    });
+    $("#sWipeCancel").addEventListener("click", () => panel.remove());
   });
   const sIntro = $("#sIntro");
   if (sIntro) sIntro.addEventListener("click", () => showOnboarding(() => render()));

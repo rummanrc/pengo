@@ -90,6 +90,9 @@ button { font: inherit; }
 }
 .view { flex: 1; padding: 1.2rem clamp(.8rem, 3vw, 2rem) 5.5rem; max-width: 1080px; width: 100%; margin: 0 auto; }
 .footer { padding: 1rem; text-align: center; color: var(--ink-soft); font-size: .8rem; border-top: 1px solid var(--line); }
+.wipe-confirm { margin-top: .8rem; padding: .8rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.wipe-confirm p { margin: 0 0 .7rem; }
+.btn.danger { background: #b42318; color: #fff; border-color: #b42318; }
 .bottom-nav {
   display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   background: var(--card); border-top: 1px solid var(--line);
