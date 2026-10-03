@@ -778,6 +778,45 @@ function quizResultHTML(o) {
     "<a class=\"btn soft\" href=\"#/learn?lv=" + o.lv + "\">Study " + o.lv + "</a> " +
     "<a class=\"btn soft\" href=\"#/review?kind=" + kind + "&lv=" + o.lv + "\">More quizzes</a></p></div>";
 }
+function quizClip(text, limit) {
+  text = String(text || "").trim();
+  return text.length > limit ? text.slice(0, limit).trim() + "…" : text;
+}
+function quizReviewHTML(kind, item) {
+  if (kind === "kanji") {
+    const readings = [];
+    if (item.on && item.on.length) readings.push("<span><strong>On:</strong> <span lang=\"ja\">" + esc(item.on.join("、 ")) + "</span></span>");
+    if (item.kun && item.kun.length) readings.push("<span><strong>Kun:</strong> <span lang=\"ja\">" + esc(item.kun.join("、 ")) + "</span></span>");
+    const parts = (item.components || []).slice(0, 3).map(c => "<span class=\"badge\"><span lang=\"ja\">" + esc(c.c) + "</span> " + esc(c.m) + "</span>").join(" ");
+    const words = (item.vocab || []).slice(0, 2).map(v => "<li><span lang=\"ja\">" + esc(v.w) + " (" + esc(v.r) + ")</span> — " + esc(v.m) + "</li>").join("");
+    const mnemonic = quizClip(mnemonicFor(item).text, 180);
+    return "<section class=\"card quiz-review\"><h3>Quick review <span lang=\"ja\">" + esc(item.k) + "</span></h3>" +
+      "<p><strong>Meaning:</strong> " + esc(item.meaning) + (item.strokes ? " <span class=\"badge\">" + item.strokes + " strokes</span>" : "") + "</p>" +
+      (readings.length ? "<p class=\"quiz-review-readings\">" + readings.join(" &nbsp; ") + "</p>" : "") +
+      (parts ? "<p><strong>Parts:</strong> " + parts + "</p>" : "") +
+      (mnemonic ? "<p><strong>Memory aid:</strong> " + esc(mnemonic) + "</p>" : "") +
+      (words ? "<p><strong>Example words</strong></p><ul class=\"quiz-review-list\">" + words + "</ul>" : "") + "</section>";
+  }
+  if (kind === "vocab") {
+    const ex = (item.sentences || [])[0];
+    return "<section class=\"card quiz-review\"><h3>Quick review <span lang=\"ja\">" + esc(item.word) + "</span></h3>" +
+      "<p><strong>Reading:</strong> <span lang=\"ja\">" + esc(item.reading) + "</span> &nbsp; <strong>Meaning:</strong> " + esc(item.meaning) + "</p>" +
+      (item.meanings && item.meanings.length > 1 ? "<p><strong>Also:</strong> " + esc(item.meanings.slice(1, 4).join("; ")) + "</p>" : "") +
+      (ex ? "<p class=\"quiz-review-example jp\" lang=\"ja\">" + esc(ex.jp) + "</p>" + (ex.en ? "<p class=\"explain quiz-review-translation\">" + esc(ex.en) + "</p>" : "") : "") + "</section>";
+  }
+  const formation = (item.sections || []).find(s => String(s.label || "").toLowerCase() === "formation");
+  const example = (item.examples || [])[0];
+  return "<section class=\"card quiz-review\"><h3>Quick review <span lang=\"ja\">" + esc(item.point) + "</span></h3>" +
+    "<p><strong>Meaning:</strong> " + esc(item.meaning) + "</p>" +
+    (formation ? "<p><strong>Formation:</strong> " + esc(quizClip(stripTags(formation.html), 220)) + "</p>" : "") +
+    (example ? "<p class=\"quiz-review-example jp\" lang=\"ja\">" + esc(example.jp) + "</p>" + (example.en ? "<p class=\"explain quiz-review-translation\">" + esc(example.en) + "</p>" : "") : "") +
+    "</section>";
+}
+function showQuizAnswer(body, correct, kind, item, nextButton) {
+  $("#qFb").textContent = correct ? "Correct!" : "Not quite.";
+  $("#qFb").closest(".card").insertAdjacentHTML("afterend", quizReviewHTML(kind, item));
+  body.appendChild(nextButton);
+}
 function renderReview(view, q) {
   const kind = q.kind === "vocab" ? "vocab" : q.kind === "grammar" ? "grammar" : "kanji";
   const lv = LEVELS.includes((q.lv || "").toUpperCase()) ? q.lv.toUpperCase() : "N5";
@@ -835,16 +874,15 @@ function renderQuiz(body, q) {
       if (answered) return;
       answered = true;
       const ok = b.dataset.k === it.k;
-      if (ok) { score++; b.classList.add("correct"); $("#qFb").textContent = "Correct! " + it.k + " = " + it.meaning; }
+      if (ok) { score++; b.classList.add("correct"); }
       else {
         b.classList.add("wrong");
         $$(".quiz-opt", body).forEach(x => { if (x.dataset.k === it.k) x.classList.add("correct"); });
-        $("#qFb").innerHTML = "Not quite — <a href=\"#/k/" + encodeURIComponent(it.k) + "\">" + esc(it.k) + "</a> means “" + esc(it.meaning) + "”.";
       }
       const nx = document.createElement("button");
       nx.className = "btn primary"; nx.textContent = i + 1 >= qs.length ? "See result" : "Next →";
       nx.addEventListener("click", () => { i++; answered = false; draw(); });
-      $("#qFb").after(nx);
+      showQuizAnswer(body, ok, "kanji", it, nx);
     }));
   }
   body.innerHTML = "";
@@ -1383,16 +1421,15 @@ function renderVQuiz(body, q) {
       if (answered) return;
       answered = true;
       const ok = b.dataset.k === v.id;
-      if (ok) { score++; b.classList.add("correct"); $("#qFb").textContent = "Correct! " + v.word + " = " + v.meaning; }
+      if (ok) { score++; b.classList.add("correct"); }
       else {
         b.classList.add("wrong");
         $$(".quiz-opt", body).forEach(x => { if (x.dataset.k === v.id) x.classList.add("correct"); });
-        $("#qFb").innerHTML = "Not quite — <a href=\"#/v/" + encodeURIComponent(v.id) + "\">" + esc(v.word) + "</a> means " + esc(v.meaning) + ".";
       }
       const nx = document.createElement("button");
       nx.className = "btn primary"; nx.textContent = i + 1 >= qs.length ? "See result" : "Next";
       nx.addEventListener("click", () => { i++; answered = false; draw(); });
-      $("#qFb").after(nx);
+      showQuizAnswer(body, ok, "vocab", v, nx);
     }));
   }
   body.innerHTML = "";
@@ -1746,16 +1783,15 @@ function renderGQuiz(body, q) {
       if (answered) return;
       answered = true;
       const ok = b.dataset.k === g.id;
-      if (ok) { score++; b.classList.add("correct"); $("#qFb").textContent = "Correct! " + g.point + " = " + g.meaning; }
+      if (ok) { score++; b.classList.add("correct"); }
       else {
         b.classList.add("wrong");
         $$(".quiz-opt", body).forEach(x => { if (x.dataset.k === g.id) x.classList.add("correct"); });
-        $("#qFb").innerHTML = "Not quite &mdash; <a href=\"#/g/" + encodeURIComponent(g.id) + "\">" + esc(g.point) + "</a> means " + esc(g.meaning) + ".";
       }
       const nx = document.createElement("button");
       nx.className = "btn primary"; nx.textContent = i + 1 >= qs.length ? "See result" : "Next";
       nx.addEventListener("click", () => { i++; answered = false; draw(); });
-      $("#qFb").after(nx);
+      showQuizAnswer(body, ok, "grammar", g, nx);
     }));
   }
   body.innerHTML = "";
@@ -2224,18 +2260,15 @@ function renderCourseQuiz(view) {
         if (ok) {
           score++;
           b.classList.add("correct");
-          $("#qFb").textContent = "Correct! " + courseQuizHeadLabel(cur);
         } else {
           b.classList.add("wrong");
           $$(".quiz-opt", body).forEach(function (x) { if (x.dataset.ck === cur.id) x.classList.add("correct"); });
-          $("#qFb").innerHTML = "Not quite &mdash; <a href=\"" + courseItemLink(cur.type, cur.id) + "\">" +
-            esc(courseQuizHeadLabel(cur)) + "</a>.";
         }
         var nx = document.createElement("button");
         nx.className = "btn primary";
         nx.textContent = i + 1 >= qs.length ? "See result" : "Next";
         nx.addEventListener("click", function () { i++; answered = false; draw(); });
-        $("#qFb").after(nx);
+        showQuizAnswer(body, ok, cur.type, cur.head, nx);
       });
     });
   }
