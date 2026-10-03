@@ -190,6 +190,22 @@ def build_lookup():
             items = []
         for it in items:
             _add(counts, it.get("word", ""), it.get("reading", ""))
+    # The Tatoeba corpus includes morphology lines with surface(reading)
+    # annotations. These cover many common words outside the JLPT lists and
+    # provide readings for kanji compounds found in the example sentences.
+    corpus = ROOT / "resources" / "sentences" / "examples.utf"
+    token_re = re.compile(r"([^\s(){}\[\]~]+)\(([^()]+)\)")
+    kana_re = re.compile(r"^[ぁ-ゖァ-ヺー]+$")
+    try:
+        with open(corpus, encoding="utf-8") as f:
+            for line in f:
+                if not line.startswith("B:"):
+                    continue
+                for surface, reading in token_re.findall(line):
+                    if has_cjk(surface) and kana_re.fullmatch(reading):
+                        _add(counts, surface, reading)
+    except OSError:
+        pass
     for lv in ["n5", "n4", "n3", "n2", "n1"]:
         p = DATA / ("grammar_%s.json" % lv)
         try:
@@ -283,6 +299,18 @@ def annotate_sentence(sent, lookup=None, max_len=None):
     return True
 
 
+def fill_furigana_gaps(furi, jp, lookup, max_len):
+    """Annotate unmarked sentence text while preserving existing ruby."""
+    parts = []
+    pos = 0
+    for m in FURI_RE.finditer(furi or ""):
+        parts.append(annotate((furi or "")[pos:m.start()], lookup, max_len))
+        parts.append(m.group(0))
+        pos = m.end()
+    parts.append(annotate((furi or "")[pos:], lookup, max_len))
+    return "".join(parts)
+
+
 def main():
     check_only = "--check" in sys.argv
     lookup, max_len = get_lookup()
@@ -336,13 +364,17 @@ def main():
             for e in items:
                 for s in e.get("sentences", []) or []:
                     total_sent += 1
-                    if "<ruby>" in (s.get("furi") or ""):
-                        ruby_sent += 1
-                        continue
                     if check_only:
+                        if "<ruby>" in (s.get("furi") or ""):
+                            ruby_sent += 1
                         continue
-                    if annotate_sentence(s, lookup, max_len):
+                    jp = (s.get("jp") or "").strip()
+                    furi = s.get("furi") or ""
+                    updated = fill_furigana_gaps(furi, jp, lookup, max_len) if furi else annotate(jp, lookup, max_len)
+                    if updated != furi:
+                        s["furi"] = updated
                         dirty = True
+                    if "<ruby>" in updated:
                         ruby_sent += 1
             if dirty and not check_only:
                 with open(p, "w", encoding="utf-8") as f:

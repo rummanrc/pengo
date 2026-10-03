@@ -140,6 +140,22 @@ invents sentences.
 - `resources/vocab/kanji_alive/` stubs (`ka_data.csv`, `audio-mp3.zip`) are
   placeholders only and are NOT bundled into the app.
 
+## Vocabulary example sentence furigana (`data/vocab_n{1-5}.json`)
+
+Missing readings in vocabulary example sentences are generated at build time
+with SudachiPy and SudachiDict Core. Existing ruby readings are preserved.
+The tokenizer and dictionary are used only by `scripts/sudachi_furigana.py`
+and are not included in the app bundle.
+
+- SudachiDict is published by Works Applications under Apache 2.0 and includes
+  UniDic and part of NEologd; see the upstream [license notes](https://github.com/WorksApplications/SudachiDict#licenses).
+- UniDic publishes its contemporary dictionary under a GPL/LGPL/New BSD
+  triple license; review the bundled notices for the exact dictionary version
+  used when redistributing build outputs: <https://clrd.ninjal.ac.jp/unidic/en/>.
+- Build command (the versions used for this data refresh):
+  `pip install sudachipy==0.6.11 sudachidict_core==20260723`, then
+  `python scripts/sudachi_furigana.py`.
+
 ## JLPT grammar deck (`grammar/Japanese_Core_Grammar_JLPT_N5-N1_waudio.apkg`)
 
 Anki package "Japanese Core Grammar JLPT N5-N1" (400 notes, 1 note type).
