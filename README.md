@@ -22,7 +22,8 @@ GitHub Pages works too, but `resources/` is a submodule: enable
 
     index.html            app shell (sidebar + topbar + bottom nav + view)
     styles.css            theme, layout, responsive rules (mobile bottom nav)
-    app.js                hash-router SPA: home/learn/browse/detail/review/search/progress/settings
+    app.js                hash-router SPA: home/learn/course/browse/detail/review/search/progress/settings
+    course.js             study-plan scheduling logic (curriculum, quiz pool, streak, exams), no DOM
     data/n5..n1.json      per-level kanji records (generated, UTF-8)
     data/vocab_n5..n1.json per-level vocabulary records with Tatoeba sentences (generated, UTF-8)
     data/grammar_n5..n1.json per-level grammar records with examples + readings (generated, UTF-8)
@@ -66,8 +67,17 @@ Then `python scripts/build_bundle.py` to refresh the file:// fallback bundle.
   flashcards (3 modes), SRS review queue, 10-question quiz (meaning, point, translation + fill-in-blank)
 - Study flashcards (3 modes, keyboard support), SRS review queue, 10-question quiz
 - Progress dashboard, export/import backup, dark mode, responsive + keyboard accessible
+- Study plans: Home opens with a JLPT level picker, then becomes your dashboard (Continue Learning, Today's Goal, streak); unlock a little kanji/vocabulary/grammar every day, quiz the unlocked pool, track milestones (see docs/course.md)
 - All user data persists in localStorage; mnemonic engine exposes
   `KanjiMnemonic.generateViaModel` for future LLM-generated stories.
+
+## Tests
+
+    pip install dukpy
+    python tests/test_course.py
+
+80 assertions run against the real course.js (streak, curriculum,
+quiz selection, progress, exam dates). See docs/course.md.
 
 ## Offline Android app
 

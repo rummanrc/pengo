@@ -461,12 +461,12 @@ body.ob-open { overflow: hidden; }
 .ob-bubble small { color: #416084; }
 .ob-feats { display: flex; flex-direction: column; gap: .55rem; margin: 1rem 0 .5rem; text-align: left; }
 .ob-feat { display: flex; align-items: center; gap: .8rem; background: #fff; border-radius: 16px; padding: .6rem .9rem; box-shadow: 0 2px 8px rgba(28,53,83,.08); }
-.ob-feat-ico { width: 2.6rem; height: 2.6rem; flex: none; display: grid; place-items: center; font-size: 1.3rem; font-weight: 800; border-radius: 12px; color: #1c3553; }
+.ob-feat-ico { width: 2.6rem; height: 2.6rem; flex: none; display: grid; place-items: center; align-content: center; justify-content: center; text-align: center; line-height: 1; font-size: 1.3rem; font-weight: 800; border-radius: 12px; color: #1c3553; }
 .ob-feat-ico.pink { background: #fde8ec; } .ob-feat-ico.blue { background: #dcebfb; }
 .ob-feat-ico.green { background: #dcf3e4; } .ob-feat-ico.yellow { background: #fdf0d3; }
 .ob-feat-ico.purple { background: #e9e4fb; }
-.ob-feat b { display: block; color: #1c3553; font-size: .98rem; }
-.ob-feat span { display: block; color: #5b7290; font-size: .82rem; }
+.ob-feat > div > b { display: block; color: #1c3553; font-size: .98rem; }
+.ob-feat > div > span { display: block; color: #5b7290; font-size: .82rem; }
 .ob-cta {
   display: block; width: 100%; border: none; cursor: pointer;
   background: #1c3553; color: #fff; font-weight: 700; font-size: 1.05rem;
@@ -516,3 +516,58 @@ html.ob-boot .app { visibility: hidden; }
 @keyframes pengo-cheer { 0%,100% { transform: rotate(-2deg) scale(1); } 50% { transform: rotate(2deg) scale(1.04); } }
 @keyframes pengo-sway { 0%,100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
 @media (prefers-reduced-motion: reduce) { .quiz-result, .quiz-result-img { animation: none; } }
+/* ---- Course / study plan ---- */
+.course-banner small { font-weight: 600; color: var(--ink-soft); font-size: .85rem; }
+.course-item { display: flex; align-items: center; gap: .6rem; padding: .45rem 0; border-top: 1px solid var(--line); }
+.course-item a { flex: 1 1 auto; text-decoration: none; color: inherit; display: block; }
+.course-item-head { font-size: 1.25rem; font-weight: 700; }
+.course-item-sub { display: block; font-size: .85rem; color: var(--ink-soft); }
+.course-item.done { opacity: .65; }
+.course-item-badge { font-size: .75rem; font-weight: 700; color: var(--green); border: 1px solid currentColor; border-radius: 999px; padding: .1rem .55rem; white-space: nowrap; }
+.mile-grid { display: flex; flex-wrap: wrap; gap: .4rem; margin: .5rem 0; }
+.mile { font-size: .8rem; border: 1px solid var(--line); border-radius: 999px; padding: .2rem .6rem; background: var(--bg-soft); color: var(--ink-soft); }
+.mile.got { border-color: var(--green); color: var(--ink); background: #fff; }
+.exam-row { display: block; margin: .3rem 0; }
+.exam-row small { color: var(--ink-soft); }
+.course-item .btn { white-space: nowrap; }
+
+/* ---- Splash level picker ---- */
+.splash { text-align: center; padding: 1rem .4rem 2rem; max-width: 26rem; margin: 0 auto; }
+.splash h1 { font-size: 1.5rem; line-height: 1.3; color: var(--ink); margin: .6rem 0 1.1rem; }
+.splash-levels { display: flex; flex-direction: column; gap: .7rem; }
+.splash-lv { display: flex; align-items: center; gap: 1rem; border-radius: 16px; padding: .85rem 1.3rem; text-decoration: none; color: var(--ink); box-shadow: var(--shadow); }
+.splash-lv:active { transform: scale(.98); }
+.splash-lv-code { font-size: 1.6rem; font-weight: 800; min-width: 3.2rem; text-align: left; }
+.splash-lv-name { font-size: 1rem; font-weight: 600; color: var(--ink-soft); }
+.lv-n1 { background: #e4dcf5; } .lv-n2 { background: #d7e6f8; } .lv-n3 { background: #d8f0e1; }
+.lv-n4 { background: #fbeed3; } .lv-n5 { background: #f9dfe6; }
+.splash-cheer { font-weight: 800; font-size: 1.15rem; margin: 1.2rem 0 .2rem; color: var(--ink); }
+.splash-cheer span { display: block; font-size: .85rem; font-weight: 600; color: var(--ink-soft); }
+.splash-mascot { width: min(200px, 55%); height: auto; }
+.splash-dots { display: flex; gap: .45rem; justify-content: center; margin: .6rem 0; }
+.splash-dots i { width: .55rem; height: .55rem; border-radius: 50%; background: rgba(28,53,83,.18); }
+.splash-dots i.on { background: #1c3553; width: 1.2rem; border-radius: 999px; }
+[data-theme="dark"] .splash-lv { background: var(--card); border: 1px solid var(--line); }
+[data-theme="dark"] .splash-dots i { background: rgba(232,238,246,.25); }
+[data-theme="dark"] .splash-dots i.on { background: #e8eef6; }
+
+/* ---- Home dashboard ---- */
+.dash-hero { text-align: center; padding-top: .4rem; }
+.dash-hello { font-size: 1.6rem; font-weight: 800; color: var(--ink); }
+.dash-tag { color: var(--ink-soft); margin: .2rem 0 .4rem; }
+.dash-mascot { width: min(180px, 50%); height: auto; }
+.dash-continue h2 { margin-bottom: .6rem; }
+.dash-cont-row { display: flex; align-items: center; gap: .8rem; }
+.dash-badge { background: var(--accent-soft); color: var(--accent-ink); font-weight: 800; border-radius: 12px; padding: .5rem .7rem; font-size: 1.1rem; }
+.dash-cont-meta { flex: 1 1 auto; min-width: 0; }
+.dash-cont-meta b { display: block; }
+.dash-cont-meta span { color: var(--ink-soft); font-size: .85rem; }
+.dash-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: .6rem; margin: 1rem 0; }
+.dash-tile { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: .6rem .2rem; text-align: center; text-decoration: none; color: var(--ink); font-size: .72rem; font-weight: 700; box-shadow: var(--shadow); }
+.dash-tile-ico { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; margin: 0 auto .3rem; border-radius: 12px; font-size: 1.3rem; font-family: var(--jp-font); }
+.dash-tile.t1 .dash-tile-ico { background: #fde8ec; color: #1c3553; }
+.dash-tile.t2 .dash-tile-ico { background: #dcebfb; color: #1c3553; }
+.dash-tile.t3 .dash-tile-ico { background: #dcf3e4; color: #1c3553; }
+.dash-tile.t4 .dash-tile-ico { background: #e9e4fb; color: #1c3553; }
+[data-theme="dark"] .dash-tile-ico { background: var(--bg-soft); color: var(--ink); }
+.dash-goal-num { font-size: 1.1rem; font-weight: 800; margin-bottom: .4rem; }

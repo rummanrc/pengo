@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / (sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv else "www")
 
-FILES = ["index.html", "app.js", "onboarding.js", "platform.js", "styles.css", "manifest.webmanifest"]
+FILES = ["index.html", "app.js", "onboarding.js", "course.js", "platform.js", "styles.css", "manifest.webmanifest"]
 DIRS = ["assets", "data"]
 EXTRA = [
     ("resources/stroke-order", "resources/stroke-order"),
