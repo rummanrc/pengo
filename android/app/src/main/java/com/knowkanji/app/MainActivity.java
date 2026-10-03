@@ -3,12 +3,14 @@ package com.knowkanji.app;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.view.View;
 import android.widget.Toast;
 
 import org.json.JSONObject;
@@ -59,12 +61,18 @@ public class MainActivity extends Activity {
         public void showMessage(String message) {
             runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show());
         }
+
+        @JavascriptInterface
+        public void setDarkTheme(boolean dark) {
+            runOnUiThread(() -> updateSystemBars(dark));
+        }
     }
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        updateSystemBars(false);
 
         web = new WebView(this);
         web.setFitsSystemWindows(true);
@@ -93,6 +101,19 @@ public class MainActivity extends Activity {
         } else {
             web.loadUrl("file:///android_asset/www/index.html");
         }
+    }
+
+    private void updateSystemBars(boolean dark) {
+        getWindow().setStatusBarColor(Color.parseColor(dark ? "#0f1826" : "#eef6fd"));
+        int flags = getWindow().getDecorView().getSystemUiVisibility();
+        if (dark) flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        else flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            getWindow().setNavigationBarColor(Color.parseColor(dark ? "#0f1826" : "#eef6fd"));
+            if (dark) flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            else flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        }
+        getWindow().getDecorView().setSystemUiVisibility(flags);
     }
 
     @Override

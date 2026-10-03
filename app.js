@@ -2296,7 +2296,9 @@ function renderCourseQuiz(view) {
 
 /* ---------- Theme, search box, init ---------- */
 function applyTheme() {
-  document.documentElement.dataset.theme = store.settings.theme === "dark" ? "dark" : "light";
+  const dark = store.settings.theme === "dark";
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  if (window.Platform && window.Platform.setDarkTheme) window.Platform.setDarkTheme(dark);
   const icon = store.settings.theme === "dark" ? "☀" : "🌙";
   if ($("#themeBtn")) $("#themeBtn").textContent = icon;
   if ($("#themeBtn2")) $("#themeBtn2").textContent = icon;

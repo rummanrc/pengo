@@ -33,6 +33,11 @@ const Platform = {
   receiveImport(text) {
     if (typeof window.importBackupText === "function") window.importBackupText(text);
   },
+  setDarkTheme(dark) {
+    if (window.KnowKanjiNative && typeof window.KnowKanjiNative.setDarkTheme === "function") {
+      window.KnowKanjiNative.setDarkTheme(!!dark);
+    }
+  },
   handleBackPress() {
     const h = String(location.hash || "#/");
     if (h && h !== "#/" && h !== "#") { history.back(); return true; }
