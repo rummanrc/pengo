@@ -125,7 +125,7 @@ grammar deck (text only). See `resources/CREDITS.md`.
 
 - `#/` - level-picker splash (`N1 Advanced` .. `N5 Beginner`) when no plan
   exists; otherwise the course dashboard: greeting, Continue Learning card
-  (current batch progress), Kanji/Vocab/Grammar/Mock Test tiles into the
+  (current batch progress), Kanji/Vocab/Grammar/Review tiles into the
   existing Learn/Review pages, Today's Goal (studied today vs daily pace),
   streak + schedule line, milestones. There is no separate course page.
 - `#/course/setup` - planning wizard: level (accepts `?target=N4` from the

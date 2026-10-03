@@ -417,7 +417,7 @@ function renderHomeDash(view) {
     { t: "Kanji", ch: "\u6f22", href: "#/kanji/" + c.target, cls: "t1" },
     { t: "Vocab", ch: "\u8a9e", href: "#/vocab/" + c.target, cls: "t2" },
     { t: "Grammar", ch: "\u6587", href: "#/grammar/" + c.target, cls: "t3" },
-    { t: "Mock Test", ch: "\u8a66", href: "#/review?lv=" + c.target, cls: "t4" }
+    { t: "Review", ch: "\u8a66", href: "#/review?lv=" + c.target, cls: "t4" }
   ];
   var due = dueCount();
   view.innerHTML =
