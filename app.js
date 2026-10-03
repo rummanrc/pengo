@@ -230,12 +230,12 @@ function dueCount() {
 
 /* ---------- Router ---------- */
 const NAV = [
-  { path: "#/", label: "Home", ico: "🏠", match: "home" },
-  { path: "#/learn", label: "Learn", ico: "\u5b66", match: "learn" },
-  { path: "#/review", label: "Review", ico: "🔁", match: "review" },
-  { path: "#/search", label: "Search", ico: "🔍", match: "search" },
-  { path: "#/progress", label: "Progress", ico: "📊", match: "progress" },
-  { path: "#/settings", label: "Settings", ico: "⚙", match: "settings" }
+  { path: "#/", label: "Home", ico: "<svg viewBox=\"0 0 24 24\"><path d=\"m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z\"/></svg>", match: "home" },
+  { path: "#/learn", label: "Learn", ico: "<svg viewBox=\"0 0 24 24\"><path d=\"M12 7v14M12 7C9 4 5 4 2 5v14c4-1 7 0 10 2m0-14c3-3 7-3 10-2v14c-4-1-7 0-10 2\"/></svg>", match: "learn" },
+  { path: "#/review", label: "Review", ico: "<svg viewBox=\"0 0 24 24\"><path d=\"M20 7v5h-5M4 17v-5h5\"/><path d=\"M5.6 9A7 7 0 0 1 18 6l2 2M4 16l2 2a7 7 0 0 0 12.4-3\"/></svg>", match: "review" },
+  { path: "#/search", label: "Search", ico: "<svg viewBox=\"0 0 24 24\"><circle cx=\"10.8\" cy=\"10.8\" r=\"6.8\"/><path d=\"m16 16 5 5\"/></svg>", match: "search" },
+  { path: "#/progress", label: "Progress", ico: "<svg viewBox=\"0 0 24 24\"><path d=\"M4 20V12h4v8zm6 0V4h4v16zm6 0V9h4v11z\"/></svg>", match: "progress" },
+  { path: "#/settings", label: "Settings", ico: "<svg viewBox=\"0 0 24 24\"><path d=\"M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z\"/><path d=\"m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.8 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.8-1l-1.7.6-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.8-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.8 1l1.7-.6 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2Z\"/></svg>", match: "settings" }
 ];
 function parseHash() {
   const h = location.hash || "#/";
