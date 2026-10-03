@@ -237,9 +237,10 @@ a.comp:hover { border-color: var(--accent); }
 .quiz-review-example { font-size: 1rem; margin-top: .55rem !important; }
 .quiz-review-translation { margin-top: -.2rem !important; }
 .quiz-opts .btn { text-align: left; }
-.quiz-opts .btn.correct { background: var(--green-soft); border-color: var(--green); color: var(--ink); }
-.quiz-opts .btn.wrong { background: #fdf0f3; border-color: #d66a7d; }
-[data-theme="dark"] .quiz-opts .btn.wrong { background: #3a2530; border-color: #d66a7d; }
+.quiz-opts .btn.correct { background: var(--card); border: 2px solid #22c55e; color: #166534; }
+.quiz-opts .btn.wrong { background: var(--card); border: 2px solid #ef4444; color: #991b1b; }
+[data-theme="dark"] .quiz-opts .btn.correct { background: var(--card); border-color: #34d399; color: #6ee7b7; }
+[data-theme="dark"] .quiz-opts .btn.wrong { background: var(--card); border-color: #fb7185; color: #fda4af; }
 textarea.note {
   width: 100%; min-height: 90px; border-radius: 10px; border: 1px solid var(--line);
   background: var(--bg); color: var(--ink); font: inherit; padding: .6rem .7rem;
@@ -534,7 +535,8 @@ html.ob-boot .app { visibility: hidden; }
 .course-item-badge { font-size: .75rem; font-weight: 700; color: var(--green); border: 1px solid currentColor; border-radius: 999px; padding: .1rem .55rem; white-space: nowrap; }
 .mile-grid { display: flex; flex-wrap: wrap; gap: .4rem; margin: .5rem 0; }
 .mile { font-size: .8rem; border: 1px solid var(--line); border-radius: 999px; padding: .2rem .6rem; background: var(--bg-soft); color: var(--ink-soft); }
-.mile.got { border-color: var(--green); color: var(--ink); background: #fff; }
+.mile.got { border: 2px solid #22c55e; color: #166534; background: var(--bg-soft); }
+[data-theme="dark"] .mile.got { border-color: #34d399; color: #6ee7b7; background: var(--bg-soft); }
 .exam-row { display: block; margin: .3rem 0; }
 .exam-row small { color: var(--ink-soft); }
 .course-item .btn { white-space: nowrap; }
