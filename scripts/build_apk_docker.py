@@ -33,7 +33,16 @@ def main():
             tag = sys.argv[1:][i + 1]
         if a == "--no-cache":
             extra.append("--no-cache")
-    run(["docker", "build", "-f", "docker/Dockerfile", "-t", tag] + extra + ["."])
+    run([
+        "docker",
+        "build",
+        "--platform=linux/amd64",
+        "-f",
+        "docker/Dockerfile",
+        "-t",
+        tag,
+    ] + extra + ["."])
+    
     subprocess.run(["docker", "rm", "-f", CONTAINER],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     run(["docker", "create", "--name", CONTAINER, tag])

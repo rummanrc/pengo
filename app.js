@@ -483,16 +483,45 @@ function renderBrowse(view, level, q) {
     "<option value=\"alpha\"" + (sort === "alpha" ? " selected" : "") + ">Meaning A–Z</option>" +
     "<option value=\"progress\"" + (sort === "progress" ? " selected" : "") + ">Unlearned first</option></select>" +
     "</div>" +
-    "<p class=\"result-count\">" + recs.length + " / " + DB.levels[lv].length + " kanji · " + lv + "</p>" +
-    "<div class=\"kanji-grid\">" + grid + "</div>";
+    "<p class=\"result-count\" id=\"browseResultCount\">" + recs.length + " / " + DB.levels[lv].length + " kanji · " + lv + "</p>" +
+    "<div class=\"kanji-grid\" id=\"browseGrid\">" + grid + "</div>";
   $$(".chip", view).forEach(c => c.addEventListener("click", () => go("#/kanji/" + c.dataset.lv)));
-  let deb = null;
-  $("#bq").addEventListener("input", e => {
-    clearTimeout(deb);
-    deb = setTimeout(() => go(link({ q: e.target.value })), 300);
-  });
+  bindBrowseSearch("bq", "browseResultCount", "browseGrid", function (text) {
+    let matches = DB.levels[lv].filter(item => matchQuery({ item: item, level: lv }, text));
+    if (filt === "learned") matches = matches.filter(item => isLearned(item.k));
+    else if (filt === "unlearned") matches = matches.filter(item => !isLearned(item.k));
+    else if (filt === "fav") matches = matches.filter(item => isFav(item.k));
+    if (sort === "strokes") matches.sort((a, b) => (a.strokes || 99) - (b.strokes || 99));
+    else if (sort === "freq") matches.sort((a, b) => (a.freq || 99999) - (b.freq || 99999));
+    else if (sort === "alpha") matches.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
+    else if (sort === "progress") matches.sort((a, b) => ((store.learned[a.k] ? 1 : 0) - (store.learned[b.k] ? 1 : 0)));
+    return matches;
+  }, function (item) { return kanjiCard(item, lv); }, "kanji", lv, link);
   $("#bf").addEventListener("change", e => go(link({ f: e.target.value })));
   $("#bs").addEventListener("change", e => go(link({ s: e.target.value })));
+}
+
+/* Update browse results without replacing the focused search input. Rebuilding
+   the view on each query change blurs Android's WebView input and hides its IME. */
+function bindBrowseSearch(inputId, countId, gridId, filterItems, renderCard, kind, level, link) {
+  let deb = null;
+  const input = $("#" + inputId);
+  const grid = $("#" + gridId);
+  const count = $("#" + countId);
+  input.addEventListener("input", function () {
+    clearTimeout(deb);
+    const text = input.value;
+    deb = setTimeout(function () {
+      const items = filterItems(text);
+      grid.innerHTML = items.length ? items.map(renderCard).join("") :
+        "<p class=\"empty\">No results match. Try a different search or filter.</p>";
+      if (kind === "kanji") count.textContent = items.length + " / " + DB.levels[level].length + " kanji · " + level;
+      else if (kind === "vocab") count.innerHTML = items.length + " words · <a href=\"#/review?tab=quiz&kind=vocab&lv=" + level + "\">Quiz " + level + "</a>";
+      else count.innerHTML = items.length + " points · <a href=\"#/review?tab=quiz&kind=grammar&lv=" + level + "\">Quiz " + level + "</a>";
+      const hash = link({ q: text });
+      if (location.hash !== hash) history.replaceState(null, "", hash);
+    }, 150);
+  });
 }
 
 /* ---------- Detail ---------- */
@@ -1218,14 +1247,20 @@ function renderVocabBrowse(view, level, q) {
     "<option value=\"reading\"" + (sort === "reading" ? " selected" : "") + ">Reading</option>" +
     "<option value=\"progress\"" + (sort === "progress" ? " selected" : "") + ">Unlearned first</option>" +
     "</select></div>" +
-    "<p class=\"result-count\">" + recs.length + " words · <a href=\"#/review?tab=quiz&kind=vocab&lv=" + lv + "\">Quiz " + lv + "</a></p>" +
-    "<div class=\"kanji-grid\">" + grid + "</div>";
+    "<p class=\"result-count\" id=\"vocabResultCount\">" + recs.length + " words · <a href=\"#/review?tab=quiz&kind=vocab&lv=" + lv + "\">Quiz " + lv + "</a></p>" +
+    "<div class=\"kanji-grid\" id=\"vocabGrid\">" + grid + "</div>";
   $$(".chip", view).forEach(c => c.addEventListener("click", () => go("#/vocab/" + c.dataset.lv + "?" + new URLSearchParams({ q: query, f: filt, s: sort }).toString())));
-  let deb = null;
-  $("#vq").addEventListener("input", e => {
-    clearTimeout(deb);
-    deb = setTimeout(() => go(link({ q: e.target.value })), 350);
-  });
+  bindBrowseSearch("vq", "vocabResultCount", "vocabGrid", function (text) {
+    let matches = (DB.vocab[lv] || []).filter(v => matchVQuery(v, text));
+    if (filt === "learned") matches = matches.filter(v => isVLearned(v.id));
+    else if (filt === "unlearned") matches = matches.filter(v => !isVLearned(v.id));
+    else if (filt === "fav") matches = matches.filter(v => isVFav(v.id));
+    else if (filt === "nosent") matches = matches.filter(v => !(v.sentences && v.sentences.length));
+    if (sort === "alpha") matches.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
+    else if (sort === "reading") matches.sort((a, b) => (a.reading < b.reading ? -1 : 1));
+    else if (sort === "progress") matches.sort((a, b) => ((store.vLearned[a.id] ? 1 : 0) - (store.vLearned[b.id] ? 1 : 0)));
+    return matches;
+  }, vocabCard, "vocab", lv, link);
   $("#vf").addEventListener("change", e => go(link({ f: e.target.value })));
   $("#vs").addEventListener("change", e => go(link({ s: e.target.value })));
 }
@@ -1500,14 +1535,18 @@ function renderGrammarBrowse(view, level, q) {
     "<option value=\"alpha\"" + (sort === "alpha" ? " selected" : "") + ">A-Z</option>" +
     "<option value=\"progress\"" + (sort === "progress" ? " selected" : "") + ">Unlearned first</option>" +
     "</select></div>" +
-    "<p class=\"result-count\">" + recs.length + " points &middot; <a href=\"#/review?tab=quiz&kind=grammar&lv=" + lv + "\">Quiz " + lv + "</a></p>" +
-    "<div class=\"kanji-grid\">" + grid + "</div>";
+    "<p class=\"result-count\" id=\"grammarResultCount\">" + recs.length + " points &middot; <a href=\"#/review?tab=quiz&kind=grammar&lv=" + lv + "\">Quiz " + lv + "</a></p>" +
+    "<div class=\"kanji-grid\" id=\"grammarGrid\">" + grid + "</div>";
   $$(".chip", view).forEach(c => c.addEventListener("click", () => go("#/grammar/" + c.dataset.lv + "?" + new URLSearchParams({ q: query, f: filt, s: sort }).toString())));
-  let deb = null;
-  $("#gq").addEventListener("input", e => {
-    clearTimeout(deb);
-    deb = setTimeout(() => go(link({ q: e.target.value })), 350);
-  });
+  bindBrowseSearch("gq", "grammarResultCount", "grammarGrid", function (text) {
+    let matches = (DB.grammar[lv] || []).filter(g => matchGQuery(g, text));
+    if (filt === "learned") matches = matches.filter(g => isGLearned(g.id));
+    else if (filt === "unlearned") matches = matches.filter(g => !isGLearned(g.id));
+    else if (filt === "fav") matches = matches.filter(g => isGFav(g.id));
+    if (sort === "alpha") matches.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
+    else if (sort === "progress") matches.sort((a, b) => ((store.gLearned[a.id] ? 1 : 0) - (store.gLearned[b.id] ? 1 : 0)));
+    return matches;
+  }, grammarCard, "grammar", lv, link);
   $("#gf").addEventListener("change", e => go(link({ f: e.target.value })));
   $("#gs").addEventListener("change", e => go(link({ s: e.target.value })));
 }
