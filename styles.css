@@ -314,6 +314,14 @@ textarea.note { font-size: 16px; }
 .vocab-hero { font-size: 2.6rem; line-height: 1.15; text-align: center; overflow-wrap: anywhere; height: auto; min-height: 9rem; padding: .8rem; }
 h2 small { font-weight: 600; font-size: .8rem; }
 h2 small a { font-weight: 600; }
+.level-card .lvl { display: flex; align-items: center; gap: .4rem; }
+.level-card .lvl small { margin-left: auto; }
+.level-card .dash-tile-ico { display: inline-grid; flex: 0 0 1.7rem; width: 1.7rem; height: 1.7rem; margin: 0; font-size: .9rem; border-radius: 8px; }
+.level-card .dash-tile-ico.t1 { background: #fde8ec; color: #1c3553; }
+.level-card .dash-tile-ico.t2 { background: #dcebfb; color: #1c3553; }
+.level-card .dash-tile-ico.t3 { background: #dcf3e4; color: #1c3553; }
+.level-card .dash-tile-ico.t4 { background: #e9e4fb; color: #1c3553; }
+[data-theme="dark"] .level-card .dash-tile-ico { background: var(--bg-soft); color: var(--ink); }
 
 /* Grammar */
 .gcard .gpoint { font-family: var(--jp-font); font-size: 1.35rem; font-weight: 700; line-height: 1.35; text-align: center; }

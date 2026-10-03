@@ -508,16 +508,16 @@ function renderLearn(view, q) {
     "<p class=\"explain\">Pick a JLPT level, then choose what to study: kanji, vocabulary, grammar \u2014 or jump straight into a review quiz for that level.</p>" +
     "<div class=\"chip-row\" role=\"group\" aria-label=\"Learn level\">" + lvBtns + "</div>" +
     "<div class=\"level-grid\">" +
-    "<a class=\"level-card\" href=\"#/kanji/" + lv + "\"><div class=\"lvl\">\u6f22 Kanji <small>" + ks.total + " kanji</small></div>" +
+    "<a class=\"level-card\" href=\"#/kanji/" + lv + "\"><div class=\"lvl\"><span class=\"dash-tile-ico t1\" aria-hidden=\"true\">\u6f22</span> Kanji <small>" + ks.total + " kanji</small></div>" +
     "<div class=\"count\">" + ks.learned + " / " + ks.total + " learned</div>" + progressBar(ks.pct) +
     "<div class=\"progress-label\">" + ks.pct + "% complete \u00b7 " + ks.left + " left</div></a>" +
-    "<a class=\"level-card\" href=\"#/vocab/" + lv + "\"><div class=\"lvl\">\u8a9e Vocab <small>" + vs.total + " words</small></div>" +
+    "<a class=\"level-card\" href=\"#/vocab/" + lv + "\"><div class=\"lvl\"><span class=\"dash-tile-ico t2\" aria-hidden=\"true\">\u8a9e</span> Vocab <small>" + vs.total + " words</small></div>" +
     "<div class=\"count\">" + vs.learned + " / " + vs.total + " learned</div>" + progressBar(vs.pct) +
     "<div class=\"progress-label\">" + vs.pct + "% complete \u00b7 " + vs.left + " left</div></a>" +
-    "<a class=\"level-card\" href=\"#/grammar/" + lv + "\"><div class=\"lvl\">\u6587 Grammar <small>" + gs.total + " points</small></div>" +
+    "<a class=\"level-card\" href=\"#/grammar/" + lv + "\"><div class=\"lvl\"><span class=\"dash-tile-ico t3\" aria-hidden=\"true\">\u6587</span> Grammar <small>" + gs.total + " points</small></div>" +
     "<div class=\"count\">" + gs.learned + " / " + gs.total + " learned</div>" + progressBar(gs.pct) +
     "<div class=\"progress-label\">" + gs.pct + "% complete \u00b7 " + gs.left + " left</div></a>" +
-    "<div class=\"level-card\"><div class=\"lvl\">\uD83D\uDD01 Review <small>" + lv + " quiz</small></div>" +
+    "<div class=\"level-card\"><div class=\"lvl\"><span class=\"dash-tile-ico t4\" aria-hidden=\"true\">\u8a66</span> Review <small>" + lv + " quiz</small></div>" +
     "<div class=\"count\">Test yourself on " + lv + "</div>" +
     "<p><a class=\"btn soft\" href=\"#/review?kind=kanji&lv=" + lv + "\">Kanji</a> " +
     "<a class=\"btn soft\" href=\"#/review?kind=vocab&lv=" + lv + "\">Vocab</a> " +
