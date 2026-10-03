@@ -472,7 +472,7 @@ function renderBrowse(view, level, q) {
     "<h1>Browse kanji</h1>" +
     "<div class=\"chip-row\" role=\"group\" aria-label=\"JLPT level\">" + chips + "</div>" +
     "<div class=\"toolbar\">" +
-    "<input type=\"search\" id=\"bq\" placeholder=\"Search kanji, meaning, reading...\" value=\"" + esc(query) + "\" aria-label=\"Search kanji\">" +
+    "<input type=\"search\" id=\"bq\" placeholder=\"Search\" value=\"" + esc(query) + "\" aria-label=\"Search\">" +
     "<select id=\"bf\" aria-label=\"Filter\"><option value=\"all\">All</option>" +
     "<option value=\"learned\"" + (filt === "learned" ? " selected" : "") + ">Learned</option>" +
     "<option value=\"unlearned\"" + (filt === "unlearned" ? " selected" : "") + ">Unlearned</option>" +
@@ -796,7 +796,7 @@ function renderSearch(view, q) {
   const query = q.q || "";
   view.innerHTML =
     "<h1>Search</h1>" +
-    "<div class=\"toolbar\"><input type=\"search\" id=\"sq\" placeholder=\"Kanji, word, English meaning, or reading...\" value=\"" + esc(query) + "\" aria-label=\"Search kanji and vocabulary\"></div>" +
+    "<div class=\"toolbar\"><input type=\"search\" id=\"sq\" placeholder=\"Kanji, word, English meaning, or reading...\" value=\"" + esc(query) + "\" aria-label=\"Search\"></div>" +
     "<div id=\"sRes\"></div>";
   const box = $("#sRes"), input = $("#sq");
   function run() {
