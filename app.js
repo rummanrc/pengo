@@ -971,9 +971,9 @@ function renderProgress(view) {
     "<a href=\"#/kanji/" + heroLevel + "\">study " + heroLevel + "</a></p>");
   html.push("</section>");
   html.push("<section class=\"pg-card\" aria-label=\"Study stats\"><h2>Study Stats</h2><div class=\"pg-stats\">" +
-    "<div class=\"pg-stat pink\"><div class=\"pg-stat-ico\">&#128293;</div><div class=\"pg-stat-num\">" + days + "</div><div class=\"pg-stat-lbl\">Days</div></div>" +
-    "<div class=\"pg-stat blue\"><div class=\"pg-stat-ico\">&#128216;</div><div class=\"pg-stat-num\">" + pengoNum(itemsLearned) + "</div><div class=\"pg-stat-lbl\">Items learned</div></div>" +
-    "<div class=\"pg-stat green\"><div class=\"pg-stat-ico\">&#9989;</div><div class=\"pg-stat-num\">" + accNum + "</div><div class=\"pg-stat-lbl\">" + accLbl + "</div></div>" +
+    "<div class=\"pg-stat pink\"><div class=\"pg-stat-num\">" + days + "</div><div class=\"pg-stat-lbl\">Days</div></div>" +
+    "<div class=\"pg-stat blue\"><div class=\"pg-stat-num\">" + pengoNum(itemsLearned) + "</div><div class=\"pg-stat-lbl\">Items learned</div></div>" +
+    "<div class=\"pg-stat green\"><div class=\"pg-stat-num\">" + accNum + "</div><div class=\"pg-stat-lbl\">" + accLbl + "</div></div>" +
     "</div></section>");
   if (tab === "overview") {
     var rows = LEVELS.slice().reverse().map(function (lv) {
