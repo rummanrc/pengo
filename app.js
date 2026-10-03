@@ -30,6 +30,10 @@ function save() {
 
 function exportBackup() {
   const text = JSON.stringify(store);
+  if (window.KnowKanjiNative && typeof window.KnowKanjiNative.exportJson === "function") {
+    window.KnowKanjiNative.exportJson("pengo-backup.json", text);
+    return;
+  }
   if (window.Platform && window.Platform.exportJson) { window.Platform.exportJson("pengo-backup.json", text); return; }
   const blob = new Blob([text], { type: "application/json" });
   const a = document.createElement("a");
@@ -38,6 +42,33 @@ function exportBackup() {
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+}
+function importBackupText(text) {
+  const message = function (text) {
+    if (window.KnowKanjiNative && typeof window.KnowKanjiNative.showMessage === "function") window.KnowKanjiNative.showMessage(text);
+    else alert(text);
+  };
+  try {
+    const data = JSON.parse(text);
+    const backupKeys = ["learned", "fav", "notes", "srs", "vLearned", "vFav", "vNotes", "vSrs", "gLearned", "gFav", "gNotes", "gSrs"];
+    if (!data || typeof data !== "object" || Array.isArray(data) || !backupKeys.some(key => Object.prototype.hasOwnProperty.call(data, key))) {
+      message("That file does not look like a Pengo backup.");
+      return false;
+    }
+    store = Object.assign(defaultStore(), data);
+    store.settings = Object.assign(defaultStore().settings,
+      data.settings && typeof data.settings === "object" && !Array.isArray(data.settings) ? data.settings : {});
+    for (const key of ["learned", "notes", "srs", "vLearned", "vNotes", "vSrs", "gLearned", "gNotes", "gSrs", "quizBest", "vQuizBest", "gQuizBest"]) {
+      if (!store[key] || typeof store[key] !== "object" || Array.isArray(store[key])) store[key] = {};
+    }
+    for (const key of ["fav", "vFav", "gFav"]) if (!Array.isArray(store[key])) store[key] = [];
+    save(); applyTheme(); render();
+    message("Backup imported.");
+    return true;
+  } catch (err) {
+    message("Could not read that file.");
+    return false;
+  }
 }
 function storeNote() {
   if (window.Platform && window.Platform.backingStoreNote) return window.Platform.backingStoreNote();
@@ -1010,22 +1041,8 @@ function renderProgress(view) {
     }).join("");
     html.push("<section class=\"pg-card\"><h2>Grammar by level</h2><table class=\"stats\"><tr><th>Level</th><th>Total</th><th>Learned</th><th>Left</th><th></th><th>%</th></tr>" + grows + "</table></section>");
   }
-  var tot = LEVELS.reduce(function (a, lv) { return a + levelStats(lv).total; }, 0);
-  html.push("<section class=\"pg-card\"><h2>Data</h2><p class=\"pg-data-line\">" +
-    Object.keys(store.learned).length + " / " + tot + " kanji &middot; " + dueCount() + " due for review &middot; " +
-    (store.fav.length + store.vFav.length + store.gFav.length) + " favorites &middot; " +
-    (Object.keys(store.notes).length + Object.keys(store.vNotes).length + Object.keys(store.gNotes).length) + " notes</p>" +
-    "<div class=\"settings-row\"><button class=\"btn soft\" id=\"pExport\">Export my data</button>" +
-    "<button class=\"btn soft\" id=\"pReset\">Reset progress</button></div></section>");
   html.push("</div>");
   view.innerHTML = html.join("");
-  $("#pExport").addEventListener("click", function () { exportBackup(); });
-  $("#pReset").addEventListener("click", function () {
-    if (confirm("Reset all progress, favorites, notes and review schedule?")) {
-      var theme = store.settings;
-      store = defaultStore(); store.settings = theme; save(); render();
-    }
-  });
 }
 
 /* ---------- Settings ---------- */
@@ -1039,7 +1056,7 @@ function renderSettings(view) {
     "<label><input type=\"checkbox\" id=\"sAuto\"" + (s.autoplay ? " checked" : "") + "> Auto-play stroke order</label></div></div>" +
     "<div class=\"card\"><h2>Backup</h2><div class=\"settings-row\">" +
     "<button class=\"btn soft\" id=\"sExport\">Export my data</button>" +
-    "<label class=\"btn soft\" for=\"sImport\" style=\"cursor:pointer\">Import backup</label>" +
+    "<button class=\"btn soft\" id=\"sImportButton\" type=\"button\">Import backup</button>" +
     "<input type=\"file\" id=\"sImport\" accept=\"application/json\" hidden>" +
     "<button class=\"btn soft\" id=\"sWipe\">Erase everything</button></div>" +
     "<p class=\"explain\">" + storeNote() + "</p></div>" +
@@ -1060,19 +1077,15 @@ function renderSettings(view) {
   $("#sExport").addEventListener("click", () => {
     exportBackup();
   });
+  $("#sImportButton").addEventListener("click", () => {
+    if (window.KnowKanjiNative && typeof window.KnowKanjiNative.importJson === "function") window.KnowKanjiNative.importJson();
+    else $("#sImport").click();
+  });
   $("#sImport").addEventListener("change", e => {
     const f = e.target.files[0];
     if (!f) return;
     const r = new FileReader();
-    r.onload = () => {
-      try {
-        const data = JSON.parse(r.result);
-        if (data && typeof data === "object") {
-          store = Object.assign(defaultStore(), data); save(); applyTheme(); render();
-          alert("Backup imported.");
-        } else alert("That file does not look like a Pengo backup.");
-      } catch (err) { alert("Could not read that file."); }
-    };
+    r.onload = () => importBackupText(r.result);
     r.readAsText(f);
   });
   $("#sWipe").addEventListener("click", () => {

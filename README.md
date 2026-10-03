@@ -125,8 +125,8 @@ zero-Node alternative and is what `scripts/build_apk.py` uses.
 ### Notes
 
 - Persistence stays in `localStorage` (WebView) under key `knowkanji:v1`;
-  export/import lives in Settings and Progress (`platform.js` picks Web Share
-  on Android when available).
+  export/import lives in Settings. The Android shell uses the system document
+  picker to save and restore JSON backups; the web app uses browser file APIs.
 - Android Back navigates in-app history via `window.KKBack` and exits from Home.
 - No analytics, no network permission, no secrets in the app.
 ### Docker build (no local toolchain)

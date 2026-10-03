@@ -387,7 +387,6 @@ details.trans .en { color: var(--ink-soft); font-size: .9rem; margin-top: .2rem;
 .pg-fill { display: block; height: 100%; border-radius: 999px; }
 .pg-pct { text-align: right; font-weight: 800; color: #5b7290; }
 [data-theme="dark"] .pg-pct { color: #c4d3e5; }
-.pg-data-line { color: #5b7290; font-size: .9rem; }
 @media (max-width: 600px) { .pg-cheer { display: none; } }
 @media (max-width: 480px) { .pg-hero-main { gap: .5rem; } .pg-ring { width: 112px; height: 112px; } .pg-mascot { width: 108px; } }
 

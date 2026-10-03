@@ -11,6 +11,10 @@ const Platform = {
       : "Progress is stored privately in this browser (localStorage). Export a backup before switching devices.";
   },
   async exportJson(filename, text) {
+    if (window.KnowKanjiNative && typeof window.KnowKanjiNative.exportJson === "function") {
+      window.KnowKanjiNative.exportJson(filename, text);
+      return true;
+    }
     try {
       if (navigator.share && navigator.canShare) {
         const file = new File([text], filename, { type: "application/json" });
@@ -25,6 +29,9 @@ const Platform = {
     a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
     return true;
+  },
+  receiveImport(text) {
+    if (typeof window.importBackupText === "function") window.importBackupText(text);
   },
   handleBackPress() {
     const h = String(location.hash || "#/");
