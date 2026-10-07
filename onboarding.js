@@ -37,7 +37,7 @@ function showOnboarding(onDone) {
     { t: "Kanji", d: "Learn with meaning, readings and examples", i: "&#26481;", c: "pink" },
     { t: "Vocabulary", d: "N5 - N1 word lists with useful examples", i: "&#x1F4DA;", c: "blue" },
     { t: "Grammar", d: "Key points with simple explanations", i: "&#x1F4D7;", c: "green" },
-    { t: "Practice", d: "Quizzes and mock tests", i: "&#x2710;&#xFE0F;", c: "yellow" },
+    { t: "Practice", d: "Short quizzes and recall cards", i: "&#x2710;&#xFE0F;", c: "yellow" },
     { t: "Track Progress", d: "See your improvement", i: "&#x1F4CA;", c: "purple" }
   ];
   var idx = 0;

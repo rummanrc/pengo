@@ -18,7 +18,7 @@ Content transformation happens offline; the runtime loads JSON normally and a du
 
 **Evidence:** `STORE_KEY`, `defaultStore()`, `save()`, direct store backup.
 
-Most user state is serialized into `knowkanji:v1`, with the onboarding flag separate. This makes offline export/import straightforward. The cost is whole-object writes, origin-specific storage, no conflict resolution/server recovery, silent write failure, and shallow migration/validation. A future cloud feature must define merge semantics and privacy rather than assuming backups already provide sync.
+Most user state is serialized into `knowkanji:v1`, with the onboarding flag separate. This makes offline export/import straightforward. The cost is whole-object writes, origin-specific storage, no conflict resolution/server recovery, whole-store write costs despite a visible failure notice, and shallow migration/validation. A future cloud feature must define merge semantics and privacy rather than assuming backups already provide sync.
 
 ## D-04: Pure course module over shared content/state
 
@@ -38,11 +38,11 @@ The same static runtime runs inside a minimal Java activity, with a small bridge
 
 Progress naturally follows a character across levels. The cost is that detail indexes keep the later-level record and per-level counts are not distinct global counts. Vocabulary/grammar instead use generated level-qualified IDs with different stability concerns. Any redesign requires backup/ID migration and explicit decisions about shared versus per-level progress.
 
-## D-07: Current Review is quiz practice; plan quiz grades SRS
+## D-07: Shared practice player and effort-based goals
 
-**Evidence:** `renderQuiz`, `renderVQuiz`, `renderGQuiz` versus `renderCourseQuiz` → `courseGrade`.
+**Evidence:** `practice.js`, `practice-ui.js`, shared `courseGrade`, practice unit/browser checks.
 
-Ordinary quizzes provide immediate feedback/best scores; plan quizzes affect shared review state. The code retains due counters/SRS helpers without a routed due-only session. This distinction is documented current behavior, not evidence of an intentional product approval. A review redesign should state whether ordinary quizzes grade, what due counts mean, and how learned flags interact with wrong answers.
+All quiz entry points now grade shared SRS and record real practice. Sessions contain 3/5/10 questions and persist compact references and feedback state. Mixed sessions cover available skills; due-only mode selects oldest due records and mistakes offer targeted follow-up. Goals count unique items attempted or newly studied each day, including wrong answers. Correct answers advance SRS at most once per local day, preventing retries from artificially increasing mastery. Recall ratings are explicitly self-rated. Motivation offers week activity, achievements, supportive return copy, and a clear stopping point; these are hypotheses to validate with learners, not measured learning-outcome claims.
 
 ## Future decision record format
 

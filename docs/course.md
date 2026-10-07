@@ -78,27 +78,27 @@ Changing pace on the same target rebuilds the derived curriculum while retaining
 
 The sampler includes up to three randomly chosen `new` items when available, then samples by weight without replacement until the requested count (normally ten) or pool size. “New” is based on learned/SRS state, not necessarily the newest day's bucket.
 
-The question builder resolves selected IDs and skips records that are missing or lack distractors. Therefore a quiz can contain fewer than ten questions. Question items are unlocked; distractors can be any other same-type record at the target level. Kanji offers meaning/character/reading questions; plan vocab/grammar offers meaning or identifying the word/point. Ordinary grammar Review additionally supports translation/fill-in-the-blank questions.
+`Practice.select` adds bounded 3/5/10-question sessions, due/mistake modes, oldest-due priority, and coverage of each available skill for mixed smart/plan sessions. The question builder resolves selected IDs and skips records that are missing or lack distractors. Therefore a quiz can contain fewer than ten questions. Question items are unlocked; distractors can be any other same-type record at the target level. Kanji offers meaning/character/reading questions, vocabulary offers meaning/word questions, and grammar also supports sentence translation/fill-in-the-blank. Choices exclude repeated labels and obvious ambiguous distractors. Recall cards require no distractors.
 
 ## Shared SRS grading
 
-SRS lives in `app.js`, with three equivalent graders:
+Three equivalent graders in `app.js` delegate scheduling to `Practice.nextReview`:
 
 ```text
-SRS_STEPS = [1, 3, 7, 16, 35, 80, 180] days
+Practice STEPS = [1, 3, 7, 16, 35, 80, 180] days
 ```
 
 | Action | State effect |
 | --- | --- |
 | Mark learned/studied for first time | Learned timestamp; initialize missing SRS as box 1 due in one day |
-| Correct plan answer | Increment box up to index 6; due after `SRS_STEPS[newBox]`; mark learned if needed |
-| Wrong plan answer | Reset box 0; due after ten minutes; existing learned flag stays |
+| Correct practice answer | Once per local day, increment box up to index 6; due after `STEPS[newBox]`; mark learned if needed |
+| Wrong practice answer | Reset box 0; due after ten minutes; existing learned flag stays |
 | Remove learned flag | Remove timestamp only; SRS remains |
-| Ordinary Review answer | Feedback/score only; no SRS grading |
+| Same-day successful retry | Preserve box/due; cannot repeatedly advance mastery or postpone review |
 
 Because correct answers increment before indexing, a new SRS item at box zero first schedules three days, not one. Manually marked items begin at box one with a one-day initial due time. Preserve this distinction when testing/documenting changes.
 
-Course grading records a plan study day for either answer. `courseMarkStudied` records a plan day; plain detail-page learned toggles update activity/learned/SRS but do not call `courseRecordDay`. Completing a quiz increments `quizzes`, sets `perfectQuiz` if appropriate, and checks milestones. Answers graded before abandoning a quiz persist, while the completed-quiz counter does not advance.
+All practice answers and first detail-page learning actions record plan study days when a plan exists. Completing a plan-mode quiz increments `quizzes`, sets `perfectQuiz` if appropriate, and checks milestones. Answers and cursor persist on interruption; only completion increments the quiz counter. See [daily learning improvements](learning-improvements.md) for practice goals, week activity, and achievements.
 
 ## Streaks, activity, milestones
 
@@ -114,4 +114,4 @@ Date functions use local midnight and fixed 24-hour arithmetic with rounded diff
 
 ## Validation
 
-[Testing](testing.md) describes the existing 97 course assertions and the manual integration checks. They cover the real pure logic, not DOM/SRS/native behavior. [Maintenance](maintenance.md) records the remaining implementation gaps.
+[Testing](testing.md) describes the existing 97 course assertions and the manual integration checks. Practice unit checks and an optional browser suite additionally exercise selection, SRS, and persistence integration. Native device behavior is still a separate check. [Maintenance](maintenance.md) records the remaining implementation gaps.

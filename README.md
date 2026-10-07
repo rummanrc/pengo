@@ -42,12 +42,13 @@ Start with the [documentation index](docs/README.md). The engineering docs use M
 - Browse and search all three content types by level, reading, and meaning; filter learned items and favorites.
 - Kanji readings, components, memory aids, examples, notes, similar characters, and animated KanjiVG stroke diagrams.
 - Vocabulary and grammar examples with available furigana and links to related content.
-- Review quizzes of up to ten questions for a selected type/level; mixed study-plan quizzes update SRS state.
+- Short 3/5/10-question sessions, recall cards, due-only review, and mistake practice; every answer updates shared SRS.
+- Saved sessions, daily practice goals, weekly activity, supportive achievements, and session summaries with a clear stopping point.
 - Study plans with explicit batch unlocking, unfinished-material backlog, study days, and milestones.
 - Progress with learned counts and rolling seven-/thirty-day activity; themes, backups, confirmed erasure, and intro replay.
 - Offline native Android assets, system document pickers for backups, and no `INTERNET` manifest permission.
 
-There are no accounts, cloud sync, analytics, or backend. Flashcards and a separate due-only review player are not exposed by the current router.
+There are no accounts, cloud sync, analytics, or backend. See [daily learning improvements](docs/learning-improvements.md) for the delivered feature list and next content track.
 
 ## Repository map
 
@@ -56,6 +57,8 @@ index.html          Shell and script order
 styles.css          Themes, components, responsive layout, motion
 app.js              Loading, router, views, storage, quizzes, SRS
 course.js           Pure study-plan logic; browser global/CommonJS export
+practice.js         Pure practice selection, SRS, session validation, motivation
+practice-ui.js      Shared practice player and daily dashboard
 platform.js         Browser/native adapter
 onboarding.js       Intro and first-launch state
 assets/             Branding and mascot images
@@ -95,7 +98,7 @@ python3 -m venv .venv
 .venv/bin/python tests/test_course.py
 ```
 
-Do not commit `.venv/`. Missing dukpy produces `SKIP` and a successful exit, which is not a test pass. A verified Node alternative is in [testing](docs/testing.md). The current drivers execute 97 assertions.
+Do not commit `.venv/`. Missing dukpy produces `SKIP` and a successful exit, which is not a test pass. Run `npm test` for the Node alternative: 97 course assertions and 37 practice checks, with no npm install required. Browser integration instructions are in [testing](docs/testing.md).
 
 ## Android debug APK
 

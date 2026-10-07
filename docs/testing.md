@@ -4,7 +4,7 @@
 
 `tests/test_course.py` evaluates the actual `course.js` plus two JavaScript drivers in dukpy. This snapshot executes **97 assertions**, covering dates/exam generation, pace, daily splits, curriculum coverage, unlocking, streaks, sampling, progress, milestones, defaults, ordering, schedule states, and greetings.
 
-There is no checked-in UI, storage/SRS integration, content-pipeline, Android instrumented test suite, CI workflow, formatter, or linter. Manual procedures below fill those gaps; they are not claims that every procedure has been run.
+The daily practice feature adds 37 pure-logic checks and an optional browser persistence/SRS integration suite. Content-pipeline tests, Android instrumentation, CI, a formatter, and a linter are still absent. Manual procedures below fill those gaps; they are not claims that every procedure has been run.
 
 ## Existing harness
 
@@ -53,6 +53,8 @@ Node can check JavaScript syntax without running browser code:
 ```sh
 node --check app.js
 node --check course.js
+node --check practice.js
+node --check practice-ui.js
 node --check platform.js
 node --check onboarding.js
 ```
@@ -142,9 +144,9 @@ Use a disposable browser profile or exported test backup. Record platform/browse
 | T-05 | Open a kanji with art; play/replay, toggle numbers, autoplay, reduced motion | Correct SVG; controls work; reduced motion shows final strokes; unavailable art explains failure |
 | T-06 | Open vocab and grammar; follow related/kanji links, reveal translation, inspect ruby | Existing records resolve; missing examples/links have empty states; markup is legible |
 | T-07 | Toggle learned/favorite; enter a note; wait beyond debounce; reload | State persists; removing learned does not delete SRS; overlapping kanji shares state |
-| T-08 | Run ordinary quizzes for each kind/level; answer correct/wrong; retry | Feedback and best score work; SRS/course day maps stay unchanged by answers |
+| T-08 | Run ordinary quizzes for each kind/level; answer correct/wrong; retry | Feedback and best score work; answers update SRS/course days; saved sessions resume without regrading; goals count unique effort |
 | T-09 | Finish batch, continue, unlock early, leave backlog; change pace/target; end plan | Explicit unlocks; earlier material retained; change/reset semantics match course design |
-| T-10 | Run mixed plan quiz, abandon midway, finish a perfect quiz | Answers grade SRS immediately; wrong due +10 minutes; completion counter/perfect flag only on finish |
+| T-10 | Run mixed plan quiz, pause/reload midway, finish a perfect quiz | Answers grade SRS immediately; wrong due +10 minutes; completion counter/perfect flag only on finish |
 | T-11 | Keep app visible then hide it; learn an item; inspect week/month and hero level | Rolling 7/30-day activity; visible-time updates; first-learned dedupe; counts reflect stored state |
 | T-12 | Export; modify disposable progress; import original; try malformed/unrelated JSON | Valid import replaces store; unrelated file rejected; invalid JSON rejected; no merge |
 | T-13 | Change theme/autoplay; replay intro; cancel erase; confirm erase in disposable profile | Controls persist; erase cancellation preserves state; confirmed erase resets store/intro flag |
@@ -165,3 +167,20 @@ For backup robustness changes, additionally test partial old backups, null/array
 | Packaging/native | Clean staging, debug build, airplane-mode/picker/Back checks |
 
 Do not equate syntax checks with UI testing or pure Course assertions with SRS integration coverage. Report what actually ran. The [verification record](verification.md) documents this documentation task's checks.
+
+## Practice browser integration
+
+`npm test` runs the existing 97 course assertions through Node and 37 practice checks without installing npm dependencies. The course runner uses Python 3 to extract the original drivers. Practice checks cover bounded/mixed/due/mistake selection, same-day SRS promotion, session validation, legacy activity, goals, week/streak behavior, badges, and backup defaults.
+
+For browser checks, start the static server and install Playwright in a separate temporary environment:
+
+```sh
+python3 -m http.server 8000 --bind 127.0.0.1
+# In another terminal:
+npm install --prefix /tmp/pengo-qa playwright --no-audit --no-fund
+NODE_PATH=/tmp/pengo-qa/node_modules PENGO_CHROME_CHANNEL=chrome node tests/test_practice_browser.cjs
+```
+
+`PENGO_CHROME_CHANNEL=chrome` uses installed Chrome. Otherwise install Playwright's Chromium in that temporary environment and omit the channel. `PENGO_TEST_URL` overrides the server URL; optional `PENGO_TEST_ARTIFACTS` names an existing directory for desktop/mobile screenshots. Isolated browser contexts do not open a user's existing profile.
+
+The suite exercises real answers and reloads, pause/resume, no double grading, daily goals, achievements, mistake clearing, due filtering across levels, plan unlocking/completion/perfect flags, legacy Review entry points, ten-question best scores, grammar contextual questions, 320px layout, new/old backup imports, invalid sessions, legacy daily-item deduplication, blocked storage, and JSON-fetch fallback to `bundle.js`. This is browser evidence; it does not prove Android WebView/native bridge behavior or learning outcomes.

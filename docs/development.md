@@ -28,7 +28,7 @@ Serve only for local development. For public hosting, stage the runtime inventor
 | Docker APK | Python 3, Docker daemon/CLI | `scripts/build_apk_docker.py` |
 | Capacitor experiments | Node/npm and optional package dev dependencies | Separate integration work required |
 
-`package.json` declares only optional Capacitor dev dependencies, with `^6.0.0` ranges. There is no lockfile, test script, or frontend build script. `npm install` is not part of the native Java shell build.
+`package.json` declares only optional Capacitor dev dependencies, with `^6.0.0` ranges. There is no lockfile or frontend build script. `npm test` runs dependency-free Node course/practice checks (Python 3 is needed to extract the existing course drivers). `npm install` is not part of the native Java shell build.
 
 ## Test environment
 
@@ -45,7 +45,7 @@ Choose another environment path if needed. The current test drivers contain 97 a
 ## Finding implementation
 
 ```sh
-rg -n 'function render|function course|SRS_STEPS|STORE_KEY' app.js
+rg -n 'function render|function course|STORE_KEY' app.js
 rg -n 'function |return \{' course.js
 rg -n '@media|data-theme|:focus|prefers-reduced-motion' styles.css
 rg --files scripts tests docs android

@@ -43,3 +43,20 @@ Further confirmed gaps are in [maintenance](maintenance.md). Official IPA, Digit
 No visual browser walkthrough, accessibility audit, native APK compilation/device test, dukpy-engine run, complete raw-data regeneration, production publication, stakeholder sign-off, or legal/source-permission determination was performed. No runtime source or CSS changes were made by this documentation work.
 
 Use the [test matrix](testing.md) and [delivery records](delivery/review-and-acceptance.md) to collect that evidence for a real candidate. Do not turn a documentation check into a claim that all Pengo features are accepted.
+
+## Daily practice implementation verification
+
+**Date:** 2026-10-07 (Asia/Tokyo). This later record covers the daily-learning runtime changes in the workspace; the earlier documentation-only results above remain historical.
+
+| Check | Result | Scope and limit |
+| --- | --- | --- |
+| Existing course regression drivers | 97 assertions passed | Actual Course source under Node; dukpy not exercised |
+| Practice rules | 37 checks passed | Actual selection, SRS, saved-session validation, activity, goals, badges, and migration defaults |
+| Chrome browser integration | 46 checks passed | Isolated contexts; real answers, pause/reload/resume, due/mistake queues, goal dedupe, plan counters/perfect flags, best scores, contextual grammar, backups, storage rejection, and bundle fallback |
+| Mobile/desktop layouts | Passed | 320px overflow checks; inspected 390px recall, 320px dark Home, and 1280px practice screenshots in installed Chrome |
+| Runtime and Python syntax | Passed | All six root JavaScript scripts; Python root scripts and tests |
+| Static/native asset staging | Passed | 2,420 files (~39.4 MiB); every staged file matched source SHA-256; all shell script references exist |
+| Documentation local targets | Passed | 149 non-web file targets exist across README, contributing guide, and docs |
+| Diff whitespace | Passed | `git diff --check` |
+
+The browser suite and Playwright dependency used a separate temporary directory, with no changes to the user's browser profile. Screenshots and staged artifacts were generated outside the repository. No APK build/device test, production deployment, full accessibility audit, or learner-outcome study was performed. Delivered capabilities and further content needs are listed in [daily learning improvements](learning-improvements.md).

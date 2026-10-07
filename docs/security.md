@@ -4,7 +4,7 @@ This describes the inspected implementation and its trust boundaries. It is not 
 
 ## Data handled
 
-Pengo stores learned timestamps, favorites, notes, SRS due times, quiz best scores, plan settings/history, and visible-time/first-learned activity locally. No account, analytics SDK, remote sync, model call, or credential storage is implemented. Web data/SVG requests go to the static host; native content is bundled and its manifest declares no internet permission.
+Pengo stores learned timestamps, favorites, notes, SRS due times, quiz best scores, plan settings/history, and visible-time/first-learned activity, practice attempts, saved sessions, mistake lists, and achievements locally. No account, analytics SDK, remote sync, model call, or credential storage is implemented. Web data/SVG requests go to the static host; native content is bundled and its manifest declares no internet permission.
 
 “Local” does not mean encrypted. localStorage and exported JSON are plaintext at the application layer. A static host can have its own access logging. Android declares `allowBackup=true`, so platform/device backup policy can affect app data; the repository does not implement custom backup encryption or exclusions.
 
@@ -15,14 +15,14 @@ Pengo stores learned timestamps, favorites, notes, SRS due times, quiz best scor
 | Ordinary record/note text → DOM | `esc()` in text/attributes | Review any newly added raw interpolation |
 | Generated furigana/explanations → DOM | Offline HTML generation; grammar sanitizer allows `b`/`i`/`br` | Raw HTML remains trusted runtime markup; no general runtime sanitizer |
 | KanjiVG file → DOM | Parse as SVG then insert | No general SVG content sanitizer |
-| Backup file → store | JSON parse, recognized top-level key, container normalization | No deep schema, size, ID/date/SRS/course validation |
+| Backup file → store | JSON parse, recognized top-level key, container normalization | Practice session reference/shape validation is present; no complete schema, size, SRS/course validation |
 | Java import text → evaluated JavaScript | `JSONObject.quote` encodes text as a string | Full-file read; no import-size bound |
 | Web JavaScript → native bridge | Explicit annotated methods, UI-thread dispatch | Reachable by loaded WebView content; no separate origin authorization |
 | Runtime files → hosted users | Static deployment | Integrity depends on trusted host/artifact; no CSP/SRI configured |
 
 ## Persistence and backups
 
-`save()` catches quota/blocked-storage failures silently. A visible change or successful import message may not survive restart. Export before clearing browser data, switching origin/device, uninstalling, or changing native identity. Backups contain personal notes/activity and should be treated as user data.
+`save()` catches quota/blocked-storage failures and displays a persistent notice directing the user to export a backup. The app still holds the in-memory state, so exporting can preserve it. A visible change or successful import message may not survive restart. Export before clearing browser data, switching origin/device, uninstalling, or changing native identity. Backups contain personal notes/activity and should be treated as user data.
 
 Import replaces current state and has no confirmation preview. It accepts a broad object with at least one known progress field and preserves unknown properties. Top-level maps are normalized, but malformed nested values can trigger rendering/scheduler errors. A full storage migration framework and dataset-version envelope are absent.
 

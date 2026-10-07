@@ -23,7 +23,7 @@ These documentation IDs organize acceptance checks; they are not historical issu
 | P-04 | Kanji details show readings, components, memory aid, examples, available stroke art | `renderDetail`, `initStrokeOrder` | T-05 |
 | P-05 | Vocabulary/grammar details show examples and related links | `renderVocabDetail`, `renderGrammarDetail` | T-06 |
 | P-06 | Learned state, favorites, and notes survive reload when storage works | `toggle*`, note handlers, `save` | T-07 |
-| P-07 | Review offers up to ten questions for chosen type/level, feedback, best score | `renderReview`, ordinary quiz renderers | T-08 |
+| P-07 | Review offers 3/5/10-question sessions, recall, due/mistake filters, feedback, and resume | `renderPractice`, shared player | Practice checks, browser suite, T-08 |
 | P-08 | A plan covers target-level list entries and preserves missed material | `Course.buildCurriculum`, `renderCourseDay` | Course tests, T-09 |
 | P-09 | Plan quizzes choose unlocked questions and grade shared SRS state | `Course.selectQuizItems`, `courseGrade` | Course tests, T-10 |
 | P-10 | Progress shows content counts and rolling activity | `renderProgress`, `studyStatsHTML` | T-11 |
@@ -34,9 +34,9 @@ These documentation IDs organize acceptance checks; they are not historical issu
 
 ## Behavior distinctions
 
-Ordinary Review quizzes sample the whole selected level and save a best raw score. They do not grade SRS or record course study days. The plan quiz grades SRS and selects only unlocked question items; its distractors can come from other target-level records.
+All Review and plan quiz entry points use the shared practice player and grade SRS and activity. Smart sessions at the active plan level select unlocked or previously studied material; without a matching plan they sample the selected level. Due and mistake modes include studied records across all levels. Plan mode selects unlocked question items; distractors can come from other target-level records. Best raw scores remain for completed ten-question, single-kind multiple-choice sessions whose questions all match the selected level.
 
-A learned flag means an item was marked learned or correctly answered in a plan quiz. It is separate from mastery classification, which also uses SRS box/due status. Completion percentages use learned flags.
+A learned flag means an item was marked learned or correctly answered or recalled in any practice session. It is separate from mastery classification, which also uses SRS box/due status. Completion percentages use learned flags.
 
 Kanji lists overlap. Learning a character affects every occurrence. Vocabulary and grammar progress uses level-qualified record IDs.
 
@@ -46,15 +46,19 @@ Kanji lists overlap. Learning a character affects every occurrence. Vocabulary a
 | --- | --- | --- |
 | Offline native operation | Packaged assets; no `INTERNET` permission | Build tools may need network downloads |
 | Portable web delivery | Relative static paths; hash routes | No service worker/offline reload guarantee |
-| Local persistence | Main localStorage object and separate intro flag | Blocked/full storage fails silently |
+| Local persistence | Main localStorage object and separate intro flag | Blocked/full storage displays an export-backup notice |
 | Data consistency | Generated JSON and fallback bundle | Bundle must be refreshed after content changes |
 | Accessibility support | Semantic controls, labels, focus, reduced motion | No conformance audit recorded |
-| Testable scheduling | Pure logic with real-code assertions | UI/native/pipeline lack automated coverage |
+| Testable scheduling | Pure logic and browser integration checks | Native/pipeline still lack automated coverage |
 
 The repository defines no performance SLA, uptime commitment, certified browser matrix, or cloud recovery service.
 
 ## Scope boundaries
 
-Accounts, backend services, cloud sync, notifications, audio practice, flashcard routes, a due-only review player, and full-length JLPT mock exams are not implemented. Intro copy mentioning mock tests is broader than the current quiz behavior. The mnemonic model hook is an extension point with no model integration shipped.
+Accounts, backend services, cloud sync, notifications, audio practice, a reading comprehension curriculum, and full-length JLPT mock exams are not implemented. Recall cards and due-only review are available through `#/practice`. The mnemonic model hook is an extension point with no model integration shipped.
 
 Exam choices are generated offline from a July/December first-Sunday rule. They are planning estimates, not a retrieved calendar of confirmed local sessions. Content counts are dated in the [root README](../README.md#content-snapshot); runtime totals should continue to come from data.
+
+## Daily learning feature review
+
+See [daily learning improvements](learning-improvements.md) for the delivered priorities, learning rationale, acceptance criteria, and next content track.

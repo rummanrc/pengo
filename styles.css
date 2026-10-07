@@ -599,3 +599,29 @@ html.ob-boot .app { visibility: hidden; }
 .dash-tile.t4 .dash-tile-ico { background: #e9e4fb; color: #1c3553; }
 [data-theme="dark"] .dash-tile-ico { background: var(--bg-soft); color: var(--ink); }
 .dash-goal-num { font-size: 1.1rem; font-weight: 800; margin-bottom: .4rem; }
+
+/* Daily practice: compact sessions, saved progress and a clear stopping point. */
+.practice-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.practice-heading h2 { margin-bottom: .3rem; }
+.practice-heading > a { font-size: .85rem; }
+.practice-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .4rem; margin: 1rem 0 .5rem; }
+.practice-week-day { display: grid; justify-items: center; gap: .35rem; color: var(--ink-soft); font-size: .8rem; }
+.practice-week-day strong { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--bg-soft); border: 1px solid var(--line); }
+.practice-week-day.active strong { background: var(--green-soft); color: var(--green); border-color: var(--green); }
+.practice-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .7rem; }
+.practice-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0; }
+.practice-fields label { display: grid; gap: .4rem; font-weight: 600; min-width: 0; }
+.practice-fields select, #practiceGoal { min-height: 44px; padding: .55rem .7rem; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-soft); color: var(--ink); font: inherit; }
+.practice-fields select { width: 100%; min-width: 0; }
+.practice-question { margin-top: 1rem; }
+.practice-question .quiz-opt { min-height: 48px; white-space: normal; overflow-wrap: anywhere; }
+.practice-question .quiz-opt:disabled { opacity: 1; cursor: default; }
+.practice-daily .mile-grid { margin-top: .8rem; }
+.practice-daily .dash-goal-num { margin: .25rem 0 .6rem; }
+.storage-notice { position: fixed; inset: auto 1rem 5rem; z-index: 1000; max-width: 45rem; margin: 0 auto; padding: .8rem 1rem; border: 2px solid var(--gold); border-radius: 12px; background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+#practiceNext { margin: .5rem 0 1rem; }
+@media (max-width: 480px) {
+  .practice-fields { grid-template-columns: 1fr; gap: .8rem; }
+  .practice-actions > .btn { flex: 1 1 auto; text-align: center; }
+  .practice-week { gap: .2rem; }
+}

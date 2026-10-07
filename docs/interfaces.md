@@ -74,6 +74,12 @@ Constants are mutable objects/arrays; there is no freeze or supported live confi
 
 `stateOf(item)` returns a classification string. `isLearned(type, id)` returns truthiness. `rand()` should return a value in [0, 1); injecting it makes sampling checks deterministic. Milestone stats keys are `studyDays`, `streak`, `vocabLearned`, `kanjiLearned`, `perfectQuiz`, and `coursePct`.
 
+## Practice interfaces
+
+`practice.js` exposes the browser global/CommonJS `Practice`. `config(query, fallbackLevel)` normalizes session choices. `select(pool, config, srsOf, mistakes, stateOf, random?)` returns unique bounded item references; due mode sorts oldest first, smart/plan mixed sessions cover available skills. `nextReview(previous, correct, nowMs, localDate)` returns a new SRS record with one successful promotion per day. `validSession(session, exists)` checks persisted references, options, cursor, configuration, and answer shapes. `normalize(value)` supplies practice containers and bounds history. `stats(days, today, dailyGoal)` derives actual-practice goals, week activity, break days, attempts, and streak; `earned(stats, existingBadgeIds)` returns newly earned IDs. `count(day)`, `key(item)`, `size(n)`, and `goal(n)` support these contracts. Constants are `TYPES` and `BADGES`.
+
+`practice-ui.js` uses app globals to expose `renderPractice`, `renderPracticePlayer`, `startPractice`, `finishPractice`, and daily dashboard/settings helpers. Runtime calls happen only after app data/store initialization; the UI script itself performs no startup work.
+
 ## Platform and browser hooks
 
 `Platform` and `APP_VERSION` are explicitly on `window`; `APP_VERSION` is currently `1.0.0`.

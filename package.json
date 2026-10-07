@@ -8,7 +8,8 @@
     "sync:android-assets": "python scripts/build_apk.py --assets-only",
     "cap:sync": "npx cap sync android",
     "build:apk": "python scripts/build_apk.py",
-    "build:apk:docker": "python scripts/build_apk_docker.py"
+    "build:apk:docker": "python scripts/build_apk_docker.py",
+    "test": "node tests/test_course.cjs && node tests/test_practice.cjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.0.0",

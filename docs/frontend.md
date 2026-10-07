@@ -23,7 +23,12 @@
 | `#/grammar` | Grammar level overview | `renderGrammarHome` |
 | `#/grammar/N5` | Grammar browser | `renderGrammarBrowse` |
 | `#/g/<id>` | Grammar detail | `renderGrammarDetail` |
-| `#/review?kind=vocab&lv=N4` | Ordinary selected-type/level quiz | `renderReview` |
+| `#/review?kind=vocab&lv=N4` | Shared practice setup with vocabulary/N4 selected | `renderReview`, `renderPractice` |
+| `#/practice` | Short-session setup and daily practice | `renderPractice` |
+| `#/practice?mode=due&kind=vocab` | Due-only vocabulary across levels | Shared player |
+| `#/practice?mode=mistakes` | Targeted mistake practice | Shared player |
+| `#/practice?start=1&size=3` | Start three-question smart practice; resume if saved | Shared player |
+| `#/practice?resume=1` | Resume valid saved session, or setup if absent | Shared player |
 | `#/search?q=tree` | Combined reference search | `renderSearch` |
 | `#/progress?level=N4&period=month` | Progress, selected hero level and rolling period | `renderProgress` |
 | `#/settings` | Theme, autoplay, backup, erase, plan, about/intro | `renderSettings` |
@@ -34,7 +39,7 @@
 | `#/course/reset` | Confirm ending the plan, then Home | `renderCourse` |
 | `#/study?kind=grammar` | Legacy redirect into ordinary Review quiz | Router |
 
-Course day/quiz requires a plan; without one it redirects to setup. Unknown course subroutes redirect Home. Review defaults to kanji/N5; Learn defaults to the active plan target or N5. Progress derives a default hero level from plan/progress when no valid `level` is provided.
+Course day/quiz requires a plan; without one it redirects to setup. Unknown course subroutes redirect Home. Review defaults to kanji and the active target or N5; Learn defaults to the active plan target or N5. Progress derives a default hero level from plan/progress when no valid `level` is provided.
 
 ### Browse parameters
 
@@ -46,7 +51,7 @@ All three browser views support `q` (query), `f` (filter), and `s` (sort). Defau
 | Vocabulary | `all`, `learned`, `unlearned`, `fav`, `nosent` | `default`, `freq`, `alpha`, `reading`, `progress` |
 | Grammar | `all`, `learned`, `unlearned`, `fav` | `default`, `freq`, `alpha`, `progress` |
 
-`tab=quiz` still appears in some links but is ignored by current Review dispatch; there is no flashcard or SRS tab. Progress uses `level`, while Learn/Review use `lv`.
+`tab=quiz` still appears in some links but is ignored by current Review dispatch; recall cards and due/mistake modes are selected in practice setup. Additional practice parameters are `mode=smart|due|mistakes|plan`, `kind=mixed|kanji|vocab|grammar`, `size=3|5|10`, and `format=quiz|recall`. Progress uses `level`, while Learn/Review use `lv`.
 
 ## Search and details
 
@@ -77,6 +82,7 @@ Reduced motion displays completed strokes/numbers immediately. Missing art disab
 | Progress | `.pg-*`, `.study-*` |
 | Onboarding | `.ob-*`, `.ob-boot`, `.ob-open` |
 | Plan/dashboard | `.course-item`, `.mile-*`, `.exam-row`, `.dash-*`, `.splash-*` |
+| Daily practice | `.practice-*`, `.storage-notice` |
 | Quiz/results | `.quiz-*`, `.correct`, `.wrong` |
 
 The main navigation switch is at 860/861 px. Other rules handle narrow content, tablets/desktops, and short landscape screens. Safe-area insets protect mobile edges. Japanese fonts are system fallbacks; no web-font download is defined. Later rules override earlier sections, so inspect the cascade before appending duplicate selectors.

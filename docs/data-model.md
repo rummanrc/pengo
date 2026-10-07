@@ -89,24 +89,25 @@ Bundle keys are `levels`, `meta`, `radicals`, `vocab`, `vocab_meta`, `grammar`, 
 | `learned`, `vLearned`, `gLearned` | `{ [id]: timestampMs }`, `{}` | Truthy learned state and initial timestamp |
 | `fav`, `vFav`, `gFav` | ID arrays, `[]` | Favorites |
 | `notes`, `vNotes`, `gNotes` | `{ [id]: string }`, `{}` | Trimmed notes |
-| `srs`, `vSrs`, `gSrs` | `{ [id]: { box, due } }`, `{}` | Review box and epoch-millisecond due time |
-| `quizBest`, `vQuizBest`, `gQuizBest` | `{ [level]: number }`, `{}` | Best raw ordinary-quiz score |
-| `settings` | Object below | Presentation/legacy preferences |
+| `srs`, `vSrs`, `gSrs` | `{ [id]: { box, due, lastReviewed?, lastCorrectDay? } }`, `{}` | Review box and epoch-millisecond due time |
+| `quizBest`, `vQuizBest`, `gQuizBest` | `{ [level]: number }`, `{}` | Best raw ten-question, single-kind, single-level quiz score |
+| `settings` | Object below | Presentation and practice preferences |
 | `course` | Plan object or `null` | Active plan |
 | `study` | Activity object below | Rolling statistics and one-time learning dedupe |
+| `practice` | Session/history/badges/mistakes object | Resumable practice and daily motivation |
 
 Default settings:
 
 ```json
 {
   "theme": "light",
-  "dailyGoal": 10,
+  "dailyGoal": 5,
   "autoplay": true,
   "hideBanner": false
 }
 ```
 
-Theme and autoplay have current Settings controls. `dailyGoal`/`hideBanner` remain stored legacy settings; the plan dashboard's goal comes from plan pace. Do not infer a current control from a field's presence.
+Settings exposes theme, autoplay, and `dailyGoal` (3/5/10/20 unique items practiced per local day). The goal is independent of plan new-item pace. `hideBanner` remains a legacy preference.
 
 ### Plan object
 
@@ -143,7 +144,17 @@ This is an illustrative default-shaped plan, not a required target/date. `Course
 
 `loggedLearned` counts an item's first recorded learning once over the store's lifetime, even if its learned flag is later removed and restored. Startup migration credits existing learned timestamps to local dates and sets `migratedLearned`. Visible elapsed time flushes every 15 seconds, on visibility changes, and on pagehide; each flush is capped at 30 seconds. It measures visible app time, not verified active study.
 
-The labels “This Week” and “This Month” represent rolling seven/thirty local-date windows, not calendar week/month boundaries. Course streak uses `course.studyDays`, not `study.days`.
+The labels “This Week” and “This Month” represent rolling seven/thirty local-date windows, not calendar week/month boundaries. The daily dashboard streak uses actual practiced/learned items in `study.days`; passive visible time does not count. Course milestone streaks still use `course.studyDays`, now updated by all practice answers and first learning actions.
+
+Daily entries also contain `attempts`, `correct`, and `practiced: { ["type:id"]: true }`. Wrong answers count as attempts and unique practice. Learned and reviewed instances of the same item count once that day. Migration reconstructs known item keys from old learned timestamps; any remaining legacy learned count is preserved as `legacyLearned`.
+
+### Practice object
+
+`practice` defaults to `{ session: null, history: [], badges: [], mistakes: {} }` and is included in exports. Old backups get empty practice state. Nested practice containers receive normalization; invalid saved sessions or removed question/option IDs are discarded before rendering.
+
+A version-1 session stores an ID, normalized configuration (`mode`, `kind`, `lv`, `size`, `format`), up to ten question references (`type`, `id`, `lv`, `variant`, `options` as IDs), `cursor`, `answers` (`ok`, `selected`), `startedAt`, and `startingBadges`. Content is resolved from DB; answers are saved before feedback. The cursor can point at an already answered question so its explanation can resume without a second grade.
+
+Completion clears the active session and appends an ID-deduplicated summary to the latest 60 history entries (`id`, `date`, `score`, `total`, `format`, `mode`, `lv`). Recall scores are self-ratings. Badges contain IDs from `Practice.BADGES`. Mistakes are keyed by `type:id`, with `{ type, id, misses, lastMissed }`; correct answers clear that entry. Session replacement preserves previously recorded activity and SRS.
 
 ## Separate onboarding state
 

@@ -9,6 +9,8 @@ flowchart TD
     User["Learner"] --> Shell["index.html: shell"]
     Shell --> App["app.js: router, views, quizzes, store"]
     App --> Course["course.js: pure scheduling"]
+    App --> Practice["practice.js: pure practice rules"]
+    App --> PracticeUI["practice-ui.js: shared player and motivation"]
     App --> Content["data JSON or bundle.js"]
     App --> SVG["resources/stroke-order: SVGs"]
     App --> Storage["localStorage: knowkanji:v1"]
@@ -21,13 +23,15 @@ flowchart TD
     Shell --> Style["styles.css and assets/"]
 ```
 
-`app.js` owns data indexes, mutable progress, routing, and views. `course.js` computes plan behavior without DOM/storage access. Platform adapts native/browser operations, although `app.js` also calls the native bridge directly for backups. Onboarding owns its overlay and completion flag.
+`app.js` owns data indexes, mutable progress, routing, and views. `course.js` computes plan behavior without DOM/storage access. `practice.js` computes selection, SRS scheduling, session validation, and motivation statistics; `practice-ui.js` owns the shared player and daily practice views. Platform adapts native/browser operations, although `app.js` also calls the native bridge directly for backups. Onboarding owns its overlay and completion flag.
 
 | Component | Responsibility | Dependencies |
 | --- | --- | --- |
-| `index.html` | Shell DOM, metadata, early intro gate, script order | CSS, assets, four scripts |
+| `index.html` | Shell DOM, metadata, early intro gate, script order | CSS, assets, six scripts |
 | `app.js` | Loading/indexing, routes, rendering, persistence, quiz/SRS integration | DOM, Course, Platform, onboarding, local files |
 | `course.js` | Dates, pace, order, batches, sampling, streaks, milestones | Built-ins and state callbacks |
+| `practice.js` | Pure practice selection, grading, validation, goals, badges | Course and built-ins |
+| `practice-ui.js` | Shared quiz/recall player, session summaries, daily dashboard | App globals, Practice, Course |
 | `platform.js` | Detection, export, import callback, theme, Back | Browser APIs, optional native globals |
 | `onboarding.js` | Intro slides, touch navigation, first-launch decision | DOM, Platform, localStorage |
 | `styles.css` | Themes, shell, feature styles, responsive/motion rules | Shell and renderer classes |
@@ -36,7 +40,7 @@ flowchart TD
 
 ## Startup
 
-Script order is `platform.js` → `onboarding.js` → `course.js` → `app.js`. These are classic scripts, not ES modules. Top-level `const`/`let` such as `DB` and `store` are global lexical bindings, not necessarily properties on `window`. Course uses `var`; Platform and APP_VERSION are explicitly exported on `window`.
+Script order is `platform.js` → `onboarding.js` → `course.js` → `practice.js` → `practice-ui.js` → `app.js`. These are classic scripts, not ES modules. Top-level `const`/`let` such as `DB` and `store` are global lexical bindings, not necessarily properties on `window`. Course uses `var`; Platform and APP_VERSION are explicitly exported on `window`.
 
 ```mermaid
 sequenceDiagram
@@ -68,9 +72,9 @@ Data and intro run concurrently. Rendering waits for both. The failure handler c
 
 ## State and rendering
 
-Content lives in `DB.levels`, `DB.vocab`, and `DB.grammar`, with `byChar`, `vById`, and `gById` indexes. The mutable `store` holds learned state, favorites, notes, SRS, settings, plan configuration, and activity. Content itself is excluded from backups.
+Content lives in `DB.levels`, `DB.vocab`, and `DB.grammar`, with `byChar`, `vById`, and `gById` indexes. The mutable `store` holds learned state, favorites, notes, SRS, settings, plan configuration, activity, and practice session/history/achievements. Content itself is excluded from backups.
 
-Handlers mutate the store and call `save()`, which serializes the whole object into `knowkanji:v1`. There is no transaction log, cross-tab coordination, or server acknowledgement; storage errors are swallowed. Curriculum is derived on demand, so changed data/pace may change numbered batches.
+Handlers mutate the store and call `save()`, which serializes the whole object into `knowkanji:v1`. There is no transaction log, cross-tab coordination, or server acknowledgement; storage errors show a persistent export-backup notice. The saved practice session is validated against loaded content before use, and answered questions resume as feedback without regrading. Curriculum is derived on demand, so changed data/pace may change numbered batches.
 
 `parseHash()` decodes route segments/query pairs. `render()` selects a view, updates navigation, focuses `#view`, and scrolls to the top. Most renderers replace `innerHTML` then bind handlers. Browse search changes only results and replaces history state to preserve focus. Hash routing requires no server route rewriting.
 
