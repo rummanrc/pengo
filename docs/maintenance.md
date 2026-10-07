@@ -1,0 +1,66 @@
+# Maintenance and troubleshooting
+
+Preserve an exported backup before investigating user-state problems. Use a disposable profile/copy to reproduce failures; do not erase real progress as a diagnostic step.
+
+## Troubleshooting
+
+| Symptom | Likely cause/check | Recovery |
+| --- | --- | --- |
+| Data-load error on startup | Required JSON failed and bundle could not load | Serve via HTTP; check paths, JSON validity, and `data/bundle.js` |
+| Empty vocab/grammar but kanji works | Optional requests failed to empty arrays | Inspect Network requests; restore full staged `data/` |
+| HTTP and file/native show different content | JSON changed without matching fallback bundle | Rebuild bundle after final JSON changes, then restage/rebuild |
+| Missing stroke art | Absent SVG, blocked file fetch/XHR, stale `hasStroke`, parse failure | Check `<cp>.svg`, `window.KKDiag.stroke`, HTTP/native behavior |
+| Blank/hidden app during intro | Boot gate or failed script/data load | Check console, script order, `ob-boot` handling, load failure path |
+| Progress seems missing | Origin/profile changed, storage cleared, native identity changed | Return to original origin/profile or import an exported backup |
+| Progress disappears after restart | Full/blocked localStorage or malformed stored data | Test storage in disposable profile; preserve/export current state; diagnose permissions/quota |
+| Import reports unrelated/invalid file | Not a main-store backup or invalid JSON | Use original `pengo-backup.json`; inspect a copy |
+| Import succeeds then view fails | Nested malformed course/SRS values or missing IDs | Preserve file, reproduce in disposable profile, repair through a reviewed migration |
+| Intro reappears | Flag missing/blocked, erase, new origin, or `?onboarding=1` | Remove preview query; finish intro; check separate onboarding key |
+| Course batch changed after update | Derived curriculum changed with pace/data | Compare counts/order/IDs and retained `unlockedDay`; document migration |
+| Streak differs from Progress days | Course study days and visible-time activity are separate | Inspect `course.studyDays` versus `study.days`; see course rules |
+| “No Gradle found” | Incomplete wrapper and no system Gradle | Install configured toolchain or use Docker build |
+| Docker build/extraction fails | Daemon unavailable, network/toolchain failure, fixed container collision | Start daemon, inspect build logs, run builds serially |
+| Native still shows old UI | Source edited but packaged assets/APK unchanged | Stage from final root sources and rebuild/install |
+
+Useful navigation:
+
+```sh
+rg -n 'loadData|bootFailed|KKDiag|importBackupText|save\(' app.js
+rg -n 'FILES|DIRS|EXTRA|find_gradle' scripts
+git diff --stat
+git status --short
+```
+
+## Confirmed gaps at documentation time
+
+These are observed implementation gaps, not newly implemented fixes or an exhaustive defect audit. Priority below is a suggested order for release planning; ownership and disposition remain unset.
+
+| ID | Gap | Practical impact | Suggested next step |
+| --- | --- | --- | --- |
+| K-01 | Raw vocab CSVs/Tatoeba TSV/grammar Anki source absent | Full content rebuild cannot be reproduced | Recover exact inputs and provenance; preserve ID compatibility |
+| K-02 | Source credits report unresolved terms; no root application license | Company distribution has unresolved ownership/permission questions | Assign content/application rights review before public release |
+| K-03 | Debug-only automated APK flow; incomplete wrapper | No ready production signing/distribution pipeline | Define release identity/signing and complete reproducible toolchain |
+| K-04 | Silent storage failures and shallow backup validation | False confidence in durable saves; malformed imports can break views | Add visible errors and versioned deep validation/limits |
+| K-05 | Review quizzes do not grade SRS; due badges are present | Due counts and Review behavior can be confusing | Decide intended review behavior, align copy/tests/design |
+| K-06 | Kanji due badge uses combined `dueCount()` | Kanji chip can display vocab/grammar dues too | Use type-specific counting if chip is meant to be kanji-only |
+| K-07 | Overlapping kanji lists overwrite global detail index | Detail level may differ from entry list; progress shared by character | Preserve/document identity or redesign level-specific resolution |
+| K-08 | Ordinal/occurrence IDs depend on source order | Content refresh can misassign or strand stored progress | Diff ID→record mappings; define migrations before source changes |
+| K-09 | `sync_www.py` merges without removing obsolete files | Clean source can still yield stale packaged assets | Stage into fresh directory or add safe clean-staging behavior |
+| K-10 | No hosted-web service worker | Hosted offline reload is not guaranteed | Keep claims precise; add caching only if product scope requires it |
+| K-11 | Capacitor scaffolding is not equivalent to native shell | Straight add/sync commands can conflict or miss native behavior | Isolate and implement a deliberate Capacitor integration |
+| K-12 | Only pure course assertions are automated; missing dukpy exits zero | A green process can mean skipped tests; integration regressions unguarded | Require non-skipped output and add meaningful integration coverage |
+| K-13 | No native URL allowlist with bridge installed | Future external navigation changes need careful boundary design | Define navigation policy before adding remote pages/permission |
+| K-14 | Combined kanji search threshold breaks inner loop only | Kanji result count can exceed intended 120 limit | Stop outer iteration too if enforcing a shared bound |
+| K-15 | No central cancellation for asynchronous view work | Rapid navigation may leave timers/responses targeting stale views | Add lifecycle checks if reproducing stale updates |
+| K-16 | Intro mentions mock tests beyond implemented short quizzes | Product copy overstates current assessment scope | Align copy or explicitly scope a mock-exam feature |
+| K-17 | Pace recommendation has caps and dates are generated estimates | Suggested pace may miss a close exam; venue dates unverified | Show limits; agree planning/calendar behavior |
+
+For company tracking, link these IDs from the [risk and change register](delivery/register.md) instead of copying a second defect description.
+
+## Content and incident handling
+
+For a content error, record level, record ID/character, wrong field, expected text, source evidence, and a screenshot if useful. Trace to the generator/input, fix at the source where possible, regenerate matching outputs, and review representative examples. Do not assume substring matches or furigana are linguistically correct just because syntax checks pass.
+
+For a release failure, record source revision/artifact, platform, steps, console/native logs, and whether data was affected. Avoid collecting unredacted backups without consent: notes/activity can contain personal information. A host/APK rollback does not restore local-only progress; use the exported backup route and compatible IDs.
+
+Known limitations should be closed only after a scoped implementation change and evidence. This documentation task changes no runtime behavior.

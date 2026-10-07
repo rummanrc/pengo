@@ -1,0 +1,60 @@
+# Product scope and requirements
+
+Pengo supports Japanese learners preparing for JLPT N5–N1 with a reference library and daily study plan. It requires no account. Native Android carries the content on the device; web hosting serves the same static runtime.
+
+## Primary journeys
+
+1. Choose a level on Home, set an optional exam target and daily pace, and begin the first batch.
+2. Browse kanji, words, and grammar; read examples, add notes/favorites, and mark items learned.
+3. Study the current plan batch and unfinished earlier material, then answer a mixed daily quiz.
+4. Practice a chosen type/level in Review, inspect Progress, and export a backup before moving devices.
+
+The intro appears automatically on a first native launch, can be previewed on the web with `?onboarding=1`, and can be replayed through Settings.
+
+## Implemented capability requirements
+
+These documentation IDs organize acceptance checks; they are not historical issue identifiers. T identifiers refer to the [testing matrix](testing.md#manual-acceptance-matrix), whose procedures are not claims of completed manual testing.
+
+| ID | Capability and current acceptance criterion | Implementation | Check |
+| --- | --- | --- | --- |
+| P-01 | Load N5–N1 content from local runtime files | `loadData`, `loadDataFetch` | T-01, T-02 |
+| P-02 | Home shows a level picker without a plan and dashboard with one | `renderHome`, two Home renderers | T-03 |
+| P-03 | Browse by level with search, learned/favorite filters, sorting | Three browse renderers, `bindBrowseSearch` | T-04 |
+| P-04 | Kanji details show readings, components, memory aid, examples, available stroke art | `renderDetail`, `initStrokeOrder` | T-05 |
+| P-05 | Vocabulary/grammar details show examples and related links | `renderVocabDetail`, `renderGrammarDetail` | T-06 |
+| P-06 | Learned state, favorites, and notes survive reload when storage works | `toggle*`, note handlers, `save` | T-07 |
+| P-07 | Review offers up to ten questions for chosen type/level, feedback, best score | `renderReview`, ordinary quiz renderers | T-08 |
+| P-08 | A plan covers target-level list entries and preserves missed material | `Course.buildCurriculum`, `renderCourseDay` | Course tests, T-09 |
+| P-09 | Plan quizzes choose unlocked questions and grade shared SRS state | `Course.selectQuizItems`, `courseGrade` | Course tests, T-10 |
+| P-10 | Progress shows content counts and rolling activity | `renderProgress`, `studyStatsHTML` | T-11 |
+| P-11 | Export captures the main store; import replaces it after basic validation | Backup helpers | T-12 |
+| P-12 | Settings supports theme, autoplay, plan changes, intro replay, confirmed erase | `renderSettings`, `applyTheme` | T-13 |
+| P-13 | Desktop/mobile navigation, visible focus, reduced motion | Shell, CSS, stroke animator | T-14 |
+| P-14 | Android uses packaged files, document pickers, and in-app Back handling | MainActivity, Platform, `KKBack` | T-15 |
+
+## Behavior distinctions
+
+Ordinary Review quizzes sample the whole selected level and save a best raw score. They do not grade SRS or record course study days. The plan quiz grades SRS and selects only unlocked question items; its distractors can come from other target-level records.
+
+A learned flag means an item was marked learned or correctly answered in a plan quiz. It is separate from mastery classification, which also uses SRS box/due status. Completion percentages use learned flags.
+
+Kanji lists overlap. Learning a character affects every occurrence. Vocabulary and grammar progress uses level-qualified record IDs.
+
+## Quality properties and limits
+
+| Property | Implemented basis | Limit |
+| --- | --- | --- |
+| Offline native operation | Packaged assets; no `INTERNET` permission | Build tools may need network downloads |
+| Portable web delivery | Relative static paths; hash routes | No service worker/offline reload guarantee |
+| Local persistence | Main localStorage object and separate intro flag | Blocked/full storage fails silently |
+| Data consistency | Generated JSON and fallback bundle | Bundle must be refreshed after content changes |
+| Accessibility support | Semantic controls, labels, focus, reduced motion | No conformance audit recorded |
+| Testable scheduling | Pure logic with real-code assertions | UI/native/pipeline lack automated coverage |
+
+The repository defines no performance SLA, uptime commitment, certified browser matrix, or cloud recovery service.
+
+## Scope boundaries
+
+Accounts, backend services, cloud sync, notifications, audio practice, flashcard routes, a due-only review player, and full-length JLPT mock exams are not implemented. Intro copy mentioning mock tests is broader than the current quiz behavior. The mnemonic model hook is an extension point with no model integration shipped.
+
+Exam choices are generated offline from a July/December first-Sunday rule. They are planning estimates, not a retrieved calendar of confirmed local sessions. Content counts are dated in the [root README](../README.md#content-snapshot); runtime totals should continue to come from data.

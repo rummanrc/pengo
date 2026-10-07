@@ -1,142 +1,126 @@
-# Pengo - JLPT Kanji, Vocabulary and Grammar Study App
+# Pengo
 
-A responsive, data-driven Japanese learning web app for JLPT N5-N1: kanji, vocabulary and grammar.
-No build step, no dependencies: just static files plus prebuilt JSON.
+Pengo is a Japanese study app for JLPT N5–N1: kanji, vocabulary, grammar, quizzes, progress, and daily study plans. The web runtime is static HTML, CSS, JavaScript, and prebuilt data. Android wraps those same files in an offline WebView.
 
-## Run it
+## Run the web app
 
-Any static server from the repo root, e.g.:
+From the repository root:
 
-    python -m http.server 8000
+```sh
+python3 -m http.server 8000
+```
 
-then open http://localhost:8000/
+Open <http://localhost:8000/>. No npm install, backend, or frontend compilation is required. Stop with Ctrl+C.
 
-(Double-clicking index.html also works: if data fetch is blocked, the app
-falls back to data/bundle.js, which script tags can load anywhere.)
+Opening `index.html` directly can load study data through `data/bundle.js`, but browser file restrictions may block stroke diagrams. HTTP is the supported development path. The web manifest is present; no service worker provides guaranteed offline caching for hosted visits.
 
-(Browsers block `fetch()` on `file://` URLs, so a local server is required.
-GitHub Pages works too, but `resources/` is a submodule: enable
-`submodules: true` in your Pages workflow so stroke art and data resolve.)
+## Documentation
 
-## Project layout
+Start with the [documentation index](docs/README.md). The engineering docs use Markdown and editable Mermaid diagrams, with prose explanations for viewers without Mermaid support.
 
-    index.html            app shell (sidebar + topbar + bottom nav + view)
-    styles.css            theme, layout, responsive rules (mobile bottom nav)
-    app.js                hash-router SPA: home/learn/course/browse/detail/review/search/progress/settings
-    course.js             study-plan scheduling logic (curriculum, quiz pool, streak, exams), no DOM
-    data/n5..n1.json      per-level kanji records (generated, UTF-8)
-    data/vocab_n5..n1.json per-level vocabulary records with Tatoeba sentences (generated, UTF-8)
-    data/grammar_n5..n1.json per-level grammar records with examples + readings (generated, UTF-8)
-    data/radicals.json    the 214 Kangxi radicals, correctly numbered
-    data/meta.json        counts + stroke-art coverage per level
-    scripts/build_data.py rebuilds data/ from resources/ (the kanji-data submodule)
-    resources/            upstream data (KANJIDIC2, KRADFILE, KanjiVG, Tanaka, Kanjium...)
+| Need | Document |
+| --- | --- |
+| Understand the product and requirements | [Product](docs/product.md) |
+| Understand components and startup | [Architecture](docs/architecture.md) |
+| Set up and change the project | [Development](docs/development.md), [contributing](CONTRIBUTING.md) |
+| Find routes, views, and CSS conventions | [Frontend](docs/frontend.md) |
+| Understand records, storage, and backups | [Data model](docs/data-model.md) |
+| Rebuild or refresh content | [Data pipeline](docs/data-pipeline.md) |
+| Understand scheduling and SRS | [Study plan](docs/course.md) |
+| Use JavaScript and native interfaces | [Interfaces](docs/interfaces.md) |
+| Validate changes | [Testing](docs/testing.md) |
+| Package the web app or APK | [Deployment](docs/deployment.md) |
+| Review trust boundaries and privacy | [Security](docs/security.md) |
+| Diagnose failures and known gaps | [Maintenance](docs/maintenance.md) |
+| Understand architecture tradeoffs | [Decisions](docs/decisions.md) |
+| Give an AI assistant project context | [AI guide](docs/ai-guide.md) |
+| See checks performed for these docs | [Verification](docs/verification.md) |
+| Prepare a Japanese-company delivery | [Company delivery](docs/company-delivery.md), [delivery records](docs/delivery/project-plan.md) |
 
-## Data model (one entry in data/nX.json)
+## Current features
 
-    k            kanji character            cp      5-hex codepoint (stroke art file)
-    meaning      primary English meaning    meanings  up to 5 variants
-    on / kun     reading arrays             strokes / grade / freq / jlpt
-    components[] { c, m, rad, isKanji, link, variantOf }
-      c = component as written, m = its meaning,
-      rad = Kangxi number or null (true radicals vs mnemonic parts are labelled),
-      link = dataset kanji to jump to, variantOf = standard form if written as a variant
-    vocab[]      { w, r, m } up to 6 JLPT compounds using the kanji
-    sentences[]  { jp, furi, ro, en } CSV sentence + Tanaka-corpus sentences
-      furi = ruby-furigana HTML (<ruby>base<rt>reading</rt></ruby>, same as grammar examples),
-      generated offline by scripts/furigana.py (dictionary built from vocab + compounds + grammar ruby)
-    confusables[] look-alike kanji        hasStroke  KanjiVG diagram available?
-    mnemonic     prebuilt original memory aid (memory aid, not etymology)
+- Browse and search all three content types by level, reading, and meaning; filter learned items and favorites.
+- Kanji readings, components, memory aids, examples, notes, similar characters, and animated KanjiVG stroke diagrams.
+- Vocabulary and grammar examples with available furigana and links to related content.
+- Review quizzes of up to ten questions for a selected type/level; mixed study-plan quizzes update SRS state.
+- Study plans with explicit batch unlocking, unfinished-material backlog, study days, and milestones.
+- Progress with learned counts and rolling seven-/thirty-day activity; themes, backups, confirmed erasure, and intro replay.
+- Offline native Android assets, system document pickers for backups, and no `INTERNET` manifest permission.
 
-To update data, replace files under resources/ and run `python scripts/build_data.py` (kanji), `python scripts/build_vocab.py` (vocab + Tatoeba sentences) and `python scripts/build_grammar.py` (grammar from the Anki deck, text only, no audio).
-Then `python scripts/build_bundle.py` to refresh the file:// fallback bundle.
-(`scripts/build_data.py` and `scripts/build_vocab.py` annotate sentence furigana automatically;
-`python scripts/furigana.py` regenerates `furi` across all levels without rebuilding anything else.)
+There are no accounts, cloud sync, analytics, or backend. Flashcards and a separate due-only review player are not exposed by the current router.
 
-## Features
+## Repository map
 
-- Home with per-level stats computed from data (never hardcoded)
-- Browser: level chips, kanji/meaning/reading search, learned/unlearned/favorites
-  filters, sort (default, strokes, frequency, A-Z, unlearned-first)
-- Detail: readings, stats, animated KanjiVG stroke order with replay,
-  component breakdown with Kangxi-vs-helper badges, original mnemonic,
-  vocabulary, sentences, similar kanji, notes, prev/next navigation
-- Vocabulary section: 8,293 JLPT words with readings, Tatoeba sentences, kanji links, flashcards, SRS + quiz
-- Grammar section: 399 JLPT grammar points (N5 79, N4 95, N3 100, N2 61, N1 64) with explanations,
-  formation notes, ruby-reading examples (translations tap-to-reveal), related points, kanji/vocab links,
-  flashcards (3 modes), SRS review queue, 10-question quiz (meaning, point, translation + fill-in-blank)
-- Study flashcards (3 modes, keyboard support), SRS review queue, 10-question quiz
-- Progress dashboard, export/import backup, dark mode, responsive + keyboard accessible
-- Study plans: Home opens with a JLPT level picker, then becomes your dashboard (Continue Learning, Today's Goal, streak); unlock a little kanji/vocabulary/grammar every day, quiz the unlocked pool, track milestones (see docs/course.md)
-- All user data persists in localStorage; mnemonic engine exposes
-  `KanjiMnemonic.generateViaModel` for future LLM-generated stories.
+```text
+index.html          Shell and script order
+styles.css          Themes, components, responsive layout, motion
+app.js              Loading, router, views, storage, quizzes, SRS
+course.js           Pure study-plan logic; browser global/CommonJS export
+platform.js         Browser/native adapter
+onboarding.js       Intro and first-launch state
+assets/             Branding and mascot images
+data/               Generated JSON and script-loading fallback bundle
+resources/          Tracked source material, SVGs, and credits
+scripts/            Python data and packaging tools
+tests/test_course.py Existing course assertions
+android/            Java WebView shell and Gradle configuration
+docker/Dockerfile   Android build environment
+docs/               Engineering documentation
+```
+
+`www/`, staged Android assets, `dist/`, and Gradle outputs are generated and ignored. This checkout tracks `resources/` as ordinary files and has no `.gitmodules`; upstream resource documentation describes submodule use by other consumers.
+
+## Content snapshot
+
+Checked against the JSON on 2026-10-07:
+
+| Level | Kanji rows | Vocabulary | Grammar |
+| --- | ---: | ---: | ---: |
+| N5 | 103 | 684 | 79 |
+| N4 | 181 | 640 | 95 |
+| N3 | 361 | 1,730 | 100 |
+| N2 | 739 | 1,812 | 61 |
+| N1 | 1,232 | 3,427 | 64 |
+| Total | 2,616 | 8,293 | 399 |
+
+The kanji lists overlap: 2,616 rows represent 2,211 distinct characters. Progress is shared by character. These are dated counts, not UI constants.
 
 ## Tests
 
-    pip install dukpy
-    python tests/test_course.py
+The existing Python harness uses dukpy:
 
-80 assertions run against the real course.js (streak, curriculum,
-quiz selection, progress, exam dates). See docs/course.md.
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install dukpy
+.venv/bin/python tests/test_course.py
+```
 
-## Offline Android app
+Do not commit `.venv/`. Missing dukpy produces `SKIP` and a successful exit, which is not a test pass. A verified Node alternative is in [testing](docs/testing.md). The current drivers execute 97 assertions.
 
-The web app above is already server-free (static files + `localStorage`), so the
-Android build is a thin offline shell around it: a native `WebView` loads the
-bundled files, no Python/backend/server/internet at any point.
+## Android debug APK
 
-    Web:      index.html + app.js + platform.js + styles.css
-              + data/*.json (+ data/bundle.js fallback) + resources/stroke-order/*.svg
-    Android:  android/ (native WebView shell, no INTERNET permission)
-    Bundle:   www/ (generated) -> android/app/src/main/assets/www/ (generated)
+With JDK 17, Android SDK platform 34/build tools, and Gradle available:
 
-### Prerequisites (build machine only)
+```sh
+python3 scripts/build_apk.py
+```
 
-- JDK 17+
-- Android SDK with platform-34 + build-tools (`ANDROID_HOME` or `ANDROID_SDK_ROOT` set)
-- Gradle on PATH, or `android/gradle/wrapper/gradle-wrapper.jar`
-- Python 3 (no Node needed for the native build)
+Output: `dist/pengo-debug.apk`. Stage assets only with:
 
-### Build the APK
+```sh
+python3 scripts/build_apk.py --assets-only
+```
 
-    python scripts/build_apk.py
+With Docker running:
 
-Result:
+```sh
+python3 scripts/build_apk_docker.py
+```
 
-- `android/app/build/outputs/apk/debug/app-debug.apk`
-- copied to `dist/pengo-debug.apk`
+These build a debug APK. Release signing and store distribution are not configured. See [deployment](docs/deployment.md) for toolchain details and optional Capacitor limitations.
 
-Install: copy the APK to your phone/tablet, open it, allow
-"Install unknown apps" for your file manager, and install. Airplane mode works.
+## Content and attribution
 
-### Handy commands
+Normal development uses existing `data/`. Vocabulary CSVs, the Tatoeba TSV, and the grammar Anki package needed for full regeneration are absent from this checkout. Read [the pipeline guide](docs/data-pipeline.md) before rebuilding.
 
-    python scripts/sync_www.py                 # rebuild www/ only (offline check)
-    python scripts/build_apk.py --assets-only  # stage assets without Gradle
-    python -m http.server 8000                 # web smoke test -> http://localhost:8000/
-
-### Optional Capacitor flow
-
-`capacitor.config.json` + `package.json` are included for teams that prefer
-Capacitor: `npm install`, `python scripts/sync_www.py`, `npx cap add android`
-(first time), `npx cap sync android`. The checked-in `android/` project is the
-zero-Node alternative and is what `scripts/build_apk.py` uses.
-
-### Notes
-
-- Persistence stays in `localStorage` (WebView) under key `knowkanji:v1`;
-  export/import lives in Settings. The Android shell uses the system document
-  picker to save and restore JSON backups; the web app uses browser file APIs.
-- Android Back navigates in-app history via `window.KKBack` and exits from Home.
-- No analytics, no network permission, no secrets in the app.
-### Docker build (no local toolchain)
-
-If you have Docker Desktop but no JDK/SDK/Gradle installed:
-
-    python scripts/build_apk_docker.py
-
-This builds the `knowkanji-builder` image (`docker/Dockerfile`: Gradle 8.7 +
-JDK 17 + Android SDK platform-34), compiles the APK inside it, and extracts
-the result to `dist/pengo-debug.apk`. Needs ~8 GB free for the image and
-network access during the image build only. Start Docker Desktop first; on
-Windows it must use Linux containers.
+Keep [resource credits](resources/CREDITS.md) with distributed data. They identify source-specific terms and unresolved source permissions. No root application `LICENSE` exists; these docs do not assign one.

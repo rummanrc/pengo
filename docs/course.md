@@ -1,136 +1,117 @@
-# Pengo study plan (course) architecture
+# Study-plan design
 
-The study plan is a course layer on top of the existing dictionary/reference
-app. It never duplicates content: kanji, vocabulary and grammar records stay
-the single source of truth, and the plan only stores references plus settings.
+The plan references existing kanji/vocabulary/grammar IDs. It shares learned and SRS maps with the reference app and stores only configuration/history under `store.course` in `knowkanji:v1`. `course.js` is pure logic; `app.js` owns views, persistence, and grading integration.
 
-## Files
+## Responsibilities and entry points
 
-- `course.js` - pure scheduling logic, no DOM. Browser global `Course`
-  (also `module.exports` for tooling). ES5 style so it runs in the WebView
-  and under the dukpy test runner. Loaded before `app.js` in `index.html`
-  and shipped offline via `scripts/sync_www.py`.
-- `app.js` - "Course:" section: persistence helpers, `#/course*` views,
-  home banner, settings card. Reuses `progressBar`, quiz option styling,
-  `srsGrade`/`vSrsGrade`/`gSrsGrade`, and the existing detail routes.
-- `styles.css` - small `.course-item` / `.mile` / `.exam-row` additions.
-- `tests/test_course.py` - 78 assertions executed against the real
-  `course.js` (`pip install dukpy && python tests/test_course.py`).
+| Area | Pure logic | App integration |
+| --- | --- | --- |
+| Content ordering | `sortKanji`, `sortVocab`, `sortGrammar` | `courseLists`, frequency map/median helpers |
+| Pace and batches | `suggestPace`, `splitDaily`, `buildCurriculum` | Setup, `courseCurriculum` |
+| Unlocking/schedule | `unlockedForDay`, `scheduleStatus` | `courseUnlockDay`, `courseSchedule`, day view |
+| Sampling | `classifyItem`, `selectQuizItems` | `courseStateOf`, `courseBuildQuestion`, plan quiz |
+| Study history/progress | `recordStudyDay`, `calcStreak`, progress helpers | `courseRecordDay`, dashboard |
+| Milestones | `checkMilestones`, threshold helpers | `courseCheckMilestones` |
 
-## Data model
+The complete public signatures are in [interfaces](interfaces.md); persisted fields are in [data model](data-model.md).
 
-Learning item: `{ type: "kanji" | "vocab" | "grammar", id: id }`.
+## Curriculum
 
-- kanji id = the character itself (`DB.byChar` key)
-- vocab id = vocab record id, e.g. `N5-1198180-0` (`DB.vById` key)
-- grammar id = grammar record id, e.g. `N5-001` (`DB.gById` key)
+A plan targets exactly one level's three lists, not an automatically cumulative N5-to-target curriculum. Already learned records remain in the curriculum and render studied. Lists are ordered before batching:
 
-`store.course` (inside the existing `knowkanji:v1` localStorage value, so
-export/import backup keeps working):
+- Kanji: ascending positive KANJIDIC frequency; absent/nonpositive ranks last.
+- Vocabulary: average known finite rank of characters in its kanji surface (or word); unranked/kana-only words use the level median. Ties prefer shorter words, then original order.
+- Grammar: Core Grammar, Common, JLPT-Focused, Literary; unknown categories last, stable ties.
 
-- `target` - JLPT level, `examId`/`examLabel`/`examDate` (`""` = no date)
-- `startDate` - `YYYY-MM-DD`, day 1 of the plan
-- `dailyNew` - new items per day, `weights` - `{ kanji, vocab, grammar }`
-- `studyDays` - sorted `YYYY-MM-DD` list, `milestones` - earned ids
-- `quizzes`, `perfectQuiz` - quiz history counters
+`splitDaily` applies a largest-remainder integer split using default weights 3:5:2 (kanji:vocab:grammar). At pace 20 the normal split is 6/10/4. When pace permits at least three items, a share can be borrowed from the largest allocation to give a zero-share type one item.
 
-Learned/SRS state is shared with the rest of the app (`store.learned`,
-`store.srs`, `store.vLearned`, `store.vSrs`, `store.gLearned`, `store.gSrs`),
-so marking items studied in a plan also updates Progress/Review, and vice
-versa. Changing the target starts a fresh curriculum (study-day history is
-kept, milestones reset); ending a plan keeps all learned items and reviews.
+`buildCurriculum` walks the supplied ID arrays in that order and fills per-type day quotas. Exhausted types leave smaller later batches; unused quota is not redistributed to fill every day to the maximum. A zero-share type can advance once no other type remains. Every supplied entry is emitted once for the shipped/default settings; the function does not independently deduplicate arbitrary input IDs. It has an iteration guard of 100,000 days.
 
-## Curriculum generation
+## Pace recommendation
 
-`Course.buildCurriculum(lists, dailyNew, weights)` walks the level lists in
-frequency order (kanji by KANJIDIC frequency number; vocabulary by the
-average frequency of the word's kanji with kana-only words at the level
-median; grammar by category Core Grammar, Common, JLPT-Focused, Literary;
-all stable so ties keep dataset order) and fills day buckets with `Course.splitDaily` counts
-(largest-remainder split of `dailyNew` by `weights`, minimum 1 per type when
-the pace allows). Default weights `{ kanji: 3, vocab: 5, grammar: 2 }`
-prioritise vocabulary while introducing kanji and grammar every day. Every
-content id appears exactly once; the tail day takes whatever is left, so a
-starved type still finishes once the others are exhausted. The curriculum is
-derived on the fly from `DB`, never stored, so content updates apply
-automatically.
+`suggestPace` uses actual per-type counts. It searches upward from total/days until each allocated type fits the horizon. No date, zero, or negative days uses 90 days. It returns recommended/relaxed/intensive choices; recommended is clamped to 5–60, intensive to 5–100, and the UI ultimately clamps the chosen value to 5–100.
 
-## Daily pool (progress-based unlocking)
+Those caps mean a very close exam can still be impossible to meet at the returned recommended pace. The suggestion is guidance, not a guarantee. Setup computes against the full target list, rather than subtracting already learned items. Default course pace is 20, while the setup wizard initially selects the computed recommendation.
 
-The plan tracks `store.course.unlockedDay` (starts at 1) instead of the
-calendar date, so missing a day never skips material: the current batch
-stays until studied. `Course.unlockedForDay(curriculum, unlockedDay)`
-returns everything unlocked so far. The day view shows the current batch
-(tap through to the existing detail pages, then "Mark studied"), a backlog
-of unstudied items from earlier batches, and the unlocked items whose SRS
-review is due. A finished batch offers "Continue to day N+1"; an "Unlock
-day N+1 early" button lets eager users pull extra batches any day.
-Schedule pressure is informational only: `Course.scheduleStatus`
-compares curriculum days left against calendar days until the exam and
-reports on-track / behind-by-N / no-date / passed, never blocking study.
+## Progress-based unlocking
+
+```mermaid
+stateDiagram-v2
+    [*] --> NoPlan
+    NoPlan --> CurrentBatch: Save plan
+    CurrentBatch --> CurrentBatch: Study items or quiz
+    CurrentBatch --> BatchStudied: All current items learned
+    BatchStudied --> CurrentBatch: Continue to next batch
+    CurrentBatch --> CurrentBatch: Unlock next batch early
+    BatchStudied --> AllUnlocked: Finish final batch
+    CurrentBatch --> AllUnlocked: Unlock beyond final batch
+    AllUnlocked --> AllUnlocked: Keep quizzing and reviewing
+    CurrentBatch --> NoPlan: End plan
+    BatchStudied --> NoPlan: End plan
+    AllUnlocked --> NoPlan: End plan
+```
+
+`unlockedDay` starts at one. All prior/current buckets form the unlocked pool. A missed calendar day never automatically advances the batch. Users explicitly continue after finishing or unlock early, retaining earlier unlearned items as backlog.
+
+`curriculum.length + 1` means every batch is unlocked. This is different from every item learned: the completion view says “You unlocked everything,” while the completed-course milestone requires learned completion.
+
+Day view shows current items, up to 20 earlier unlearned rows, up to 30 due review links, and the daily quiz. Due links are references into details; there is no due-only grading player. The quiz is available while current items are still unlearned.
+
+Schedule status compares remaining curriculum days, including the current batch, against calendar days until the target. It reports done/no-date/passed/on-track/behind; it does not block study. `dayIndex` remains a calendar helper in Course but does not drive current unlocking.
+
+## Plan changes
+
+Setup always reconstructs a plan object when saved. The same target retains start date, unlock position, history, milestones, quiz count, and perfect-quiz flag. A changed target resets start date, `unlockedDay`, and milestones while retaining study days, quiz count/perfect flag, and weights. Learned/SRS maps are untouched.
+
+Changing pace on the same target rebuilds the derived curriculum while retaining its numeric unlock day; the membership of unlocked batches can change. Ending the plan requires confirmation, removes only `store.course`, and returns Home to the level picker. Full data erasure is a separate Settings action.
 
 ## Daily quiz selection
 
-`Course.selectQuizItems(unlocked, stateOf, count)` samples without
-replacement: up to 3 newly introduced items are always included, the rest is
-weighted (`new` 5 > `weak` 4 > `learning` 2 > `mastered` 0.5), so weak/due
-items surface first while mastered ones still revisit occasionally. Only
-unlocked items can be picked. Answers feed the existing SRS graders, so the
-plan and Review stay in sync.
+`classifyItem` applies these rules in order:
 
-## Streak logic
+| State | Condition | Sampling weight |
+| --- | --- | ---: |
+| new | Not learned and not in SRS | 5 |
+| weak | In SRS and box zero or due | 4 |
+| mastered | Learned and box at least three, after due/weak check | 0.5 |
+| learning | Remaining cases | 2 |
 
-`Course.recordStudyDay` keeps one entry per local calendar day (multiple
-sessions collapse). `Course.calcStreak` counts back consecutive days; a rest
-day yesterday keeps today eligible, a missed day restarts at the next study
-day. Tone stays encouraging, never threatening.
+The sampler includes up to three randomly chosen `new` items when available, then samples by weight without replacement until the requested count (normally ten) or pool size. “New” is based on learned/SRS state, not necessarily the newest day's bucket.
 
-## Persistence
+The question builder resolves selected IDs and skips records that are missing or lack distractors. Therefore a quiz can contain fewer than ten questions. Question items are unlocked; distractors can be any other same-type record at the target level. Kanji offers meaning/character/reading questions; plan vocab/grammar offers meaning or identifying the word/point. Ordinary grammar Review additionally supports translation/fill-in-the-blank questions.
 
-Everything lives in the existing store object under `store.course`; `save()`
-is reused unchanged. No new storage keys, no network, offline-first.
+## Shared SRS grading
 
-## Exam-date handling
+SRS lives in `app.js`, with three equivalent graders:
 
-No fixed dates ship with the app. `Course.upcomingExams(today)` generates
-the next sessions from the usual first-Sunday-of-July/December rhythm
-(`Course.EXAM_MONTHS` is the one place to edit if the schedule changes).
-"No specific exam date" is always available; with no date the pace
-suggestion assumes a 90-day horizon. `Course.daysUntil` returns `null`
-without a date and negative values after a passed exam (shown as passed,
-never blocking).
+```text
+SRS_STEPS = [1, 3, 7, 16, 35, 80, 180] days
+```
 
-## Review scheduler
+| Action | State effect |
+| --- | --- |
+| Mark learned/studied for first time | Learned timestamp; initialize missing SRS as box 1 due in one day |
+| Correct plan answer | Increment box up to index 6; due after `SRS_STEPS[newBox]`; mark learned if needed |
+| Wrong plan answer | Reset box 0; due after ten minutes; existing learned flag stays |
+| Remove learned flag | Remove timestamp only; SRS remains |
+| Ordinary Review answer | Feedback/score only; no SRS grading |
 
-`planned new items + items due for review = today`s workload`
-(`Course.todayWorkload`). Due reviews reuse the existing SRS boxes; a wrong
-quiz answer resets to box 0 (10-minute retry), a right answer steps the box
-up the shared `SRS_STEPS` ladder. Future adaptive pacing (fewer new items
-when many are due) can build on `todayWorkload` without touching quiz code.
+Because correct answers increment before indexing, a new SRS item at box zero first schedules three days, not one. Manually marked items begin at box one with a one-day initial due time. Preserve this distinction when testing/documenting changes.
 
-## How to add/update JLPT content
+Course grading records a plan study day for either answer. `courseMarkStudied` records a plan day; plain detail-page learned toggles update activity/learned/SRS but do not call `courseRecordDay`. Completing a quiz increments `quizzes`, sets `perfectQuiz` if appropriate, and checks milestones. Answers graded before abandoning a quiz persist, while the completed-quiz counter does not advance.
 
-Unchanged: replace files under `resources/` and run `scripts/build_data.py`,
-`scripts/build_vocab.py`, `scripts/build_grammar.py`, then
-`python scripts/build_bundle.py`. The plan picks new content up
-automatically because the curriculum is derived from `DB` at render time.
+## Streaks, activity, milestones
 
-## External dataset sources and licenses
+Study-day lists deduplicate/sort local `YYYY-MM-DD` strings. A streak counts backward from today if studied, otherwise yesterday; yesterday's chain stays visible before studying today. Skipping a day breaks continuity once outside that grace window. This is distinct from visible-time/first-learned statistics in `store.study`.
 
-No new datasets. Same sources as the app: KANJIDIC2, KRADFILE (EDRDG),
-KanjiVG, Tanaka Corpus, Kanjium, JLPT vocab lists, Tatoeba sentences, Anki
-grammar deck (text only). See `resources/CREDITS.md`.
+Nine milestone IDs are `first-session`, `streak-7`, `streak-30`, `vocab-100`, `kanji-50`, `quiz-perfect`, `course-25`, `course-50`, `course-done`. Earned IDs persist; thresholds use plan study days, streak, target-level learned counts, perfect quiz, and full-course percentage. Milestone checks occur at integration points, not on every arbitrary store mutation.
 
-## Routes (Home is the dashboard)
+## Exam date generation
 
-- `#/` - level-picker splash (`N1 Advanced` .. `N5 Beginner`) when no plan
-  exists; otherwise the course dashboard: greeting, Continue Learning card
-  (current batch progress), Kanji/Vocab/Grammar/Review tiles into the
-  existing Learn/Review pages, Today's Goal (studied today vs daily pace),
-  streak + schedule line, milestones. There is no separate course page.
-- `#/course/setup` - planning wizard: level (accepts `?target=N4` from the
-  splash), exam date, pace
-- `#/course/day` - today`s new items + due reviews + quiz entry
-- `#/course/quiz` - 10-question mixed quiz over the unlocked pool
-- `#/course/reset` - end plan (confirm; learned items and reviews kept);
-  after ending, Home returns to the splash picker
+`EXAM_MONTHS` uses zero-based July/December months and `firstSunday`. Upcoming choices are generated over a bounded three-year search and filtered on/after today. There is no confirmed-session service or venue calendar. No-date and passed dates remain valid planning states without blocking study.
+
+Date functions use local midnight and fixed 24-hour arithmetic with rounded differences. The existing tests use explicit dates, but daylight-saving/timezone travel behavior deserves separate checks if date semantics change.
+
+## Validation
+
+[Testing](testing.md) describes the existing 97 course assertions and the manual integration checks. They cover the real pure logic, not DOM/SRS/native behavior. [Maintenance](maintenance.md) records the remaining implementation gaps.
