@@ -18,6 +18,7 @@ function check(condition, message) { assert.ok(condition, message); checks++; }
     const state = ()=>page.evaluate(()=>JSON.parse(localStorage.getItem(STORE_KEY)));
     async function start({mode='smart',kind='mixed',lv='N5',size='3',format='quiz'}={}) {
       await route('#/practice');
+      await page.locator('.practice-custom').evaluate(el=>el.open=true);
       for(const [name,value] of Object.entries({mode,kind,lv,size,format})) await page.locator('[name='+name+']').selectOption(value);
       await page.getByRole('button',{name:'Start session',exact:true}).click();
     }

@@ -9,7 +9,8 @@
     "cap:sync": "npx cap sync android",
     "build:apk": "python scripts/build_apk.py",
     "build:apk:docker": "python scripts/build_apk_docker.py",
-    "test": "node tests/test_course.cjs && node tests/test_practice.cjs"
+    "test": "node tests/test_course.cjs && node tests/test_practice.cjs && node tests/test_reminders.cjs && node tests/test_reminder_worker.cjs",
+    "test:android": "gradle -p android :app:testDebugUnitTest --console=plain"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.0.0",

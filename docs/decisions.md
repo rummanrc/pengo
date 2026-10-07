@@ -44,6 +44,18 @@ Progress naturally follows a character across levels. The cost is that detail in
 
 All quiz entry points now grade shared SRS and record real practice. Sessions contain 3/5/10 questions and persist compact references and feedback state. Mixed sessions cover available skills; due-only mode selects oldest due records and mistakes offer targeted follow-up. Goals count unique items attempted or newly studied each day, including wrong answers. Correct answers advance SRS at most once per local day, preventing retries from artificially increasing mastery. Recall ratings are explicitly self-rated. Motivation offers week activity, achievements, supportive return copy, and a clear stopping point; these are hypotheses to validate with learners, not measured learning-outcome claims.
 
+## D-08: Original adventure identity with progressive practice choices
+
+**Evidence:** `design.js`, adventure CSS, `practice-ui.js`, design browser checks.
+
+The app uses a generated variant of its existing Pengo mascot, warm colors, a learning trail, and real-progress cards. Four short-session choices are immediately available; custom configuration is a disclosure, and saved sessions require an explicit resume/replacement choice. Decorative animation is finite and honors reduced motion. This adds personality and lowers setup effort while preserving reference/plan routes and shared learning state. Visuals and copy remain product hypotheses, with no measured retention claim. The generation prompt and asset are recorded in [design and reminders](design-and-reminders.md).
+
+## D-09: Device opt-in reminders without a push backend
+
+**Evidence:** `reminders.js`, `reminder-worker.js`, native reminder classes, manifest, unit/browser/native tests.
+
+Native Android uses inexact OS alarms and receivers so reminders work independently of the WebView, with local clock/timezone restoration. Browser alerts use an open page plus a notification worker; calendar export offers a closed-app alternative. There is no remote push service. Permission follows explicit opt-in, daily alerts honor goals/duplicates and skip stale delivery, and device preferences stay outside progress backups. The tradeoffs are OS scheduling delays, browser suspension, and calendar alerts that cannot read Pengo goals. Native tests simulate lifecycle/permissions; physical-device delivery remains separate acceptance evidence.
+
 ## Future decision record format
 
 For a new architectural change, record ID/date, status (proposed/accepted/superseded), concrete context, chosen behavior, alternatives considered, state/route/content compatibility, consequences, reviewer/decision evidence, and related requirement/test IDs. Use [the review template](delivery/review-and-acceptance.md) when formal delivery records are needed.

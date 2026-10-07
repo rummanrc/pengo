@@ -4,7 +4,7 @@
 
 `tests/test_course.py` evaluates the actual `course.js` plus two JavaScript drivers in dukpy. This snapshot executes **97 assertions**, covering dates/exam generation, pace, daily splits, curriculum coverage, unlocking, streaks, sampling, progress, milestones, defaults, ordering, schedule states, and greetings.
 
-The daily practice feature adds 37 pure-logic checks and an optional browser persistence/SRS integration suite. Content-pipeline tests, Android instrumentation, CI, a formatter, and a linter are still absent. Manual procedures below fill those gaps; they are not claims that every procedure has been run.
+Daily practice adds 37 pure-logic checks and an optional browser persistence/SRS integration suite. Design/reminder checks add 17 reminder rules, 7 worker checks, 40 browser checks, and 26 native JUnit/Robolectric tests. Content-pipeline tests, physical-device Android instrumentation, CI, a formatter, and a linter are still absent. Manual procedures below fill those gaps; they are not claims that every procedure has been run.
 
 ## Existing harness
 
@@ -55,6 +55,9 @@ node --check app.js
 node --check course.js
 node --check practice.js
 node --check practice-ui.js
+node --check design.js
+node --check reminders.js
+node --check reminder-worker.js
 node --check platform.js
 node --check onboarding.js
 ```
@@ -152,6 +155,7 @@ Use a disposable browser profile or exported test backup. Record platform/browse
 | T-13 | Change theme/autoplay; replay intro; cancel erase; confirm erase in disposable profile | Controls persist; erase cancellation preserves state; confirmed erase resets store/intro flag |
 | T-14 | Check desktop/phone/tablet/landscape, keyboard, zoom, both themes, reduced motion | Navigation/layout remain usable; focus visible; no clipped critical controls |
 | T-15 | Install rebuilt APK; airplane-mode cold start; intro, rotate, Back, export/import/cancel | Local content/art work; picker callbacks work; Back traverses intro/routes and exits from Home |
+| T-16 | Explicit reminder opt-in/denial, test, chosen-time delivery, goal completion, turn-off, erase, notification tap; native reboot/timezone/closed app | No startup permission request; denial leaves new reminders off; at most one daily alert when goal unmet; late alerts skipped; tap starts/resumes short practice; device settings remain outside progress imports; web/calendar limits visible |
 
 For backup robustness changes, additionally test partial old backups, null/array maps, invalid nested SRS/course fields, large files, storage rejection, and missing IDs. Current import does not comprehensively reject every nested malformed shape.
 
@@ -170,7 +174,7 @@ Do not equate syntax checks with UI testing or pure Course assertions with SRS i
 
 ## Practice browser integration
 
-`npm test` runs the existing 97 course assertions through Node and 37 practice checks without installing npm dependencies. The course runner uses Python 3 to extract the original drivers. Practice checks cover bounded/mixed/due/mistake selection, same-day SRS promotion, session validation, legacy activity, goals, week/streak behavior, badges, and backup defaults.
+`npm test` runs the existing 97 course assertions through Node, 37 practice checks, 17 reminder-rule checks, and 7 notification-worker checks without installing npm dependencies. The course runner uses Python 3 to extract the original drivers. Practice checks cover bounded/mixed/due/mistake selection, same-day SRS promotion, session validation, legacy activity, goals, week/streak behavior, badges, and backup defaults. Reminder checks cover opt-in/time validation, delivery window, goals/duplicates, and calendar structure. Worker checks execute the real click handler with fake clients to verify scope-safe navigation/focus and opening a new window.
 
 For browser checks, start the static server and install Playwright in a separate temporary environment:
 
@@ -184,3 +188,30 @@ NODE_PATH=/tmp/pengo-qa/node_modules PENGO_CHROME_CHANNEL=chrome node tests/test
 `PENGO_CHROME_CHANNEL=chrome` uses installed Chrome. Otherwise install Playwright's Chromium in that temporary environment and omit the channel. `PENGO_TEST_URL` overrides the server URL; optional `PENGO_TEST_ARTIFACTS` names an existing directory for desktop/mobile screenshots. Isolated browser contexts do not open a user's existing profile.
 
 The suite exercises real answers and reloads, pause/resume, no double grading, daily goals, achievements, mistake clearing, due filtering across levels, plan unlocking/completion/perfect flags, legacy Review entry points, ten-question best scores, grammar contextual questions, 320px layout, new/old backup imports, invalid sessions, legacy daily-item deduplication, blocked storage, and JSON-fetch fallback to `bundle.js`. This is browser evidence; it does not prove Android WebView/native bridge behavior or learning outcomes.
+
+## Design and reminder browser integration
+
+Using the same server and temporary Playwright environment:
+
+```sh
+NODE_PATH=/tmp/pengo-qa/node_modules PENGO_CHROME_CHANNEL=chrome node tests/test_design_reminders_browser.cjs
+```
+
+This suite contains 40 checks: mascot loading, real learning trail, quick practice, response feedback/results, reduced motion, finite celebrations, reminder-section navigation, no unsolicited permission request, explicit permission denial, real service-worker notification display/retrieval in an isolated Chrome context, calendar download, goal/duplicate guards, time-change duplicate protection, backup/device-setting separation, erasure, unsupported-browser fallback, and main-route overflow at 320/390/768/1024/1440px. `PENGO_TEST_ARTIFACTS` also writes Home desktop, Review mobile, and dark Home screenshots.
+
+Browser notifications are tested inside a temporary browser context, never by changing the user's own browser profile. API display evidence does not prove an OS banner appeared or a suspended/closed browser delivered a scheduled reminder. Calendar import/alerts depend on the chosen external calendar.
+
+## Native reminder tests
+
+With JDK 17, SDK 34, and Gradle available, stage current assets then run:
+
+```sh
+python3 scripts/build_apk.py --assets-only
+npm run test:android
+# Optional build in the same Gradle invocation:
+gradle -p android :app:testDebugUnitTest :app:assembleDebug --console=plain
+```
+
+JUnit 4.13.2 and Robolectric 4.16.1 are test-only Gradle dependencies. The 26 tests cover local-time recurrence/year rollover/DST, off by default, single alarm replacement, permission/app/channel denial, explicit tests, duplicate/goal/late suppression, actionable tap, broadcast filtering, restore after boot/clock/timezone/package updates, receiver delivery without a WebView, full activity startup and opt-in callbacks, cold notification entry, cancellation during a permission request, and confirmed-reset behavior. Reports are generated under `android/app/build/test-results/testDebugUnitTest/`.
+
+Robolectric uses a simulated SDK 33 Android framework for platform tests, plus plain Java calendar checks. It does not execute an actual Android WebView or emulate OEM alarm/doze policies. Use T-15/T-16 on supported physical devices for that acceptance evidence. The pinned test version supports these lifecycle tests; upgrading it requires rerunning the full visible-activity tests rather than weakening lifecycle coverage to accommodate a runner regression.

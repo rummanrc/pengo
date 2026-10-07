@@ -1,0 +1,22 @@
+const assert=require('node:assert/strict');
+const R=require('../reminders.js');
+let checks=0;function test(name,fn){fn();checks++;}
+const when=(hour,minute)=>new Date(2026,9,7,hour,minute);
+test('defaults are opt-in and evening',()=>assert.deepEqual(R.normalize(null),{enabled:false,time:'19:00',lastDate:''}));
+test('invalid time never reaches scheduler',()=>{for(const time of ['24:00','19:60','2:00','12:00Z','<script>'])assert.equal(R.normalize({time}).time,'19:00');});
+test('valid midnight and late evening preserved',()=>{assert.equal(R.normalize({time:'00:00'}).time,'00:00');assert.equal(R.normalize({time:'23:59'}).time,'23:59');});
+test('opt-in must be boolean',()=>assert.equal(R.normalize({enabled:'true'}).enabled,false));
+test('disabled never delivers',()=>assert.equal(R.shouldDeliver({enabled:false,time:'19:00'},when(19,10),false),false));
+test('before chosen time never delivers',()=>assert.equal(R.shouldDeliver({enabled:true,time:'19:00'},when(18,59),false),false));
+test('chosen time and grace window deliver',()=>{assert.equal(R.shouldDeliver({enabled:true,time:'19:00'},when(19,0),false),true);assert.equal(R.shouldDeliver({enabled:true,time:'19:00'},when(19,59),false),true);});
+test('no late nag',()=>assert.equal(R.shouldDeliver({enabled:true,time:'19:00'},when(20,0),false),false));
+test('completed goal suppresses',()=>assert.equal(R.shouldDeliver({enabled:true,time:'19:00'},when(19,10),true),false));
+test('daily duplicate suppressed',()=>assert.equal(R.shouldDeliver({enabled:true,time:'19:00',lastDate:'2026-10-07'},when(19,10),false),false));
+test('previous day does not suppress today',()=>assert.equal(R.shouldDeliver({enabled:true,time:'19:00',lastDate:'2026-10-06'},when(19,10),false),true));
+test('calendar uses daily recurrence and local wall clock',()=>{const text=R.calendar('19:00',when(18,30));assert.ok(text.includes('DTSTART:20261007T190000\r\n'));assert.ok(text.includes('RRULE:FREQ=DAILY'));assert.ok(text.includes('BEGIN:VALARM'));assert.ok(text.includes('TRIGGER:PT0M'));assert.ok(text.endsWith('END:VCALENDAR\r\n'));});
+test('calendar begins tomorrow if time already passed',()=>assert.ok(R.calendar('19:00',when(19,5)).includes('DTSTART:20261008T190000')));
+test('calendar equality begins tomorrow',()=>assert.ok(R.calendar('19:00',when(19,0)).includes('DTSTART:20261008T190000')));
+test('calendar year rollover',()=>assert.ok(R.calendar('00:01',new Date(2026,11,31,23,59)).includes('DTSTART:20270101T000100')));
+test('calendar cannot inject fields via malformed time',()=>{const text=R.calendar('19:00\r\nATTENDEE:evil',when(18,0));assert.equal(text.includes('ATTENDEE'),false);assert.ok(text.includes('T190000'));});
+test('reminder key is separate from transferable progress',()=>assert.equal(R.key,'pengo:reminders:v1'));
+console.log('Reminders:',checks,'checks passed');

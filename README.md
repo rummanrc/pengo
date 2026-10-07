@@ -12,7 +12,7 @@ python3 -m http.server 8000
 
 Open <http://localhost:8000/>. No npm install, backend, or frontend compilation is required. Stop with Ctrl+C.
 
-Opening `index.html` directly can load study data through `data/bundle.js`, but browser file restrictions may block stroke diagrams. HTTP is the supported development path. The web manifest is present; no service worker provides guaranteed offline caching for hosted visits.
+Opening `index.html` directly can load study data through `data/bundle.js`, but browser file restrictions may block stroke diagrams. HTTP is the supported development path. The web manifest is present; the optional notification worker does not cache files, so hosted offline reload is not guaranteed.
 
 ## Documentation
 
@@ -21,6 +21,7 @@ Start with the [documentation index](docs/README.md). The engineering docs use M
 | Need | Document |
 | --- | --- |
 | Understand the product and requirements | [Product](docs/product.md) |
+| Explore the visual refresh and return reminders | [Design and reminders](docs/design-and-reminders.md) |
 | Understand components and startup | [Architecture](docs/architecture.md) |
 | Set up and change the project | [Development](docs/development.md), [contributing](CONTRIBUTING.md) |
 | Find routes, views, and CSS conventions | [Frontend](docs/frontend.md) |
@@ -44,6 +45,8 @@ Start with the [documentation index](docs/README.md). The engineering docs use M
 - Vocabulary and grammar examples with available furigana and links to related content.
 - Short 3/5/10-question sessions, recall cards, due-only review, and mistake practice; every answer updates shared SRS.
 - Saved sessions, daily practice goals, weekly activity, supportive achievements, and session summaries with a clear stopping point.
+- A warmer adventure dashboard, actionable learning trail, quick practice cards, expressive Pengo artwork and tips, dark mode, and brief animations with reduced-motion support.
+- Opt-in daily Android reminders while closed; open-page browser alerts and a calendar download, with goal/duplicate suppression for Pengo alerts.
 - Study plans with explicit batch unlocking, unfinished-material backlog, study days, and milestones.
 - Progress with learned counts and rolling seven-/thirty-day activity; themes, backups, confirmed erasure, and intro replay.
 - Offline native Android assets, system document pickers for backups, and no `INTERNET` manifest permission.
@@ -59,6 +62,9 @@ app.js              Loading, router, views, storage, quizzes, SRS
 course.js           Pure study-plan logic; browser global/CommonJS export
 practice.js         Pure practice selection, SRS, session validation, motivation
 practice-ui.js      Shared practice player and daily dashboard
+design.js           Adventure Home, learning trail, mascot, quick choices
+reminders.js        Opt-in device reminder settings and browser delivery
+reminder-worker.js  Browser notification taps; no caching or scheduling
 platform.js         Browser/native adapter
 onboarding.js       Intro and first-launch state
 assets/             Branding and mascot images
@@ -98,7 +104,7 @@ python3 -m venv .venv
 .venv/bin/python tests/test_course.py
 ```
 
-Do not commit `.venv/`. Missing dukpy produces `SKIP` and a successful exit, which is not a test pass. Run `npm test` for the Node alternative: 97 course assertions and 37 practice checks, with no npm install required. Browser integration instructions are in [testing](docs/testing.md).
+Do not commit `.venv/`. Missing dukpy produces `SKIP` and a successful exit, which is not a test pass. Run `npm test` for the Node alternative: 97 course assertions, 37 practice checks, 17 reminder checks, and 7 notification-worker checks, with no npm install required. Browser integration and native reminder tests are described in [testing](docs/testing.md).
 
 ## Android debug APK
 

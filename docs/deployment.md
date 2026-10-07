@@ -14,7 +14,7 @@ The default output is ignored `www/`. Upload its contents to a static host, reta
 
 | Inventory | Paths |
 | --- | --- |
-| Root files | `index.html`, `app.js`, `onboarding.js`, `course.js`, `platform.js`, `styles.css`, `manifest.webmanifest` |
+| Root files | `index.html`, `app.js`, `onboarding.js`, `course.js`, `practice.js`, `practice-ui.js`, `reminders.js`, `reminder-worker.js`, `design.js`, `platform.js`, `styles.css`, `manifest.webmanifest` |
 | Full directories | `assets/`, `data/` |
 | Resource subset | `resources/stroke-order/`, `resources/CREDITS.md` |
 
@@ -22,7 +22,7 @@ Docs, raw vocab/grammar input packages, Python, Java, build tools, and optional 
 
 Check the package locally with a static server and the [acceptance matrix](testing.md). No publishing provider or CI deployment workflow is configured in this repository.
 
-Hosted web offline reloads are not guaranteed: the manifest does not register a service worker. Browser localStorage is tied to the deployed origin, so changing hostname/scheme/port changes the store available to that installation.
+Hosted web offline reloads are not guaranteed: explicit browser reminder opt-in registers a notification-only worker with no caching. Serve over HTTPS (localhost is suitable for development) for browser notification APIs. The worker and script paths must retain the app's deployment subdirectory. Browser localStorage is tied to the deployed origin, so changing hostname/scheme/port changes the store available to that installation.
 
 ## Checked-in native Android shell
 
@@ -39,6 +39,7 @@ Hosted web offline reloads are not guaranteed: the manifest does not register a 
 | versionCode/versionName | 1 / `1.0.0` |
 | Native start URL | `file:///android_asset/www/index.html` |
 | Internet permission | Not declared |
+| Reminder permissions | `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`; no exact-alarm permission |
 | Platform backup | `android:allowBackup="true"` |
 
 These are repository values, not claims of compliance with current distribution-store requirements. The app is a framework Activity/WebView and has no Capacitor Android dependency in its Gradle project.
@@ -92,6 +93,8 @@ adb install -r dist/pengo-debug.apk
 ```
 
 Test cold startup and stroke diagrams in airplane mode, intro skip/replay/swipe, orientation changes, Back navigation, dark system bars, document picker export/import/cancel, and reload persistence. See T-15 in [testing](testing.md). Same application ID/signing identity is required for a normal update install; export a backup before uninstalling or changing identity.
+
+For reminders, use T-16: explicit opt-in/denial, local-time delivery with the app closed, notification tap/resume, goal suppression, turn-off, reboot/timezone restoration, and battery restrictions. Inexact alarms can be delayed and are not guaranteed appointments. Native automated checks run with `npm run test:android` after staging assets; JUnit 4.13.2 and Robolectric 4.16.1 are test-only Gradle dependencies, not shipped notification services. See [testing](testing.md#native-reminder-tests).
 
 ## Optional Capacitor configuration
 

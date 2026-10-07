@@ -80,6 +80,14 @@ Constants are mutable objects/arrays; there is no freeze or supported live confi
 
 `practice-ui.js` uses app globals to expose `renderPractice`, `renderPracticePlayer`, `startPractice`, `finishPractice`, and daily dashboard/settings helpers. Runtime calls happen only after app data/store initialization; the UI script itself performs no startup work.
 
+## Design and reminder interfaces
+
+`design.js` supplies `renderAdventureHome`, `dailyPracticeCardHTML`, `practiceQuickChoicesHTML`, `bindPengoUI`, and mascot/icon/result helpers using initialized app globals. It is presentation code rather than a separate progress store.
+
+`reminders.js` exposes the classic global/CommonJS `Reminders`. Pure helpers are `normalize(value)`, `dateKey(date)`, `shouldDeliver(value, now, goalMet)`, and `calendar(time, now?)`. Device operations are `read()`, `permission()`, async `enable(time)`, `disable()`, `resetDevice()`, and `syncGoal()`. Native enable returns `{ pending: true }`; permission/configuration results arrive at `window.PengoReminderResult(ok, message)`. Browser enable resolves `{ ok, message }`, requests permission on explicit action, and registers the worker before saving enabled state. `init()` synchronizes native goals or starts one browser timer/listener; `tick(now?)` checks opt-in, time, goal, and duplicates before notification display.
+
+`reminderSettingsHTML` and `bindReminderSettings` own the Settings controls. `reminder-worker.js` handles notification taps within its deployment scope; it neither caches nor schedules content. Storage and practical limits are in [design and reminders](design-and-reminders.md).
+
 ## Platform and browser hooks
 
 `Platform` and `APP_VERSION` are explicitly on `window`; `APP_VERSION` is currently `1.0.0`.
@@ -113,8 +121,16 @@ The Java activity installs `NativeBridge` through `addJavascriptInterface(..., "
 | `importJson()` | No arguments; void | Opens document picker accepting JSON/text MIME suggestions |
 | `showMessage(message)` | String; void | Android Toast on UI thread |
 | `setDarkTheme(dark)` | Boolean; void | Changes status/navigation bar colors/flags |
+| `getReminderSettings()` | Returns JSON string | `enabled`, `time`, effective `permission`, `nextAt` |
+| `setReminder(enabled, time)` | Boolean, `HH:MM`; void | Validates, requests permission only for opt-in if needed, schedules/cancels; result callback |
+| `setReminderGoalDate(date)` | Local `YYYY-MM-DD` or empty; void | Suppresses today's daily alert when goal is complete |
+| `resetReminderSettings()` | No arguments; void | Cancels alarm, resets off/19:00 and delivery/goal dates; preserves OS permission history |
+| `openNotificationSettings()` | No arguments; void | Opens system notification settings, or app details on API 24–25 |
+| `sendTestReminder()` | No arguments; void | Explicit permission-checked test; does not consume daily alert; result callback |
 
 Request codes are 4101 for export and 4102 for import. Canceling clears pending export text. Import reads the whole file, quotes it with `JSONObject.quote`, and evaluates `window.Platform && window.Platform.receiveImport(...)`. Read/write errors show native messages. There is no import-size limit or export queue.
+
+Notification permission uses request code 4103. Results invoke `window.PengoReminderResult` with a quoted message. Denial does not enable a new reminder; turning off while a permission request is pending prevents a later grant from scheduling it. Alarm and restore receivers operate without the WebView. A notification launches short practice on cold startup or calls `go()` on the existing activity.
 
 ## Mnemonic extension
 

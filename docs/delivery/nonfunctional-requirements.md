@@ -10,7 +10,7 @@ The approach uses [IPA's customizable nonfunctional guidance](https://www.ipa.go
 | --- | --- | --- | --- | --- |
 | N-01 | Availability / 可用性 | Native bundled assets, no internet permission | Core library/art/plan/progress/backup work without app network on agreed devices | Airplane-mode T-15 |
 | N-02 | Recovery | localStorage/manual backup | Data-loss tolerance, backup guidance, corrupt-state recovery/transfer; no server recovery assumed | T-07/T-12, failure report |
-| N-03 | Performance / 性能・拡張性 | Full datasets loaded; inspected runtime ~39.4 MiB | Reference device/browser and cold-start/search/memory/size/import limits | Measurements; thresholds TBD |
+| N-03 | Performance / 性能・拡張性 | Full datasets loaded; current staged runtime ~40.4 MiB | Reference device/browser and cold-start/search/memory/size/import limits | Measurements; thresholds TBD |
 | N-04 | Capacity | Local scans and whole-store writes | Largest expected dataset/notes/backup and acceptable behavior | Representative large-store check |
 | N-05 | Maintainability / 運用・保守性 | Runbooks, debug build, no CI | New maintainer reproduces clean package/checks without undocumented state | Rebuild/handover rehearsal |
 | N-06 | Support | No production support/SLA | Channel, response expectations, maintenance/incident roles | Owner record; targets TBD |
@@ -19,7 +19,7 @@ The approach uses [IPA's customizable nonfunctional guidance](https://www.ipa.go
 | N-09 | Security / セキュリティ | Trusted HTML/SVG, shallow import, bridge | Permitted content/URLs, validation/size limits, save-error reporting, artifact controls | Boundary/malformed-input checks |
 | N-10 | Privacy | No account/analytics; plaintext backup; allowBackup | Actual hosting/support/device data handling and notice/retention responsibilities | Operator data-flow review |
 | N-11 | Environment / システム環境・エコロジー | SDK min24, target34; browser matrix unset | Supported OS/WebView/browser/devices and toolchain | Platform matrix/results |
-| N-12 | Resource use | Timers/local assets | Decide battery/storage targets or explicit exclusions for irrelevant infrastructure items | Measurement or scope decision |
+| N-12 | Resource use | Timers/local assets; opt-in native OS alarm | Decide battery/storage targets or explicit exclusions for irrelevant infrastructure items | Measurement or scope decision |
 | N-13 | Accessibility/usability / 使用性・アクセシビリティ | Focus/labels/reduced motion; no audit | Learner/language needs, accessibility target, chosen assistive tools | T-14/T-15, audit evidence |
 | N-14 | Content / 学習コンテンツ品質 | Generated examples/readings; rights gaps | Named linguistic reviewer, provenance/permission review, correction process | Content/rights record |
 

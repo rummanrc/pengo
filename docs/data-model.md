@@ -160,6 +160,12 @@ Completion clears the active session and appends an ID-deduplicated summary to t
 
 `pengo:onboarded:v1` stores the string `"1"` after finishing/skipping the intro. It is not included in the main backup. Erase resets the main store and removes this flag. Imported progress does not by itself suppress a new platform's intro.
 
+## Device reminder preferences
+
+`pengo:reminders:v1` stores browser `{ enabled, time, lastDate }`, normalized to off/`19:00`/empty by default. `time` must be `HH:MM`; `lastDate` is the last local date with a daily alert. Android's private SharedPreferences `pengo_reminders` instead stores `enabled`, `time`, `lastDate`, `goalDate`, `nextAt`, and `permissionAsked`. The native bridge is authoritative on Android; browser preferences do not schedule native alarms.
+
+Reminder preferences are outside `knowkanji:v1` and its progress exports. Import preserves this device's opt-in/time and updates native goal suppression from imported practice. Confirmed erase resets device reminder preferences and cancels native scheduling, without changing OS permission or removing imported external calendar events. Android's existing platform backup policy still applies. See [design and reminders](design-and-reminders.md).
+
 ## Backup and migration semantics
 
 ```mermaid
@@ -175,6 +181,6 @@ flowchart TD
 
 Import replaces rather than merges existing progress and has no preview/confirmation. It requires a non-array object with at least one of the learned/favorite/note/SRS keys. Top-level progress maps/arrays and activity containers receive basic normalization; nested SRS values, course fields, dates, IDs, and timestamps are not comprehensively validated. Unknown top-level properties survive `Object.assign`.
 
-Startup loading also merges defaults but normalizes settings less thoroughly than import. Invalid JSON starts from defaults; syntactically valid malformed structures may still cause runtime errors. Writes are silent on failure, so an import success message is not proof of durable persistence.
+Startup loading also merges defaults but normalizes settings less thoroughly than import. Invalid JSON starts from defaults; syntactically valid malformed structures may still cause runtime errors. Failed main-store writes display a backup notice; an import success message is not proof of durable persistence.
 
 Backup files are plaintext JSON with notes/progress; native uses a document picker and web uses sharing/download/file input. They carry no content dataset version. Preserve compatible IDs and test old backups before storage changes. See [security](security.md) and [testing](testing.md).

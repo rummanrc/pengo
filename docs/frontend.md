@@ -12,7 +12,7 @@
 
 | Hash route | Behavior | Owner |
 | --- | --- | --- |
-| `#/` | Level-picker splash without a plan; dashboard with a plan | `renderHome` |
+| `#/` | Adventure welcome, level picker or learning trail, actual daily progress | `renderHome`, `renderAdventureHome` |
 | `#/learn?lv=N4` | Kanji/vocab/grammar/review tiles for a level | `renderLearn` |
 | `#/kanji` or `#/kanji/N5` | Kanji browser; invalid/missing level defaults to N5 | `renderBrowse` |
 | `#/kanji/<character>` | Detail if character exists in global index | Router, `renderDetail` |
@@ -24,7 +24,7 @@
 | `#/grammar/N5` | Grammar browser | `renderGrammarBrowse` |
 | `#/g/<id>` | Grammar detail | `renderGrammarDetail` |
 | `#/review?kind=vocab&lv=N4` | Shared practice setup with vocabulary/N4 selected | `renderReview`, `renderPractice` |
-| `#/practice` | Short-session setup and daily practice | `renderPractice` |
+| `#/practice` | Four quick starts, optional custom setup, and daily practice | `renderPractice` |
 | `#/practice?mode=due&kind=vocab` | Due-only vocabulary across levels | Shared player |
 | `#/practice?mode=mistakes` | Targeted mistake practice | Shared player |
 | `#/practice?start=1&size=3` | Start three-question smart practice; resume if saved | Shared player |
@@ -32,6 +32,7 @@
 | `#/search?q=tree` | Combined reference search | `renderSearch` |
 | `#/progress?level=N4&period=month` | Progress, selected hero level and rolling period | `renderProgress` |
 | `#/settings` | Theme, autoplay, backup, erase, plan, about/intro | `renderSettings` |
+| `#/settings?section=reminders` | Settings scrolled to opt-in reminder controls | Router, `bindReminderSettings` |
 | `#/course` | Redirect to Home | `renderCourse` |
 | `#/course/setup?target=N4` | Plan setup/change wizard | `renderCourseSetup` |
 | `#/course/day` | Current batch, backlog, due links, quiz entry | `renderCourseDay` |
@@ -83,12 +84,17 @@ Reduced motion displays completed strokes/numbers immediately. Missing art disab
 | Onboarding | `.ob-*`, `.ob-boot`, `.ob-open` |
 | Plan/dashboard | `.course-item`, `.mile-*`, `.exam-row`, `.dash-*`, `.splash-*` |
 | Daily practice | `.practice-*`, `.storage-notice` |
+| Adventure Home | `.adventure-*`, `.hero-*`, `.trail-*`, `.discovery-*` |
+| Goal and quick starts | `.daily-quest`, `.quest-ring`, `.quick-practice-*`, `.achievement-drawer`, `.practice-custom` |
+| Mascot/reminders | `.pengo-*`, `.practice-coach`, `.celebration-sparkles`, `.reminder-*` |
 | Quiz/results | `.quiz-*`, `.correct`, `.wrong` |
 
 The main navigation switch is at 860/861 px. Other rules handle narrow content, tablets/desktops, and short landscape screens. Safe-area insets protect mobile edges. Japanese fonts are system fallbacks; no web-font download is defined. Later rules override earlier sections, so inspect the cascade before appending duplicate selectors.
+
+The adventure section supplies warm/teal theme overrides, matching dark colors, raised controls, and brief finite animations. Home and Review use the same real-progress card. Review keeps custom fields in a details disclosure (open for specific type/level or plan links); quick starts cannot replace a saved session. See [design and reminders](design-and-reminders.md) for the generated asset and notification behavior.
 
 ## Accessibility and lifecycle
 
 Existing support includes a skip link, navigation labels/current state, semantic buttons, visible focus, Japanese `lang` attributes, progressbar values, and reduced-motion handling. Onboarding declares a modal dialog and supports swipe/back/skip. These features do not establish audited conformance: focus trapping/restoration and screen-reader behavior need manual review.
 
-Timers include visible-time tracking (15 seconds), delayed notes/search, progress refresh, and stroke animation. `stopStrokeTimers()` exists, but rendering does not centrally cancel every asynchronous action. Rapid navigation can expose stale responses; account for lifecycle when changing asynchronous view code.
+Timers include visible-time tracking (15 seconds), delayed notes/search, progress refresh, stroke animation, and browser reminder checks (30 seconds). The reminder permission callback checks whether its panel remains attached. `stopStrokeTimers()` exists, but rendering does not centrally cancel every asynchronous action. Rapid navigation can expose stale responses; account for lifecycle when changing asynchronous view code.

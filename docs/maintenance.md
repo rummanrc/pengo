@@ -21,6 +21,10 @@ Preserve an exported backup before investigating user-state problems. Use a disp
 | “No Gradle found” | Incomplete wrapper and no system Gradle | Install configured toolchain or use Docker build |
 | Docker build/extraction fails | Daemon unavailable, network/toolchain failure, fixed container collision | Start daemon, inspect build logs, run builds serially |
 | Native still shows old UI | Source edited but packaged assets/APK unchanged | Stage from final root sources and rebuild/install |
+| Reminder remains off after Enable | Permission denied, app/channel blocked, unsupported/insecure browser, or storage failure | Read Settings status; explicitly allow notifications or import the calendar event |
+| Browser reminder absent after closing Pengo | Open-page alerts have no push backend | Keep a tab open or use the calendar option |
+| Native reminder late or skipped | Inexact alarm, power restrictions, goal already met, same-day delivery, or stale alarm | Check chosen time/goal/notification settings; test explicitly; see reminder limits |
+| Calendar reminder persists after Pengo turn-off | Imported event belongs to external calendar | Edit/delete that recurring event in the calendar app |
 
 Useful navigation:
 
@@ -46,9 +50,9 @@ This register retains original IDs and now identifies fixes from the daily pract
 | K-07 | Overlapping kanji lists overwrite global detail index | Detail level may differ from entry list; progress shared by character | Preserve/document identity or redesign level-specific resolution |
 | K-08 | Ordinal/occurrence IDs depend on source order | Content refresh can misassign or strand stored progress | Diff ID→record mappings; define migrations before source changes |
 | K-09 | `sync_www.py` merges without removing obsolete files | Clean source can still yield stale packaged assets | Stage into fresh directory or add safe clean-staging behavior |
-| K-10 | No hosted-web service worker | Hosted offline reload is not guaranteed | Keep claims precise; add caching only if product scope requires it |
+| K-10 | No hosted-web offline caching; notification-only worker now exists | Hosted offline reload is not guaranteed | Keep claims precise; add caching only if product scope requires it |
 | K-11 | Capacitor scaffolding is not equivalent to native shell | Straight add/sync commands can conflict or miss native behavior | Isolate and implement a deliberate Capacitor integration |
-| K-12 | Partly fixed: Node tests cannot silently skip, and practice has unit/browser coverage | Native/pipeline behavior still lacks automated coverage | Run `npm test` and optional browser suite; add remaining coverage when changing those areas |
+| K-12 | Partly fixed: Node, practice/design browser, and native reminder tests now exist | Physical-device, other native bridge, and pipeline coverage remain incomplete | Run relevant suites; add remaining coverage when changing those areas |
 | K-13 | No native URL allowlist with bridge installed | Future external navigation changes need careful boundary design | Define navigation policy before adding remote pages/permission |
 | K-14 | Combined kanji search threshold breaks inner loop only | Kanji result count can exceed intended 120 limit | Stop outer iteration too if enforcing a shared bound |
 | K-15 | No central cancellation for asynchronous view work | Rapid navigation may leave timers/responses targeting stale views | Add lifecycle checks if reproducing stale updates |

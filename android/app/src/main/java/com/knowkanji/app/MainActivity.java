@@ -2,6 +2,10 @@ package com.knowkanji.app;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.provider.Settings;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
@@ -24,6 +28,8 @@ import java.nio.charset.StandardCharsets;
 public class MainActivity extends Activity {
     private static final int REQUEST_EXPORT_BACKUP = 4101;
     private static final int REQUEST_IMPORT_BACKUP = 4102;
+    private static final int REQUEST_NOTIFICATIONS = 4103;
+    private String pendingReminderTime;
     private WebView web;
     private String pendingExportText;
 
@@ -62,6 +68,46 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show());
         }
 
+        @JavascriptInterface public String getReminderSettings() { return StudyReminders.settings(MainActivity.this); }
+        @JavascriptInterface public void setReminder(boolean enabled, String time) {
+            runOnUiThread(() -> {
+                if (!ReminderTime.valid(time)) { reminderResult(false, "Choose a valid reminder time."); return; }
+                if (!enabled) { pendingReminderTime = null; StudyReminders.configure(MainActivity.this, false, time); reminderResult(true, "Reminders are off. Your progress stays right here."); return; }
+                if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    boolean asked = StudyReminders.prefs(MainActivity.this).getBoolean("permissionAsked", false);
+                    if (asked && !shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+                        reminderResult(false, "Notifications are blocked. Allow them in System settings to enable reminders."); return;
+                    }
+                    pendingReminderTime = time;
+                    StudyReminders.prefs(MainActivity.this).edit().putBoolean("permissionAsked", true).apply();
+                    requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQUEST_NOTIFICATIONS);
+                    return;
+                }
+                enableReminder(time);
+            });
+        }
+        @JavascriptInterface public void resetReminderSettings() {
+            runOnUiThread(() -> {
+                pendingReminderTime = null;
+                StudyReminders.configure(MainActivity.this, false, "19:00");
+                StudyReminders.prefs(MainActivity.this).edit().remove("lastDate").remove("goalDate").apply();
+                reminderResult(true, "Reminder settings reset. Reminders are off.");
+            });
+        }
+        @JavascriptInterface public void setReminderGoalDate(String date) { StudyReminders.goalDate(MainActivity.this, date); }
+        @JavascriptInterface public void openNotificationSettings() {
+            runOnUiThread(() -> {
+                Intent settings = Build.VERSION.SDK_INT >= 26
+                        ? new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName())
+                        : new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
+                startActivity(settings);
+            });
+        }
+        @JavascriptInterface public void sendTestReminder() {
+            runOnUiThread(() -> reminderResult(StudyReminders.deliver(MainActivity.this, System.currentTimeMillis(), true),
+                    StudyReminders.allowed(MainActivity.this) ? "Test sent. Check your device’s notifications." : "Notifications are blocked in System settings."));
+        }
+
         @JavascriptInterface
         public void setDarkTheme(boolean dark) {
             runOnUiThread(() -> updateSystemBars(dark));
@@ -73,6 +119,8 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         updateSystemBars(false);
+        StudyReminders.createChannel(this);
+        StudyReminders.schedule(this);
 
         web = new WebView(this);
         web.setFitsSystemWindows(true);
@@ -99,17 +147,44 @@ public class MainActivity extends Activity {
         if (savedInstanceState != null) {
             web.restoreState(savedInstanceState);
         } else {
-            web.loadUrl("file:///android_asset/www/index.html");
+            web.loadUrl("file:///android_asset/www/index.html" + (getIntent().getBooleanExtra("pengo_reminder", false) ? "#/practice?start=1&size=3" : ""));
         }
     }
 
+    private void enableReminder(String time) {
+        if (!StudyReminders.allowed(this)) { reminderResult(false, "Notifications are blocked. Allow Daily practice in System settings."); return; }
+        StudyReminders.configure(this, true, time);
+        reminderResult(true, "Daily reminder enabled for " + time + ". It pauses after you meet your goal.");
+    }
+    private void reminderResult(boolean ok, String message) {
+        if (web != null) web.evaluateJavascript("window.PengoReminderResult && window.PengoReminderResult(" + ok + "," + JSONObject.quote(message) + ");", null);
+    }
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (requestCode == REQUEST_NOTIFICATIONS) {
+            String time = pendingReminderTime; pendingReminderTime = null;
+            if (time != null && results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) enableReminder(time);
+            else reminderResult(false, "Reminders stay off. You can allow notifications later in System settings.");
+        }
+    }
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent); setIntent(intent);
+        if (web != null && intent.getBooleanExtra("pengo_reminder", false))
+            web.evaluateJavascript("typeof go === 'function' ? go('#/practice?start=1&size=3') : location.hash='#/practice?start=1&size=3';", null);
+    }
+    @Override protected void onResume() {
+        super.onResume();
+        if (web != null) reminderResult(StudyReminders.allowed(this), StudyReminders.prefs(this).getBoolean("enabled", false) && StudyReminders.allowed(this)
+                ? "Daily reminder is enabled on this device." : "Reminders are off or notifications are blocked in System settings.");
+    }
+
     private void updateSystemBars(boolean dark) {
-        getWindow().setStatusBarColor(Color.parseColor(dark ? "#0f1826" : "#eef6fd"));
+        getWindow().setStatusBarColor(Color.parseColor(dark ? "#102422" : "#faf9f5"));
         int flags = getWindow().getDecorView().getSystemUiVisibility();
         if (dark) flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
         else flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
         if (android.os.Build.VERSION.SDK_INT >= 26) {
-            getWindow().setNavigationBarColor(Color.parseColor(dark ? "#0f1826" : "#eef6fd"));
+            getWindow().setNavigationBarColor(Color.parseColor(dark ? "#102422" : "#faf9f5"));
             if (dark) flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
             else flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
         }

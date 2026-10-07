@@ -6,6 +6,8 @@ This describes the inspected implementation and its trust boundaries. It is not 
 
 Pengo stores learned timestamps, favorites, notes, SRS due times, quiz best scores, plan settings/history, and visible-time/first-learned activity, practice attempts, saved sessions, mistake lists, and achievements locally. No account, analytics SDK, remote sync, model call, or credential storage is implemented. Web data/SVG requests go to the static host; native content is bundled and its manifest declares no internet permission.
 
+Optional reminder time/opt-in/delivery dates are device preferences outside progress exports. Android uses local OS alarms and notification channels; browser alerts register a notification-only worker after explicit opt-in. There is no remote push server or subscription. Permission is requested only when enabling reminders, and settings honor app/channel denial. Calendar export is user initiated and transfers a generic practice event, without progress or notes, to the selected calendar. See [design and reminders](design-and-reminders.md).
+
 “Local” does not mean encrypted. localStorage and exported JSON are plaintext at the application layer. A static host can have its own access logging. Android declares `allowBackup=true`, so platform/device backup policy can affect app data; the repository does not implement custom backup encryption or exclusions.
 
 ## Trust boundaries
@@ -26,7 +28,7 @@ Pengo stores learned timestamps, favorites, notes, SRS due times, quiz best scor
 
 Import replaces current state and has no confirmation preview. It accepts a broad object with at least one known progress field and preserves unknown properties. Top-level maps are normalized, but malformed nested values can trigger rendering/scheduler errors. A full storage migration framework and dataset-version envelope are absent.
 
-Erasure requires an explicit UI confirmation, resets the main store, and removes the intro flag. It does not delete exported files or external/device backups. It writes a default store rather than purging every localStorage key on the origin.
+Erasure requires an explicit UI confirmation, resets the main store, removes the intro flag, and resets/cancels device reminders. It does not revoke OS permission, delete exported files or external/device backups, or remove calendar events already imported elsewhere. It writes a default store rather than purging every localStorage key on the origin.
 
 ## Native configuration
 
@@ -45,7 +47,7 @@ The metadata refresh script downloads from an upstream URL; Docker downloads bui
 The following are follow-up options, not implemented protections:
 
 - Versioned deep backup validation with size bounds and an import preview/confirmation.
-- Visible persistence errors and backup recovery guidance.
+- Deeper recovery/import validation beyond the existing persistence-error notice.
 - A native navigation allowlist and bridge exposure policy before introducing remote pages.
 - Explicit trusted-content markup rules and CSP suitable for current classic scripts/inline markup.
 - Pinned build inputs/dependencies and reproducible artifact records.

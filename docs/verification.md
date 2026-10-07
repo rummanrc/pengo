@@ -60,3 +60,24 @@ Use the [test matrix](testing.md) and [delivery records](delivery/review-and-acc
 | Diff whitespace | Passed | `git diff --check` |
 
 The browser suite and Playwright dependency used a separate temporary directory, with no changes to the user's browser profile. Screenshots and staged artifacts were generated outside the repository. No APK build/device test, production deployment, full accessibility audit, or learner-outcome study was performed. Delivered capabilities and further content needs are listed in [daily learning improvements](learning-improvements.md).
+
+## Adventure design and reminders verification
+
+**Date:** 2026-10-07 (Asia/Tokyo). **Source baseline:** `b380887`, plus the implementation changes in this workspace. This subsequent record covers the visual refresh and notification implementation. Earlier records describe their own historical scope.
+
+| Check | Result | Scope and limit |
+| --- | --- | --- |
+| Node regression/rule suites | 97 course assertions + 37 practice + 17 reminder + 7 worker checks passed | Actual source; no npm runtime dependencies or dukpy execution |
+| Existing Chrome practice integration | 46 checks passed | Shared SRS, answers, resume, due/mistake filters, backups, storage failure, and fallback bundle |
+| Chrome design/reminder integration | 40 checks passed | Original mascot, quick starts, learning trail, feedback/results, finite/reduced motion, explicit permission/denial, real worker notifications, goal/duplicate suppression, calendar download, device preferences/import/erase, unsupported-browser fallback |
+| Responsive layout and visuals | Passed | Main routes at 320/390/768/1024/1440px; inspected desktop Home, mobile Review, dark Home, and actual phone viewports including reminder settings and page bottom |
+| Native JUnit/Robolectric | 26 tests passed; no failures/skips | 5 local-time tests, 15 alarm/receiver/notification tests, 6 full-activity permission/reset/entry tests; simulated SDK 33 |
+| Android compilation | Debug APK built successfully | Gradle 8.7/JDK 17/SDK 34 through cached `knowkanji-builder` Docker image on amd64; `testDebugUnitTest` and `assembleDebug` |
+| Static/APK asset parity | Passed | 2,424 runtime files / 42,325,084 bytes; every fresh staged file equals source bytes and the APK asset entry; all eight classic scripts and notification worker present |
+| Packaged Android permissions | Passed | `aapt dump permissions`: only notification and boot permissions; no internet or exact-alarm permission |
+| JavaScript/Python syntax | Passed | Root JS, Node test files, Python scripts/tests |
+| Documentation and whitespace | Passed | 172 local file links, heading anchors, and balanced fences across 26 documents; `git diff --check` |
+
+The new asset [pengo-adventure.png](../assets/pengo-adventure.png) was produced with the built-in image generation tool from the existing mascot reference; the exact prompt is in [design and reminders](design-and-reminders.md#mascot-asset-and-generation-record). Browser checks used temporary Playwright dependencies and isolated contexts. No user browser permissions/profile were changed. The local test server was stopped after verification.
+
+Review artifacts are ignored `dist/pengo-debug.apk` and `dist/pengo-home-preview.png`. APK SHA-256: `ac65f57a2b5392463736200fa61c53d4c4feb10c1049a5389ad475de2fb97151`. These are a debug candidate and a visual preview, not a production release. No physical-device/OEM power-management test, external calendar import, accessibility conformance audit, deployment, or retention/learning-outcome study was performed. Browser alerts require an open page; calendar alerts cannot suppress themselves based on Pengo goals.

@@ -8,6 +8,7 @@ For a new engineer, read [product](product.md), [architecture](architecture.md),
 | --- | --- | --- |
 | [Product](product.md) | Scope, journeys, capability requirements | `app.js`, `index.html` |
 | [Daily learning improvements](learning-improvements.md) | Implemented feature priorities, rationale, next content track | Practice scripts and tests |
+| [Design and reminders](design-and-reminders.md) | Adventure UI, mascot generation, opt-in reminders and platform limits | Design/reminder scripts, native reminder classes |
 | [Architecture](architecture.md) | Components, startup, packaging flows | Root scripts, `MainActivity.java` |
 | [Development](development.md) | Setup and change workflows | `package.json`, scripts, tests |
 | [Frontend](frontend.md) | Routes, rendering, CSS, accessibility | `app.js`, `styles.css`, onboarding |

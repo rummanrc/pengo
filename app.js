@@ -63,6 +63,7 @@ function recordStudyItem(type, id) {
   courseRecordDay();
   updatePracticeBadges();
   courseCheckMilestones();
+  Reminders.syncGoal();
   save();
 }
 function migrateStudyItems() {
@@ -164,7 +165,7 @@ function importBackupText(text) {
     store.practice = Practice.normalize(data.practice);
     migrateStudyItems();
     normalizePracticeDays();
-    save(); applyTheme(); render();
+    save(); applyTheme(); Reminders.syncGoal(); render();
     message("Backup imported.");
     return true;
   } catch (err) {
@@ -425,8 +426,10 @@ async function render() {
   else if (name === "progress") { renderNav("progress"); renderProgress(view); }
   else if (name === "settings") { renderNav("settings"); renderSettings(view); }
   else { renderNav("home"); renderHome(view); }
+  bindPengoUI(view);
   view.focus({ preventScroll: true });
   window.scrollTo(0, 0);
+  if (name === "settings" && q.section === "reminders") $("#reminderSettings",view).scrollIntoView({block:"start"});
 }
 window.addEventListener("hashchange", render);
 
@@ -493,53 +496,8 @@ function renderHome(view) {
   if (!store.course) { renderHomeSplash(view); return; }
   renderHomeDash(view);
 }
-function renderHomeSplash(view) {
-  var order = ["N1", "N2", "N3", "N4", "N5"];
-  var names = (typeof Course !== "undefined" && Course.LEVEL_NAMES) || {};
-  view.innerHTML =
-    "<div class=\"splash\">" +
-    "<h1>Which JLPT level<br>are you preparing for?</h1>" +
-    "<div class=\"splash-levels\">" + order.map(function (lv) {
-      return "<a class=\"splash-lv lv-" + lv.toLowerCase() + "\" href=\"#/course/setup?target=" + lv + "\">" +
-        "<span class=\"splash-lv-code\">" + lv + "</span>" +
-        "<span class=\"splash-lv-name\">" + esc(names[lv] || "") + "</span></a>";
-    }).join("") + "</div>" +
-    "<p class=\"splash-cheer\" lang=\"ja\">\u304c\u3093\u3070\u308d\u3046\uff01<span>Let\u2019s do it!</span></p>" +
-    "<img class=\"splash-mascot\" src=\"assets/pengo-mascot.png\" alt=\"Pengo cheering you on\">" +
-    "<div class=\"splash-dots\" aria-hidden=\"true\"><i></i><i></i><i class=\"on\"></i><i></i></div></div>" +
-    practiceDashboardHTML();
-}
-function renderHomeDash(view) {
-  var c = store.course;
-  var batch = courseTodaysBatch();
-  var batchPct = batch.items.length ? Math.round(batch.done / batch.items.length * 100) : 100;
-  var contTitle = batch.complete ? "Course complete" : c.target + " \u00b7 Day " + batch.day;
-  var contSub = batch.complete ? "All material unlocked - keep reviewing" : batch.done + " / " + batch.items.length + " studied";
-  var contHref = batch.complete ? "#/course/quiz" : "#/course/day";
-  var tiles = [
-    { t: "Kanji", ch: "\u6f22", href: "#/kanji/" + c.target, cls: "t1" },
-    { t: "Vocab", ch: "\u8a9e", href: "#/vocab/" + c.target, cls: "t2" },
-    { t: "Grammar", ch: "\u6587", href: "#/grammar/" + c.target, cls: "t3" },
-    { t: "Review", ch: "\u8a66", href: "#/review?lv=" + c.target, cls: "t4" }
-  ];
-  view.innerHTML =
-    "<div class=\"dash-hero\">" +
-    "<div class=\"dash-hello\">" + courseGreeting() + "</div>" +
-    "<p class=\"dash-tag\">A little progress each day leads to big results.</p>" +
-    "<img class=\"dash-mascot\" src=\"assets/pengo-mascot.png\" alt=\"Pengo reading a book\"></div>" +
-    practiceDashboardHTML() +
-    "<div class=\"card dash-continue\"><h2>Continue Learning</h2>" +
-    "<div class=\"dash-cont-row\"><span class=\"dash-badge\">" + esc(c.target) + "</span>" +
-    "<div class=\"dash-cont-meta\"><b>" + esc(contTitle) + "</b><span>" + esc(contSub) + "</span></div>" +
-    "<a class=\"btn primary\" href=\"" + contHref + "\">Start &rarr;</a></div>" +
-    (batchPct > 0 ? progressBar(batchPct) : "") + "</div>" +
-    "<div class=\"dash-tiles\">" + tiles.map(function (t) {
-      return "<a class=\"dash-tile " + t.cls + "\" href=\"" + t.href + "\">" +
-        "<span class=\"dash-tile-ico\" aria-hidden=\"true\">" + t.ch + "</span>" + t.t + "</a>";
-    }).join("") + "</div>" +
-    "<p class=\"explain\">" + courseScheduleText() + "</p>" +
-    "<div class=\"card\"><h2>Milestones</h2>" + courseMilestoneHTML() + "</div>";
-}
+function renderHomeSplash(view) { renderAdventureHome(view, false); }
+function renderHomeDash(view) { renderAdventureHome(view, true); }
 /* ---------- Learn (one tab for Kanji, Vocabulary, Grammar) ---------- */
 function renderLearn(view, q) {
   const defaultLv = store.course && LEVELS.includes(String(store.course.target || "").toUpperCase())
@@ -1063,6 +1021,7 @@ function renderSettings(view) {
     "<div class=\"card\"><h2>Stroke order</h2><div class=\"settings-row\">" +
     "<label><input type=\"checkbox\" id=\"sAuto\"" + (s.autoplay ? " checked" : "") + "> Auto-play stroke order</label></div></div>" +
     practiceSettingsHTML() +
+    reminderSettingsHTML() +
     "<div class=\"card\"><h2>Backup</h2><div class=\"settings-row\">" +
     "<button class=\"btn soft\" id=\"sExport\">Export my data</button>" +
     "<button class=\"btn soft\" id=\"sImportButton\" type=\"button\">Import backup</button>" +
@@ -1077,12 +1036,13 @@ function renderSettings(view) {
     "<div class=\"card\"><h2>About this app</h2>" +
     "<p><button class=\"btn soft\" id=\"sIntro\">Replay intro</button></p>" + 
     "<p class=\"explain\">Pengo " + (window.APP_VERSION || "1.0.0") + " runs fully offline: all kanji, vocabulary and grammar data (incl. example sentences) plus stroke diagrams are bundled, with no account or network needed. Sources: KANJIDIC2, KRADFILE (EDRDG), KanjiVG, Tanaka Corpus, Kanjium. See resources/CREDITS.md for full attribution.</p></div>";
+  bindReminderSettings(view);
   $("#sTheme").addEventListener("click", e => {
     s.theme = s.theme === "dark" ? "light" : "dark";
     save(); applyTheme();
     e.target.textContent = "Theme: " + s.theme;
   });
-  $("#practiceGoal").addEventListener("change", e => { s.dailyGoal = Practice.goal(e.target.value); save(); });
+  $("#practiceGoal").addEventListener("change", e => { s.dailyGoal = Practice.goal(e.target.value); Reminders.syncGoal(); save(); });
   $("#sAuto").addEventListener("change", e => { s.autoplay = e.target.checked; save(); });
   $("#sExport").addEventListener("click", () => {
     exportBackup();
@@ -1111,7 +1071,9 @@ function renderSettings(view) {
       "<button class=\"btn soft\" id=\"sWipeCancel\">Cancel</button>";
     $("#sWipe").closest(".card").appendChild(panel);
     $("#sWipeConfirm").addEventListener("click", () => {
+      Reminders.resetDevice();
       store = defaultStore(); save(); applyTheme();
+      Reminders.syncGoal();
       try { localStorage.removeItem(ONBOARD_KEY); } catch (e) {}
       render();
     });
@@ -2112,6 +2074,7 @@ function applyTheme() {
 }
 function initChrome() {
   applyTheme();
+  Reminders.init();
   const flip = () => {
     store.settings.theme = store.settings.theme === "dark" ? "light" : "dark";
     save(); applyTheme();

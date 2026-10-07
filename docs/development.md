@@ -28,7 +28,7 @@ Serve only for local development. For public hosting, stage the runtime inventor
 | Docker APK | Python 3, Docker daemon/CLI | `scripts/build_apk_docker.py` |
 | Capacitor experiments | Node/npm and optional package dev dependencies | Separate integration work required |
 
-`package.json` declares only optional Capacitor dev dependencies, with `^6.0.0` ranges. There is no lockfile or frontend build script. `npm test` runs dependency-free Node course/practice checks (Python 3 is needed to extract the existing course drivers). `npm install` is not part of the native Java shell build.
+`package.json` declares only optional Capacitor dev dependencies, with `^6.0.0` ranges. There is no lockfile or frontend build script. `npm test` runs dependency-free Node course/practice/reminder/worker checks (Python 3 is needed to extract the existing course drivers). `npm install` is not part of the native Java shell build. Native reminder tests use test-only JUnit/Robolectric Gradle dependencies; see [testing](testing.md#native-reminder-tests).
 
 ## Test environment
 
@@ -57,7 +57,7 @@ Use [frontend](frontend.md) for view/route ownership and [interfaces](interfaces
 
 ### Views and styling
 
-Change the relevant renderer in `app.js` and matching selectors/tokens in `styles.css`. Check hash navigation, retained search focus, both themes, and mobile/desktop layout. If adding a runtime script or asset path, update `index.html` where applicable and the `FILES`/`DIRS`/`EXTRA` inventory in `sync_www.py`.
+Change the relevant renderer in `app.js`, `practice-ui.js`, or `design.js` and matching selectors/tokens in `styles.css`. Check hash navigation, retained search focus, both themes, mobile/desktop layout, and reduced motion. If adding a runtime script or asset path, update `index.html` where applicable and the `FILES`/`DIRS`/`EXTRA` inventory in `sync_www.py`.
 
 ### Course behavior
 

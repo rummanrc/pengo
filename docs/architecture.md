@@ -11,6 +11,11 @@ flowchart TD
     App --> Course["course.js: pure scheduling"]
     App --> Practice["practice.js: pure practice rules"]
     App --> PracticeUI["practice-ui.js: shared player and motivation"]
+    App --> Design["design.js: adventure views and mascot"]
+    App --> Reminders["reminders.js: device reminders"]
+    Reminders --> DevicePrefs["Device-only preferences"]
+    Reminders --> Worker["reminder-worker.js: browser notification taps"]
+    Reminders --> Bridge
     App --> Content["data JSON or bundle.js"]
     App --> SVG["resources/stroke-order: SVGs"]
     App --> Storage["localStorage: knowkanji:v1"]
@@ -20,27 +25,34 @@ flowchart TD
     Platform --> Browser["Browser file/share APIs"]
     Platform --> Bridge["KnowKanjiNative Java bridge"]
     Bridge --> Android["Android document picker and system bars"]
+    Bridge --> Alarm["StudyReminders: OS alarm and channel"]
+    Alarm --> Receiver["ReminderReceiver: deliver and reschedule"]
+    Receiver --> Notification["Android notification: short practice entry"]
     Shell --> Style["styles.css and assets/"]
 ```
 
-`app.js` owns data indexes, mutable progress, routing, and views. `course.js` computes plan behavior without DOM/storage access. `practice.js` computes selection, SRS scheduling, session validation, and motivation statistics; `practice-ui.js` owns the shared player and daily practice views. Platform adapts native/browser operations, although `app.js` also calls the native bridge directly for backups. Onboarding owns its overlay and completion flag.
+`app.js` owns data indexes, mutable progress, routing, and views. `course.js` computes plan behavior without DOM/storage access. `practice.js` computes selection, SRS scheduling, session validation, and motivation statistics; `practice-ui.js` owns the shared player. `design.js` supplies adventure Home, real progress cards, quick choices, and mascot presentation. `reminders.js` supplies device preferences and explicit browser/native opt-in. Platform adapts native/browser operations, although app/reminder scripts also call the native bridge directly. Onboarding owns its overlay and completion flag.
 
 | Component | Responsibility | Dependencies |
 | --- | --- | --- |
-| `index.html` | Shell DOM, metadata, early intro gate, script order | CSS, assets, six scripts |
+| `index.html` | Shell DOM, metadata, early intro gate, script order | CSS, assets, eight scripts |
 | `app.js` | Loading/indexing, routes, rendering, persistence, quiz/SRS integration | DOM, Course, Platform, onboarding, local files |
 | `course.js` | Dates, pace, order, batches, sampling, streaks, milestones | Built-ins and state callbacks |
 | `practice.js` | Pure practice selection, grading, validation, goals, badges | Course and built-ins |
 | `practice-ui.js` | Shared quiz/recall player, session summaries, daily dashboard | App globals, Practice, Course |
+| `design.js` | Adventure Home, learning trail, progress cards, tips, quick starts | App globals, Practice, Course, Reminders |
+| `reminders.js` | Device opt-in, native goal sync, browser alerts, calendar file | Browser APIs, optional native bridge |
+| `reminder-worker.js` | Notification tap navigation | Service-worker clients API; no caching |
 | `platform.js` | Detection, export, import callback, theme, Back | Browser APIs, optional native globals |
 | `onboarding.js` | Intro slides, touch navigation, first-launch decision | DOM, Platform, localStorage |
 | `styles.css` | Themes, shell, feature styles, responsive/motion rules | Shell and renderer classes |
 | `MainActivity.java` | WebView, bridge, document results, Back/lifecycle | Android framework, packaged files |
+| Native reminder classes | Local-time alarms, permission/channel checks, delivery, boot/clock restoration | Android framework, SharedPreferences |
 | Python scripts | Content transformation, web/APK staging | Filesystem and optional build tools |
 
 ## Startup
 
-Script order is `platform.js` → `onboarding.js` → `course.js` → `practice.js` → `practice-ui.js` → `app.js`. These are classic scripts, not ES modules. Top-level `const`/`let` such as `DB` and `store` are global lexical bindings, not necessarily properties on `window`. Course uses `var`; Platform and APP_VERSION are explicitly exported on `window`.
+Script order is `platform.js` → `onboarding.js` → `course.js` → `practice.js` → `practice-ui.js` → `reminders.js` → `design.js` → `app.js`. These are classic scripts, not ES modules. UI/reminder functions access app globals only after initialization. Top-level `const`/`let` such as `DB` and `store` are global lexical bindings, not necessarily properties on `window`. Course uses `var`; Platform and APP_VERSION are explicitly exported on `window`.
 
 ```mermaid
 sequenceDiagram
@@ -76,7 +88,7 @@ Content lives in `DB.levels`, `DB.vocab`, and `DB.grammar`, with `byChar`, `vByI
 
 Handlers mutate the store and call `save()`, which serializes the whole object into `knowkanji:v1`. There is no transaction log, cross-tab coordination, or server acknowledgement; storage errors show a persistent export-backup notice. The saved practice session is validated against loaded content before use, and answered questions resume as feedback without regrading. Curriculum is derived on demand, so changed data/pace may change numbered batches.
 
-`parseHash()` decodes route segments/query pairs. `render()` selects a view, updates navigation, focuses `#view`, and scrolls to the top. Most renderers replace `innerHTML` then bind handlers. Browse search changes only results and replaces history state to preserve focus. Hash routing requires no server route rewriting.
+`parseHash()` decodes route segments/query pairs. `render()` selects a view, updates navigation, binds mascot tips, focuses `#view`, and scrolls to the top (or the requested reminder section). Most renderers replace `innerHTML` then bind handlers. Browse search changes only results and replaces history state to preserve focus. Hash routing requires no server route rewriting.
 
 ## Native packaging
 
@@ -93,6 +105,8 @@ flowchart LR
 The bridge is installed as `window.KnowKanjiNative` before loading `file:///android_asset/www/index.html`. Export opens `ACTION_CREATE_DOCUMENT`; import opens `ACTION_OPEN_DOCUMENT`, reads UTF-8, quotes the text with `JSONObject.quote`, then invokes `Platform.receiveImport`.
 
 Android Back evaluates `KKBack()`: intro gets first opportunity, then Platform navigates browser history off Home. Java falls back to activity Back when JavaScript returns false. Activity recreation saves/restores WebView state; localStorage remains the durable progress store.
+
+Native reminders use SharedPreferences outside progress backups and an OS-owned inexact alarm. Receivers deliver and restore opted-in schedules independently of the WebView; notification entry opens short practice. Browser reminders need an open page and use a notification-only service worker. See [design and reminders](design-and-reminders.md) for lifecycle, permission, timezone, and calendar behavior.
 
 ## Boundaries and constraints
 
