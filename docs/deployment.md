@@ -1,5 +1,7 @@
 # Deployment and releases
 
+Voice/audio assets are retired. Run `python3 scripts/build_components.py` after updating KanjiVG SVGs or mnemonics. Ship `data/components.js` with the runtime; `sync_www.py` removes legacy audio and pronunciation files from an existing staging directory. No synthesis/model dependencies are required.
+
 ## Static web staging
 
 Build a runtime-only directory with the existing packaging script:
@@ -14,7 +16,7 @@ The default output is ignored `www/`. Upload its contents to a static host, reta
 
 | Inventory | Paths |
 | --- | --- |
-| Root files | `index.html`, `app.js`, `onboarding.js`, `course.js`, `practice.js`, `practice-ui.js`, `reminders.js`, `reminder-worker.js`, `design.js`, `platform.js`, `styles.css`, `manifest.webmanifest` |
+| Root files | `index.html`, `app.js`, `onboarding.js`, `course.js`, `practice.js`, `practice-ui.js`, `components.js`, `recall-ui.js`, `dashboard.js`, `reminders.js`, `reminder-worker.js`, `design.js`, `platform.js`, `styles.css`, `manifest.webmanifest` |
 | Full directories | `assets/`, `data/` |
 | Resource subset | `resources/stroke-order/`, `resources/CREDITS.md` |
 
@@ -39,6 +41,7 @@ Hosted web offline reloads are not guaranteed: explicit browser reminder opt-in 
 | versionCode/versionName | 1 / `1.0.0` |
 | Native start URL | `file:///android_asset/www/index.html` |
 | Internet permission | Not declared |
+| Speech service visibility | `TTS_SERVICE` intent query; no additional permission; installed offline Japanese voice required |
 | Reminder permissions | `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`; no exact-alarm permission |
 | Platform backup | `android:allowBackup="true"` |
 

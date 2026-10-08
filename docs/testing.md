@@ -55,6 +55,8 @@ node --check app.js
 node --check course.js
 node --check practice.js
 node --check practice-ui.js
+node --check components.js
+node --check recall-ui.js
 node --check design.js
 node --check reminders.js
 node --check reminder-worker.js
@@ -215,3 +217,12 @@ gradle -p android :app:testDebugUnitTest :app:assembleDebug --console=plain
 JUnit 4.13.2 and Robolectric 4.16.1 are test-only Gradle dependencies. The 26 tests cover local-time recurrence/year rollover/DST, off by default, single alarm replacement, permission/app/channel denial, explicit tests, duplicate/goal/late suppression, actionable tap, broadcast filtering, restore after boot/clock/timezone/package updates, receiver delivery without a WebView, full activity startup and opt-in callbacks, cold notification entry, cancellation during a permission request, and confirmed-reset behavior. Reports are generated under `android/app/build/test-results/testDebugUnitTest/`.
 
 Robolectric uses a simulated SDK 33 Android framework for platform tests, plus plain Java calendar checks. It does not execute an actual Android WebView or emulate OEM alarm/doze policies. Use T-15/T-16 on supported physical devices for that acceptance evidence. The pinned test version supports these lifecycle tests; upgrading it requires rerunning the full visible-activity tests rather than weakening lifecycle coverage to accommodate a runner regression.
+
+## Discovery cards and hierarchical components
+
+```sh
+python3 tests/test_components.py
+node tests/test_discovery_browser.cjs
+```
+
+Browser tests need separately installed Playwright and a local HTTP server; use `NODE_PATH` to point to its installation. Discovery tests use isolated Chrome contexts, cover reveal/rating separation, duplicate grading, reloads, gestures, keyboard navigation, challenge completion, nested story/structural views, retired listening-session migration, file:// loading and staging cleanup. Screenshots at 320/390/768/1280px in light/dark themes default to `/tmp/pengo-discovery-qa`. The structural unit tests cover nested groups, anonymous strokes, disconnected/repeated parts, original/partial annotations and older SVG namespace declarations. Existing practice and reminder browser suites remain applicable. These checks establish behavior and layout, not improved learning outcomes.

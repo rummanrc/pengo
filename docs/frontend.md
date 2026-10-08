@@ -24,7 +24,8 @@
 | `#/grammar/N5` | Grammar browser | `renderGrammarBrowse` |
 | `#/g/<id>` | Grammar detail | `renderGrammarDetail` |
 | `#/review?kind=vocab&lv=N4` | Shared practice setup with vocabulary/N4 selected | `renderReview`, `renderPractice` |
-| `#/practice` | Four quick starts, optional custom setup, and daily practice | `renderPractice` |
+| `#/practice` | Five quick starts, optional custom setup, and daily practice | `renderPractice` |
+| `#/practice?start=1&mode=explore&kind=kanji&format=recall&size=3&lv=N5` | Guess, flip, explore memory cues, rate, swipe to continue | `renderRecallPlayer` |
 | `#/practice?mode=due&kind=vocab` | Due-only vocabulary across levels | Shared player |
 | `#/practice?mode=mistakes` | Targeted mistake practice | Shared player |
 | `#/practice?start=1&size=3` | Start three-question smart practice; resume if saved | Shared player |
@@ -52,7 +53,7 @@ All three browser views support `q` (query), `f` (filter), and `s` (sort). Defau
 | Vocabulary | `all`, `learned`, `unlearned`, `fav`, `nosent` | `default`, `freq`, `alpha`, `reading`, `progress` |
 | Grammar | `all`, `learned`, `unlearned`, `fav` | `default`, `freq`, `alpha`, `progress` |
 
-`tab=quiz` still appears in some links but is ignored by current Review dispatch; recall cards and due/mistake modes are selected in practice setup. Additional practice parameters are `mode=smart|due|mistakes|plan`, `kind=mixed|kanji|vocab|grammar`, `size=3|5|10`, and `format=quiz|recall`. Progress uses `level`, while Learn/Review use `lv`.
+`tab=quiz` still appears in some links but is ignored by current Review dispatch; recall cards and due/mistake modes are selected in practice setup. Additional practice parameters are `mode=smart|due|mistakes|plan|explore`, `kind=mixed|kanji|vocab|grammar`, `size=3|5|10`, and `format=quiz|recall`. `explore` (Level sampler) draws from the chosen level, so daily challenges remain possible even with a one-item plan; `plan` and plan-aware `smart` retain unlocked-material behavior. Progress uses `level`, while Learn/Review use `lv`.
 
 ## Search and details
 
@@ -98,3 +99,5 @@ The adventure section supplies warm/teal theme overrides, matching dark colors, 
 Existing support includes a skip link, navigation labels/current state, semantic buttons, visible focus, Japanese `lang` attributes, progressbar values, and reduced-motion handling. Onboarding declares a modal dialog and supports swipe/back/skip. These features do not establish audited conformance: focus trapping/restoration and screen-reader behavior need manual review.
 
 Timers include visible-time tracking (15 seconds), delayed notes/search, progress refresh, stroke animation, and browser reminder checks (30 seconds). The reminder permission callback checks whether its panel remains attached. `stopStrokeTimers()` exists, but rendering does not centrally cancel every asynchronous action. Rapid navigation can expose stale responses; account for lifecycle when changing asynchronous view code.
+
+Vocabulary cards contain a `.vocab-card-link`. Voice controls/settings are removed. Discovery cards use two accessible faces; the inactive face is inert and hidden from assistive technology. Details/ratings stay hidden until reveal, and swipe/keyboard advance requires a prior rating. Reduced-motion users get an immediate flip. See [discovery cards](discovery-cards.md).

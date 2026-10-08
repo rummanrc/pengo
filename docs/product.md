@@ -35,6 +35,10 @@ These documentation IDs organize acceptance checks; they are not historical issu
 | P-15 | Quick starts, real goal/week cards, mascot tips/feedback, dark theme, finite and reduced motion | `design.js`, player, CSS | Design browser suite, T-14 |
 | P-16 | Explicit device reminder opt-in, goal/duplicate suppression, native closed-app delivery, web/calendar limits | Reminders, native reminder classes, worker | Reminder unit/browser/native tests, T-16 |
 
+Learning is text-only. Daily challenges open finite discovery-card sessions: guess a shape, flip to reveal meaning/readings and memory cues, explicitly rate recall, then swipe or tap to advance. Cards share saved progress and SRS; pronunciation and listening features were removed on 2026-10-09.
+
+Home shows distinct kanji, vocabulary, and grammar items studied/practiced today, new-study and attempt totals, and current-batch completion separately. Three daily challenges track the practice goal, a rotating subject, and three flipped-and-rated kanji. Wrong answers count as effort; repeats do not inflate distinct-item goals. Challenges and the daily word follow the local date, refreshing an open Home on the next clock/visibility check. Weekly activity, supportive return copy, achievements, and reminders complement the task list without penalties for missed days. See [discovery cards](discovery-cards.md).
+
 ## Behavior distinctions
 
 All Review and plan quiz entry points use the shared practice player and grade SRS and activity. Smart sessions at the active plan level select unlocked or previously studied material; without a matching plan they sample the selected level. Due and mistake modes include studied records across all levels. Plan mode selects unlocked question items; distractors can come from other target-level records. Best raw scores remain for completed ten-question, single-kind multiple-choice sessions whose questions all match the selected level.

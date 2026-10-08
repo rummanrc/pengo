@@ -22,6 +22,7 @@ try {
 } catch (e) { /* fresh start */ }
 store.settings = Object.assign(defaultStore().settings, store.settings || {});
 store.settings.dailyGoal = Practice.goal(store.settings.dailyGoal);
+delete store.settings.audioEngine;
 store.practice = Practice.normalize(store.practice);
 if (store.settings.hideBanner == null) store.settings.hideBanner = false;
 for (const _k of ["vLearned", "vNotes", "vSrs", "vQuizBest", "gLearned", "gNotes", "gSrs", "gQuizBest"]) if (!store[_k]) store[_k] = {};
@@ -119,6 +120,7 @@ function flushStudyTime() {
     save();
   }
   studyWasVisible = document.visibilityState !== "hidden";
+  if (DB.loaded && (!location.hash || location.hash === '#/') && typeof homeDate !== 'undefined' && homeDate !== Course.todayStr()) render();
 }
 setInterval(flushStudyTime, 15000);
 document.addEventListener("visibilitychange", flushStudyTime);
@@ -162,6 +164,7 @@ function importBackupText(text) {
     }
     for (const key of ["fav", "vFav", "gFav"]) if (!Array.isArray(store[key])) store[key] = [];
     store.settings.dailyGoal = Practice.goal(store.settings.dailyGoal);
+    delete store.settings.audioEngine;
     store.practice = Practice.normalize(data.practice);
     migrateStudyItems();
     normalizePracticeDays();
@@ -272,7 +275,7 @@ const KanjiMnemonic = {
 function mnemonicFor(item) {
   if (item.mnemonic) return { text: item.mnemonic, notice: "Memory aid, not etymology." };
   return KanjiMnemonic.generate({ kanji: item.k, meaning: item.meaning,
-    parts: item.components.map(c => c.m), on: item.on, kun: item.kun });
+    parts: learningComponents(item).map(c => c.m), on: item.on, kun: item.kun });
 }
 
 /* ---------- Data loading ---------- */
@@ -398,6 +401,7 @@ function renderNav(active) {
   else pill.hidden = true;
 }
 async function render() {
+
   if (!DB.loaded) { $("#view").innerHTML = "<p class=\"empty\">Loading kanji data...</p>"; return; }
   const { seg, q } = parseHash();
   const view = $("#view");
@@ -603,6 +607,7 @@ function bindBrowseSearch(inputId, countId, gridId, filterItems, renderCard, kin
     const text = input.value;
     deb = setTimeout(function () {
       const items = filterItems(text);
+
       grid.innerHTML = items.length ? items.map(renderCard).join("") :
         "<p class=\"empty\">No results match. Try a different search or filter.</p>";
       if (kind === "kanji") count.textContent = items.length + " / " + DB.levels[level].length + " kanji · " + level;
@@ -622,7 +627,7 @@ function compRow(c) {
   if (c.variantOf) tags.push("<span class=\"badge\">variant of " + esc(c.variantOf) + "</span>");
   const inner = "<span class=\"cchar jp\" lang=\"ja\">" + esc(c.c) + "</span>" +
     "<span class=\"cinfo\"><span class=\"cm\">" + (esc(c.m) || "—") + "</span><br>" +
-    "<span class=\"explain\">" + (c.rad ? "True Kangxi radical. " : "Mnemonic component (KRADFILE). ") +
+    "<span class=\"explain\">" + (c.rad ? "True Kangxi radical. " : "Learning component. ") +
     (c.variantOf ? "Written here as " + esc(c.c) + ", standard form " + esc(c.variantOf) + ". " : "") +
     tags.join(" ") + "</span></span>";
   if (c.link && DB.byChar[c.link])
@@ -671,10 +676,9 @@ function renderDetail(view, ch) {
     "<div class=\"stroke-ctrl\"><button class=\"btn\" id=\"strokePlay\">▶ Play stroke order</button>" +
     "<label class=\"explain\"><input type=\"checkbox\" id=\"strokeNums\" checked> show stroke numbers</label></div></div></div>" +
     "<div class=\"comp-col\"><h3>Components</h3>" +
-    "<p class=\"explain\">Structural breakdown (KRADFILE). Badges tell Kangxi radicals apart from plain mnemonic parts.</p>" +
-    "<div class=\"comp-list\">" + it.components.map(compRow).join("") + "</div></div></div></div>" +
+    componentsHTML(it) + "</div></div></div>" +
     "<div class=\"card\"><h2>Mnemonic</h2><p class=\"mnemonic\">" + esc(mn.text) + "</p>" +
-    "<p class=\"explain\">" + esc(mn.notice) + " Based on: " + (it.components.map(c => esc(c.c) + " (" + esc(c.m || "?") + ")").join(" + ") || "—") + ".</p></div>" +
+    "<p class=\"explain\">" + esc(mn.notice) + " Based on: " + (storyComponents(it).map(c => esc(c.c) + " (" + esc(c.m || "?") + ")").join(" + ") || "—") + ".</p></div>" +
     "<div class=\"card\"><h2>Vocabulary</h2><ul class=\"vocab-list\">" + vocab + "</ul>" + vocabLinksForKanji(ch) + "</div>" + grammarLinksForKanji(ch) +
     "<div class=\"card\"><h2>Example sentences</h2><ul class=\"sent-list\">" + sents + "</ul></div>" +
     "<div class=\"card\"><h2>Similar kanji</h2><p class=\"jp\" lang=\"ja\">" + conf + "</p></div>" +
@@ -818,7 +822,7 @@ function quizReviewHTML(kind, item) {
     const readings = [];
     if (item.on && item.on.length) readings.push("<span><strong>On:</strong> <span lang=\"ja\">" + esc(item.on.join("、 ")) + "</span></span>");
     if (item.kun && item.kun.length) readings.push("<span><strong>Kun:</strong> <span lang=\"ja\">" + esc(item.kun.join("、 ")) + "</span></span>");
-    const parts = (item.components || []).slice(0, 3).map(c => "<span class=\"badge\"><span lang=\"ja\">" + esc(c.c) + "</span> " + esc(c.m) + "</span>").join(" ");
+    const parts = storyComponents(item).slice(0, 3).map(c => "<span class=\"badge\"><span lang=\"ja\">" + esc(c.c) + "</span> " + esc(c.m) + "</span>").join(" ");
     const words = (item.vocab || []).slice(0, 2).map(v => "<li><span lang=\"ja\">" + esc(v.w) + " (" + esc(v.r) + ")</span> — " + esc(v.m) + "</li>").join("");
     const mnemonic = quizClip(mnemonicFor(item).text, 180);
     return "<section class=\"card quiz-review\"><h3>Quick review <span lang=\"ja\">" + esc(item.k) + "</span></h3>" +
@@ -830,8 +834,7 @@ function quizReviewHTML(kind, item) {
   }
   if (kind === "vocab") {
     const ex = (item.sentences || [])[0];
-    return "<section class=\"card quiz-review\"><h3>Quick review <span lang=\"ja\">" + esc(item.word) + "</span></h3>" +
-      "<p><strong>Reading:</strong> <span lang=\"ja\">" + esc(item.reading) + "</span> &nbsp; <strong>Meaning:</strong> " + esc(item.meaning) + "</p>" +
+    return "<section class=\"card quiz-review\"><h3>Quick review <span lang=\"ja\">" + esc(item.word) + "</span></h3>" + "<p><strong>Reading:</strong> <span lang=\"ja\">" + esc(item.reading) + "</span> &nbsp; <strong>Meaning:</strong> " + esc(item.meaning) + "</p>" +
       (item.meanings && item.meanings.length > 1 ? "<p><strong>Also:</strong> " + esc(item.meanings.slice(1, 4).join("; ")) + "</p>" : "") +
       (ex ? "<p class=\"quiz-review-example jp\" lang=\"ja\">" + esc(ex.jp) + "</p>" + (ex.en ? "<p class=\"explain quiz-review-translation\">" + esc(ex.en) + "</p>" : "") : "") + "</section>";
   }
@@ -1030,7 +1033,7 @@ function renderSettings(view) {
     "<p class=\"explain\">" + storeNote() + "</p></div>" +
     courseSettingsCard() +
     "<div class=\"card\"><h2>About the data</h2>" +
-    "<p class=\"explain\">Kanji facts: KANJIDIC2 + curated JLPT files. Components: EDRDG KRADFILE. " +
+    "<p class=\"explain\">Kanji facts: KANJIDIC2 + curated JLPT files. Components: KanjiVG hierarchy; EDRDG KRADFILE fallback. " +
     "Stroke art: KanjiVG (" + (DB.meta ? LEVELS.map(l => DB.meta.levels[l].stroke + "/" + DB.meta.levels[l].count + " " + l).join(" · ") : "") + "). " +
     "Sentences: Tanaka Corpus + CSV set. Accents: Kanjium. Loader: " + (DB.source || "?") + ". Vocab: JLPT lists (" + (DB.vocabMeta ? DB.vocabMeta.total : vAll().length) + " words) + Tatoeba sentences (" + (DB.vocabMeta ? DB.vocabMeta.withSentences : 0) + " with matches). Grammar: Anki deck ‘Japanese Core Grammar JLPT N5-N1’ (" + (DB.grammarMeta ? DB.grammarMeta.total : gAll().length) + " points, text only, no audio used, no licence stated). Full credits in resources/CREDITS.md.</p></div>" +
     "<div class=\"card\"><h2>About this app</h2>" +
@@ -1180,11 +1183,11 @@ function matchVQuery(v, q) {
 }
 function vocabCard(v) {
   const fav = isVFav(v.id) ? "<span class=\"fav-star\" aria-label=\"Favorite\">*</span>" : "";
-  return "<a class=\"kcard vcard\" href=\"#/v/" + encodeURIComponent(v.id) + "\">" + fav +
+  return "<article class=\"kcard vcard\"><a class=\"vocab-card-link\" href=\"#/v/" + encodeURIComponent(v.id) + "\">" + fav +
     "<span class=\"vword jp\" lang=\"ja\">" + esc(v.word) + "</span>" +
     "<span class=\"read\" lang=\"ja\">" + esc(v.reading) + "</span>" +
     "<span class=\"mean\">" + esc(v.meaning) + "</span>" +
-    "<span class=\"meta\"><span class=\"badge " + levelClass(v.jlpt) + "\">" + v.jlpt + "</span>" + vStatusDot(v.id) + "</span></a>";
+    "<span class=\"meta\"><span class=\"badge " + levelClass(v.jlpt) + "\">" + v.jlpt + "</span>" + vStatusDot(v.id) + "</span></a>" + "</article>";
 }
 function renderVocabHome(view) {
   const due = vDueCount();
@@ -1940,6 +1943,7 @@ function renderCourseSetup(view, q) {
   });
 }
 function renderCourseDay(view) {
+
   var c = store.course, cur = courseCurriculum();
   var day = Math.min(courseUnlockedDay(), cur.length + 1);
   if (day > cur.length) {
@@ -2003,10 +2007,10 @@ function renderCourseDay(view) {
   });
 }
 
-function courseBuildQuestion(item, lv) {
+function courseBuildQuestion(item, lv, forcedVariant) {
   var head = practiceRecord(item.type, item.id);
   if (!head) return null;
-  var variant = Math.floor(Math.random() * (item.type === "grammar" ? 4 : 3));
+  var variant = forcedVariant === 0 ? 0 : Math.floor(Math.random() * (item.type === "grammar" ? 4 : 3));
   if (item.type === "vocab") variant %= 2;
   if (item.type === "grammar") {
     if (variant === 3 && !blankForm(head)) variant = 0;
@@ -2018,6 +2022,7 @@ function courseBuildQuestion(item, lv) {
   var reading = item.type === "kanji" ? foldReading(head.on[0] || head.kun[0] || "") : "";
   var others = shuffle((pool || []).filter(function (r) {
     if ((item.type === "kanji" ? r.k : r.id) === item.id) return false;
+    if (forcedVariant === 0 && item.type === 'vocab' && foldReading(r.reading) === foldReading(head.reading)) return false;
     // Homophones or identical meanings make reverse questions ambiguous.
     if (variant === 1 && foldEnglish(r.meaning) === foldEnglish(head.meaning)) return false;
     if (item.type === "kanji" && variant === 2 && (r.on || []).concat(r.kun || []).some(function (rd) { return foldReading(rd) === reading; })) return false;
@@ -2075,6 +2080,7 @@ function applyTheme() {
 function initChrome() {
   applyTheme();
   Reminders.init();
+
   const flip = () => {
     store.settings.theme = store.settings.theme === "dark" ? "light" : "dark";
     save(); applyTheme();

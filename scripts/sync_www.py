@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / (sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv else "www")
 
-FILES = ["index.html", "app.js", "onboarding.js", "course.js", "practice.js", "practice-ui.js", "reminders.js", "reminder-worker.js", "design.js", "platform.js", "styles.css", "manifest.webmanifest"]
+FILES = ["index.html", "app.js", "onboarding.js", "course.js", "practice.js", "practice-ui.js", "components.js", "recall-ui.js", "reminders.js", "reminder-worker.js", "dashboard.js", "design.js", "platform.js", "styles.css", "manifest.webmanifest"]
 DIRS = ["assets", "data"]
 EXTRA = [
     ("resources/stroke-order", "resources/stroke-order"),
@@ -24,6 +24,9 @@ EXTRA = [
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
+    # Purge retired runtime content from an existing staging directory.
+    shutil.rmtree(OUT / "assets" / "audio", ignore_errors=True)
+    (OUT / "pronunciation.js").unlink(missing_ok=True)
     for name in FILES:
         src = ROOT / name
         assert src.is_file(), "missing runtime file: %s" % name

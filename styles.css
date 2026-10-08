@@ -311,6 +311,12 @@ textarea.note { font-size: 16px; }
   .flash-card .big { font-size: 3rem; }
 }
 .vcard .vword { font-family: var(--jp-font); font-size: 1.5rem; font-weight: 700; line-height: 1.3; text-align: center; }
+.vocab-card-link { display: flex; flex-direction: column; align-items: center; gap: .1rem; flex: 1; width: 100%; min-width: 0; color: inherit; text-decoration: none; overflow-wrap: anywhere; }
+@media (max-width: 860px) {
+  .kanji-grid > .vcard .vocab-card-link { align-items: flex-start; flex-direction: row; flex-wrap: wrap; gap: .1rem .6rem; width: auto; }
+  .course-item { flex-wrap: wrap; }
+  .course-item a { min-width: 0; overflow-wrap: anywhere; }
+}
 .vocab-hero { font-size: 2.6rem; line-height: 1.15; text-align: center; overflow-wrap: anywhere; height: auto; min-height: 9rem; padding: .8rem; }
 h2 small { font-weight: 600; font-size: .8rem; }
 h2 small a { font-weight: 600; }
@@ -806,8 +812,27 @@ h2 { font-weight: 800; }
 }
 
 /* Route focus is for screen readers; keep the main region visually quiet. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .view:focus-visible { outline: none; }
 .quick-practice-section { margin: 1.5rem 0; }
+.today-overview h2,.daily-challenges h2 { font-size: 1.25rem; margin: .4rem 0; }
+.today-overview .practice-heading > a { font-size: .75rem; white-space: nowrap; }
+.today-subjects { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .65rem; margin: 1.2rem 0; }
+.today-subject { display: flex; flex-direction: column; gap: .25rem; color: var(--ink); text-decoration: none; border: 2px solid var(--line); border-radius: 18px; padding: .9rem .7rem; background: var(--coral-soft); }
+.today-subject.mint { background: var(--mint-soft); }.today-subject.lavender { background: var(--lavender-soft); }
+.subject-mark { font: 1.3rem var(--jp-font); }.today-subject strong { font-size: 2rem; line-height: 1.3; }.today-subject > span:not(.subject-mark) { font-size: .8rem; font-weight: 750; }
+.today-subject small { font-size: .7rem; color: var(--ink-soft); margin-top: .3rem; }.today-subject small .pengo-symbol { width: 12px; height: 12px; }
+.today-summary { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .75rem; color: var(--ink-soft); }
+.today-review { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: 1rem 0 0; padding-top: .8rem; border-top: 1px solid var(--line); font-size: .8rem; text-decoration: none; }
+.challenge-score { background: var(--mint-soft); padding: .5rem; border-radius: 10px; font-weight: 800; white-space: nowrap; }
+.challenge-list { list-style: none; padding: 0; margin: 1rem 0 0; }.challenge-list li + li { border-top: 1px solid var(--line); }
+.challenge-list a { display: flex; align-items: center; gap: .8rem; padding: 1rem 0; color: var(--ink); text-decoration: none; }
+.challenge-icon { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 13px; background: var(--sun-soft); color: var(--gold); }
+.challenge-done .challenge-icon { background: var(--mint-soft); color: var(--accent); }
+.challenge-copy { flex: 1; min-width: 0; }.challenge-copy strong,.challenge-copy small { display: block; }.challenge-copy strong { font-size: .85rem; }.challenge-copy small { font-size: .75rem; color: var(--ink-soft); margin: .3rem 0 .5rem; }
+.challenge-copy .progress-track { height: 6px; margin: 0; }.challenge-count { font-size: .75rem; font-weight: 750; white-space: nowrap; }
+.daily-word h2 { margin: .8rem 0 .2rem; font: 1.7rem var(--jp-font); }.daily-word p { margin: .4rem 0 .8rem; font-size: .85rem; }
+@media (max-width:480px) { .today-subjects { gap: .35rem; }.today-subject { padding: .7rem .4rem; border-radius: 13px; }.today-subject strong { font-size: 1.6rem; }.today-subject > span:not(.subject-mark) { font-size: .7rem; }.today-subject small { font-size: .6rem; }.challenge-list a { gap: .5rem; }.challenge-icon { width: 32px; height: 36px; }.challenge-copy strong { font-size: .8rem; }.challenge-count { font-size: .65rem; }.today-overview .practice-heading { align-items: flex-start; } }
 .quick-practice-section h2 { margin: 0 0 .8rem; }
 .quick-practice-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .75rem; }
 .quick-practice-card { display: flex; flex-direction: column; align-items: flex-start; gap: .6rem; text-align: left; padding: 1rem; border: 2px solid var(--line); border-bottom-width: 5px; border-radius: 20px; background: var(--card); color: var(--ink); cursor: pointer; font: inherit; }
@@ -821,3 +846,47 @@ h2 { font-weight: 800; }
 .practice-custom[open] > summary { margin-bottom: .8rem; }
 @media (max-width:860px) { .quick-practice-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width:480px) { .quick-practice-card { padding: .85rem; }.quick-practice-card strong { font-size: .8rem; } }
+
+/* Discovery cards: one clear prompt, a tactile reveal, then useful context. */
+.recall-deck { max-width: 680px; margin: 0 auto; }
+.recall-deck h1 { font-size: clamp(1.35rem, 4vw, 2rem); margin: .3rem 0; }
+.recall-counter { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin: 1rem 0 .6rem; }
+.recall-instruction { text-align: center; margin: 1.2rem 0; }
+.recall-stage { perspective: 1200px; touch-action: pan-y; }
+.recall-flipper { display: grid; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.2,.75,.25,1); }
+.recall-flipper.is-flipped { transform: rotateY(180deg); }
+.recall-face { grid-area: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; min-height: 365px; padding: 2rem 1.5rem; border: 1px solid var(--line); border-radius: 28px; background: var(--card); color: var(--ink); box-shadow: 0 12px 35px rgba(20,60,55,.09); backface-visibility: hidden; -webkit-backface-visibility: hidden; text-align: center; overflow-wrap: anywhere; }
+.recall-front { width: 100%; font: inherit; cursor: pointer; background: radial-gradient(ellipse at 50% 25%, var(--accent-soft), transparent 65%), var(--card); }
+.recall-front:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+.recall-glyph { font-family: var(--jp-font); font-size: clamp(3rem, 14vw, 6rem); line-height: 1.4; max-width: 100%; }
+.recall-tap { display: flex; align-items: center; gap: .5rem; font-size: .9rem; color: var(--ink-soft); }
+.recall-tap .pengo-symbol { width: 18px; height: 18px; }
+.recall-back { transform: rotateY(180deg); visibility: hidden; }
+.is-flipped .recall-front { visibility: hidden; }
+.is-flipped .recall-back { visibility: visible; }
+.recall-back-glyph { font-family: var(--jp-font); font-size: 2.4rem; color: var(--accent); }
+.recall-back h2 { font-size: clamp(1.35rem, 4vw, 2rem); margin: 0; }
+.recall-readings p { margin: .3rem 0; }
+.recall-dock { text-align: center; margin: 1rem 0 1.5rem; }
+.recall-dock .practice-actions { justify-content: center; }
+.recall-dock .btn { min-height: 48px; }
+.recall-remembered .recall-back { border-color: var(--green); }
+.recall-learning .recall-back { border-color: var(--gold); }
+.recall-story { border-top: 3px solid var(--gold); }
+.learning-components .comp-list { margin: .7rem 0; }
+.story-parts { margin-bottom: 1.4rem; }
+.component-branch { min-width: 0; }
+.component-inside { margin: .5rem 0 .8rem; }
+.component-inside summary { cursor: pointer; color: var(--accent); padding: .6rem .3rem; min-height: 44px; }
+.component-children { padding-left: .8rem; border-left: 2px solid var(--line); }
+.component-children .comp { margin-top: .5rem; }
+.component-attribution { font-size: .75rem; line-height: 1.6; }
+@media (max-width: 420px) { .recall-face { min-height: 330px; padding: 1.5rem 1rem; } .recall-deck .practice-heading { align-items: flex-start; } .recall-deck .practice-heading > a { flex: 0 0 85px; text-align: right; } }
+@media (prefers-reduced-motion: reduce) { .recall-flipper { transition: none; } }
+
+.recall-deck [hidden] { display: none !important; }
+
+.recall-glyph-kanji { font-size: clamp(6rem, 30vw, 8rem); }
+
+.recall-dock .practice-actions { flex-wrap: nowrap; }
+.recall-dock .practice-actions .btn { flex: 1; min-width: 0; padding: .75rem .55rem; }

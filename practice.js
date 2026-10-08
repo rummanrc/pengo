@@ -2,7 +2,7 @@
 /* Pure practice/session rules. Content, DOM and persistence stay in app.js. */
 var Practice = (function () {
   var TYPES = ["kanji", "vocab", "grammar"];
-  var MODES = ["smart", "due", "mistakes", "plan"];
+  var MODES = ["smart", "due", "mistakes", "plan", "explore"];
   var STEPS = [1, 3, 7, 16, 35, 80, 180];
   var BADGES = [
     { id: "first-practice", label: "First practice", hint: "Answer your first question" },
@@ -19,7 +19,7 @@ var Practice = (function () {
     return { mode: MODES.indexOf(q.mode) >= 0 ? q.mode : "smart",
       kind: TYPES.indexOf(q.kind) >= 0 ? q.kind : "mixed",
       lv: ["N5", "N4", "N3", "N2", "N1"].indexOf(q.lv) >= 0 ? q.lv : fallback || "N5",
-      size: size(q.size), format: q.format === "recall" ? "recall" : "quiz" };
+      size: size(q.size), format: ["recall"].indexOf(q.format) >= 0 ? q.format : "quiz" };
   }
   function select(pool, cfg, srsOf, mistakes, stateOf, rnd) {
     var seen = {}, candidates = (pool || []).filter(function (item) {
@@ -37,7 +37,7 @@ var Practice = (function () {
     }
     var selected = [], used = {}, want = size(cfg.size);
     function take(item) { if (!used[key(item)]) { used[key(item)] = true; selected.push(item); } }
-    if (cfg.mode === "smart" || cfg.mode === "plan") {
+    if (cfg.mode === "smart" || cfg.mode === "plan" || cfg.mode === "explore") {
       // Make a small mixed session cover each available skill, while favoring overdue work.
       if (cfg.kind === "mixed") TYPES.forEach(function (type) {
         var typed = candidates.filter(function (item) { return item.type === type; });
@@ -96,7 +96,7 @@ var Practice = (function () {
           !["N5", "N4", "N3", "N2", "N1"].includes(q.lv) || !Number.isInteger(q.variant) || q.variant < 0 || q.variant > 3 ||
           !exists(q) || seen[key(q)] || !Array.isArray(q.options) || q.options.length > 4) return false;
       seen[key(q)] = true;
-      if (s.config.format === "quiz" && (q.options.length < 2 || q.options.indexOf(q.id) < 0 || new Set(q.options).size !== q.options.length)) return false;
+      if (s.config.format !== "recall" && (q.options.length < 2 || q.options.indexOf(q.id) < 0 || new Set(q.options).size !== q.options.length)) return false;
       if (!q.options.every(function (id) { return typeof id === "string" && exists({ type: q.type, id: id }); })) return false;
       var a = s.answers[i];
       return i >= s.answers.length || (a && typeof a.ok === "boolean" && typeof a.selected === "string" &&

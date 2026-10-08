@@ -25,7 +25,7 @@ function check(condition,label){assert.ok(condition,label);checks++;}
   check((await page.locator('#view').textContent()).includes('Day 1'),'trail opens actual course batch');
   await route('#/practice');
   check(await page.locator('.practice-custom').evaluate(el=>!el.open),'detailed settings are optional');
-  check(await page.locator('[data-quick-practice]').count()===4,'four quick-start practice choices');
+  check(await page.locator('[data-quick-practice]').count()===4,'four text practice choices');
   await page.locator('[data-quick-practice=smart]').click();
   check(await page.evaluate(()=>store.practice.session.questions.length)===3,'quick start opens three-question session');
   for(let i=0;i<3;i++){

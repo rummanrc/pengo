@@ -8,6 +8,8 @@ Pengo stores learned timestamps, favorites, notes, SRS due times, quiz best scor
 
 Optional reminder time/opt-in/delivery dates are device preferences outside progress exports. Android uses local OS alarms and notification channels; browser alerts register a notification-only worker after explicit opt-in. There is no remote push server or subscription. Permission is requested only when enabling reminders, and settings honor app/channel denial. Calendar export is user initiated and transfers a generic practice event, without progress or notes, to the selected calendar. See [design and reminders](design-and-reminders.md).
 
+There is no speech runtime, audio pack, microphone access or native TTS bridge. Component data is generated locally from already bundled KanjiVG SVGs; the app requires no new network access or permissions.
+
 “Local” does not mean encrypted. localStorage and exported JSON are plaintext at the application layer. A static host can have its own access logging. Android declares `allowBackup=true`, so platform/device backup policy can affect app data; the repository does not implement custom backup encryption or exclusions.
 
 ## Trust boundaries

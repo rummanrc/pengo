@@ -22,6 +22,7 @@ Start with the [documentation index](docs/README.md). The engineering docs use M
 | --- | --- |
 | Understand the product and requirements | [Product](docs/product.md) |
 | Explore the visual refresh and return reminders | [Design and reminders](docs/design-and-reminders.md) |
+| Understand discovery cards and layered components | [Discovery cards and components](docs/discovery-cards.md) |
 | Understand components and startup | [Architecture](docs/architecture.md) |
 | Set up and change the project | [Development](docs/development.md), [contributing](CONTRIBUTING.md) |
 | Find routes, views, and CSS conventions | [Frontend](docs/frontend.md) |
@@ -42,10 +43,12 @@ Start with the [documentation index](docs/README.md). The engineering docs use M
 
 - Browse and search all three content types by level, reading, and meaning; filter learned items and favorites.
 - Kanji readings, components, memory aids, examples, notes, similar characters, and animated KanjiVG stroke diagrams.
+- Tap-to-flip discovery cards with meanings, readings, memory stories and nested components. Rate recall, then swipe or tap to advance.
+- Text-only learning: pronunciation clips, voice controls and native TTS have been removed to reduce app size.
 - Vocabulary and grammar examples with available furigana and links to related content.
 - Short 3/5/10-question sessions, recall cards, due-only review, and mistake practice; every answer updates shared SRS.
 - Saved sessions, daily practice goals, weekly activity, supportive achievements, and session summaries with a clear stopping point.
-- A warmer adventure dashboard, actionable learning trail, quick practice cards, expressive Pengo artwork and tips, dark mode, and brief animations with reduced-motion support.
+- An adventure dashboard with distinct kanji/vocabulary/grammar totals for today, rotating daily challenges, a daily word, weekly activity, learning trail, quick practice, Pengo tips, and dark/reduced-motion support.
 - Opt-in daily Android reminders while closed; open-page browser alerts and a calendar download, with goal/duplicate suppression for Pengo alerts.
 - Study plans with explicit batch unlocking, unfinished-material backlog, study days, and milestones.
 - Progress with learned counts and rolling seven-/thirty-day activity; themes, backups, confirmed erasure, and intro replay.
@@ -62,6 +65,9 @@ app.js              Loading, router, views, storage, quizzes, SRS
 course.js           Pure study-plan logic; browser global/CommonJS export
 practice.js         Pure practice selection, SRS, session validation, motivation
 practice-ui.js      Shared practice player and daily dashboard
+components.js       Layered KanjiVG and existing mnemonic-part views
+recall-ui.js        Resumable flip-card player
+dashboard.js        Daily subject counts, challenges, and discovery rules
 design.js           Adventure Home, learning trail, mascot, quick choices
 reminders.js        Opt-in device reminder settings and browser delivery
 reminder-worker.js  Browser notification taps; no caching or scheduling

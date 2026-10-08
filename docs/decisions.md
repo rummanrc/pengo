@@ -56,6 +56,22 @@ The app uses a generated variant of its existing Pengo mascot, warm colors, a le
 
 Native Android uses inexact OS alarms and receivers so reminders work independently of the WebView, with local clock/timezone restoration. Browser alerts use an open page plus a notification worker; calendar export offers a closed-app alternative. There is no remote push service. Permission follows explicit opt-in, daily alerts honor goals/duplicates and skip stale delivery, and device preferences stay outside progress backups. The tradeoffs are OS scheduling delays, browser suspension, and calendar alerts that cannot read Pengo goals. Native tests simulate lifecycle/permissions; physical-device delivery remains separate acceptance evidence.
 
+## D-10: Local Japanese speech from dictionary readings
+
+**Evidence:** `pronunciation.js`, `JapaneseSpeech.java`, speech integration/native tests.
+
+The original implementation used installed offline Japanese speech from dictionary kana readings. D-11 supersedes this as the default with bundled neural audio; installed speech remains optional fallback. Buttons explicitly start playback, missing voices have recovery guidance, new requests replace older ones, and navigation/backgrounding stops speech. See [pronunciation](pronunciation.md).
+
+## D-11: Bundled neural audio and date-scoped challenges (2026-10-08)
+
+**Evidence:** `scripts/build_audio.py`, audio manifest/MP3s, `pronunciation.js`, `dashboard.js`, shared listening player, full-pack decoding, real-media checks, and APK inventory. **Status:** Observed and technically verified implementation; physical-device and assessment editorial acceptance remain separate.
+
+Generate Kokoro Japanese speech during content preparation and ship compressed clips. This preserves offline playback and consistent voices without a runtime model or paid API, at the cost of bundle size and build-time generation. Device speech remains optional fallback; listening questions require completed bundled playback. Content-addressed readings and sentence IDs prepare the audio path for authored comprehension tests. Home derives per-subject totals and daily challenges from the existing activity ledger, so rewards reflect actual attempts and cannot diverge through separate completion toggles. Generated speech and engagement hypotheses still need learner/editorial review.
+
 ## Future decision record format
 
 For a new architectural change, record ID/date, status (proposed/accepted/superseded), concrete context, chosen behavior, alternatives considered, state/route/content compatibility, consequences, reviewer/decision evidence, and related requirement/test IDs. Use [the review template](delivery/review-and-acceptance.md) when formal delivery records are needed.
+
+## D-12: Text-only discovery cards and KanjiVG hierarchy (2026-10-09)
+
+D-10 and the audio portion of D-11 are superseded: remove bundled speech, voice controls and native TTS to reduce size. Keep the date-scoped dashboard; challenges now open recall decks and use explicit, unique ratings. Use the existing KanjiVG Japanese group structure directly rather than importing an experimental graph or flat named WaniKani radicals. Preserve original KRADFILE content and mnemonic stories, expose larger/secondary groupings and matching story references separately. See [source research and implementation](discovery-cards.md).

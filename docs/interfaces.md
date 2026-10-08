@@ -137,3 +137,7 @@ Notification permission uses request code 4103. Results invoke `window.PengoRemi
 `KanjiMnemonic.generate({ kanji, meaning, parts, on, kun })` returns `{ text, notice }` using deterministic templates. `generateSmart(input, fallback)` can invoke an assigned async `generateViaModel(input)` and fall back if it throws. `mnemonicFor(item)` currently prefers prebuilt text and otherwise invokes the local generator; normal detail rendering does not call `generateSmart`.
 
 The hook is unconnected scaffolding. A model feature would require explicit wiring, credentials/network design, privacy review, and offline fallback; assigning the hook alone does not change current details.
+
+## Discovery cards and components
+
+`renderRecallPlayer(view, session)` renders the recall deck; explicit ratings call `courseGrade` once, then record `day.recalled[Practice.key(ref)]`. Swipe/ArrowRight calls advance only after grading. Inactive route/player handlers cannot grade a newer session. `learningComponents(item)` returns larger KanjiVG chunks with KRADFILE fallback. `storyComponents(item)` returns explicit matching mnemonic references, falling back to the original components for existing stories. `componentsHTML(item)` renders story cues, expandable structural levels and the optional smallest-part comparison. These functions run only after app globals initialize. `KK_COMPONENTS` is classic-script content and works offline.

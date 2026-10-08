@@ -60,7 +60,7 @@ function check(condition, message) { assert.ok(condition, message); checks++; }
     check((await page.locator('#view').textContent()).includes('good place to stop'),'summary offers stopping point');
     await start({mode:'mistakes',format:'recall'}); s=await state();
     check(s.practice.session.questions.length===1 && s.practice.session.questions[0].id===first.id,'mistakes isolates failed item');
-    check(await page.locator('.quiz-review').count()===0,'recall answer explanation hidden');
+    check(await page.locator('#recallDetails').isHidden(),'recall answer explanation hidden');
     await page.locator('#practiceReveal').click(); await page.locator('#practiceRemembered').click();
     check(!(await state()).practice.mistakes[first.type+':'+first.id],'successful recall clears mistake');
     check(Object.keys((await state()).study.days[today].practiced).length===3,'retry does not inflate daily goal');

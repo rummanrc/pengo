@@ -35,10 +35,14 @@ flowchart TD
 
 | Component | Responsibility | Dependencies |
 | --- | --- | --- |
-| `index.html` | Shell DOM, metadata, early intro gate, script order | CSS, assets, eight scripts |
+| `index.html` | Shell DOM, metadata, early intro gate, script order | CSS, assets, classic runtime scripts |
 | `app.js` | Loading/indexing, routes, rendering, persistence, quiz/SRS integration | DOM, Course, Platform, onboarding, local files |
 | `course.js` | Dates, pace, order, batches, sampling, streaks, milestones | Built-ins and state callbacks |
 | `practice.js` | Pure practice selection, grading, validation, goals, badges | Course and built-ins |
+| `components.js`, `data/components.js` | KanjiVG hierarchy and existing story-reference views | Generated component data, app facts |
+| `recall-ui.js` | Resumable tap-to-flip player, explicit recall ratings and swipe navigation | Practice, Course, activity ledger |
+| `dashboard.js` | Pure daily subject totals, rotating challenges and date-based discovery | Course, Practice, activity ledger |
+| `JapaneseSpeech.java` | Lazy offline Japanese engine, request lifecycle and queue replacement | Android TextToSpeech |
 | `practice-ui.js` | Shared quiz/recall player, session summaries, daily dashboard | App globals, Practice, Course |
 | `design.js` | Adventure Home, learning trail, progress cards, tips, quick starts | App globals, Practice, Course, Reminders |
 | `reminders.js` | Device opt-in, native goal sync, browser alerts, calendar file | Browser APIs, optional native bridge |
@@ -52,7 +56,7 @@ flowchart TD
 
 ## Startup
 
-Script order is `platform.js` → `onboarding.js` → `course.js` → `practice.js` → `practice-ui.js` → `reminders.js` → `design.js` → `app.js`. These are classic scripts, not ES modules. UI/reminder functions access app globals only after initialization. Top-level `const`/`let` such as `DB` and `store` are global lexical bindings, not necessarily properties on `window`. Course uses `var`; Platform and APP_VERSION are explicitly exported on `window`.
+Script order is `platform.js` → `onboarding.js` → `course.js` → `practice.js` → `data/components.js` → `components.js` → `recall-ui.js` → `practice-ui.js` → `reminders.js` → `dashboard.js` → `design.js` → `app.js`. These are classic scripts, not ES modules. UI/reminder functions access app globals only after initialization. Top-level `const`/`let` such as `DB` and `store` are global lexical bindings, not necessarily properties on `window`. Course uses `var`; Platform and APP_VERSION are explicitly exported on `window`.
 
 ```mermaid
 sequenceDiagram
@@ -115,3 +119,5 @@ Native assets work offline and the manifest has no internet permission. Hosted w
 Kanji indexes keep the last encountered record across overlapping levels while progress is shared by character. Vocabulary/grammar ID changes can strand stored state. Raw content HTML and SVG cross a trust boundary. Platform origins differ, so backup export/import is the implemented transfer mechanism.
 
 Optional Capacitor declarations are scaffolding, not the implementation of the checked-in Java activity. See [deployment](deployment.md) and [decision records](decisions.md) for related tradeoffs.
+
+Voice pronunciation and native TTS were removed on 2026-10-09. Discovery cards use the existing practice session and SRS; revealing earns no progress, ratings do. Component data loads through a classic script in both HTTP and file:// modes. See [discovery cards](discovery-cards.md).

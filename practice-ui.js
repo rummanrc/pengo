@@ -18,6 +18,8 @@ function recordPracticeAnswer(type, id, ok) {
   day.correct = (Number(day.correct) || 0) + (ok ? 1 : 0);
   day.practiced = day.practiced || {};
   day.practiced[type + ":" + id] = true;
+  day.reviewed = day.reviewed || {};
+  day.reviewed[type + ":" + id] = true;
   var key = type + ":" + id;
   if (ok) delete store.practice.mistakes[key];
   else {
@@ -107,7 +109,7 @@ function renderPractice(view, query) {
       ' answered. Your place is saved on this device.</p><div class="practice-actions"><button class="btn primary" id="practiceResume">Resume session</button>' +
       '<button class="btn soft" id="practiceReplace">Start a different session</button></div></section>' : '') +
     quick + '<form class="card practice-form" id="practiceForm"><details class="practice-custom"' + (query.kind || query.lv || cfg.mode === 'plan' ? ' open' : '') + '><summary>Build your own session</summary><div class="practice-fields">' +
-    '<label>Focus<select name="mode">' + options([['smart', 'Smart mix'], ['due', 'Due reviews (' + counts.due + ')'],
+    '<label>Focus<select name="mode">' + options([['smart', 'Smart mix'], ['explore', 'Level sampler'], ['due', 'Due reviews (' + counts.due + ')'],
       ['mistakes', 'Mistakes (' + counts.mistakes + ')']].concat(store.course ? [['plan', 'Study plan']] : []), cfg.mode) + '</select></label>' +
     '<label>Content<select name="kind">' + options([['mixed', 'Mixed'], ['kanji', 'Kanji'], ['vocab', 'Vocabulary'], ['grammar', 'Grammar']], cfg.kind) + '</select></label>' +
     '<label>Level<select name="lv">' + options(LEVELS.map(function (lv) { return [lv, lv]; }), cfg.lv) + '</select></label>' +
@@ -142,10 +144,11 @@ function renderPractice(view, query) {
   }
 }
 function startPractice(view, cfg) {
-  var picked = Practice.select(practicePool(cfg), cfg, practiceSrs, store.practice.mistakes, courseStateOf);
+  var pool = practicePool(cfg);
+  var picked = Practice.select(pool, cfg, practiceSrs, store.practice.mistakes, courseStateOf);
   var questions = picked.map(function (item) {
     if (cfg.format === 'recall') return Object.assign({}, item, { variant: 0, options: [] });
-    var built = courseBuildQuestion(item, item.lv);
+    var built = courseBuildQuestion(item, item.lv, undefined);
     return built ? { type: item.type, id: item.id, lv: item.lv, variant: built.variant,
       options: built.opts.map(function (r) { return courseQuizKey(built, r); }) } : null;
   }).filter(Boolean);
@@ -166,20 +169,19 @@ function practiceHydrate(q) {
     opts: q.options.map(function (id) { return practiceRecord(q.type, id); }) };
 }
 function renderPracticePlayer(view, s) {
+  if (s.config.format === 'recall') { renderRecallPlayer(view, s); return; }
   if (s.cursor >= s.questions.length) { finishPractice(view, s); return; }
   var cursor = s.cursor;
   var ref = s.questions[s.cursor], q = practiceHydrate(ref), answer = s.answers[s.cursor];
-  var recall = s.config.format === 'recall';
   var total = s.questions.length;
-  view.innerHTML = '<h1>' + (recall ? 'Recall practice' : 'Practice session') + '</h1><div class="practice-heading"><p class="explain">' +
+  view.innerHTML = '<h1>Practice session</h1><div class="practice-heading"><p class="explain">' +
     (s.cursor + 1) + ' of ' + total + ' &middot; ' + esc(ref.lv) + ' ' + courseTypeName(q.type) +
-    '</p><a href="#/practice" id="practicePause">Pause &amp; save</a></div>' + progressBar(Math.round(s.answers.length / total * 100), "Practice session completion") + pengoPracticeCoachHTML(recall) +
-    '<div id="practiceBody"><section class="card practice-question"><p class="quiz-q">' + courseQuizPrompt(q) + '</p>' +
-    (recall ? '<p class="explain">Say or think of the meaning before revealing it.</p><button class="btn primary" id="practiceReveal">Reveal answer</button>' :
-      '<div class="quiz-opts">' + q.opts.map(function (o) {
+    '</p><a href="#/practice" id="practicePause">Pause &amp; save</a></div>' + progressBar(Math.round(s.answers.length / total * 100), "Practice session completion") + pengoPracticeCoachHTML(false) +
+    '<div id="practiceBody"><section class="card practice-question">' + '<p class="quiz-q">' + courseQuizPrompt(q) + '</p>' +
+    '<div class="quiz-opts">' + q.opts.map(function (o) {
         return '<button class="btn quiz-opt" data-answer="' + esc(courseQuizKey(q, o)) + '"' + (q.variant === 0 || q.variant === 2 && q.type === 'grammar' ? '' : ' lang="ja"') + '>' +
           esc(courseQuizOptionLabel(q, o)) + '</button>';
-      }).join('') + '</div>') + '<p id="qFb" class="explain" role="status" aria-live="polite"></p></section></div>';
+      }).join('') + '</div>' + '<p id="qFb" class="explain" role="status" aria-live="polite"></p></section></div>';
   var body = $('#practiceBody', view);
   $('#practicePause', view).addEventListener('click', function (e) { e.preventDefault(); save(); go('#/practice'); });
   function grade(ok, selected) {
@@ -190,11 +192,6 @@ function renderPracticePlayer(view, s) {
     renderNav('review');
   }
   function feedback(a) {
-    if (recall) {
-      var reveal = $('#practiceReveal', body);
-      if (reveal) reveal.remove();
-      var ratings = $('#practiceRatings', body); if (ratings) ratings.remove();
-    }
     $$('[data-answer]', body).forEach(function (b) {
       b.disabled = true;
       if (b.dataset.answer === q.id) b.classList.add('correct');
@@ -212,21 +209,11 @@ function renderPracticePlayer(view, s) {
     $('#practiceCoachImage',view).src = a.ok ? 'assets/pengo-happy.png' : 'assets/pengo-study.png';
     $('#practiceCoachText',view).textContent = a.ok ? 'Nice work! That’s one more little win.' : 'We’re learning. Let’s give this one another look.';
     body.classList.add(a.ok ? 'answer-win' : 'answer-learn');
-    $('#qFb', body).textContent = recall ? (a.ok ? 'Remembered. Good practice!' : 'Another chance to learn. We’ll bring it back for review.') :
-      a.ok ? 'Correct! Your review schedule is updated.' : 'Not quite. Here is the answer and a quick explanation.';
+    $('#qFb', body).textContent = a.ok ? 'Correct! Your review schedule is updated.' : 'Not quite. Here is the answer and a quick explanation.';
     next.focus({ preventScroll: true });
   }
   if (answer) { feedback(answer); return; }
-  if (recall) {
-    $('#practiceReveal', body).addEventListener('click', function () {
-      this.disabled = true;
-      this.insertAdjacentHTML('afterend', '<div id="practiceRatings"><p><strong>' + esc(courseQuizHeadLabel(q)) + '</strong></p>' +
-        '<div class="practice-actions"><button class="btn soft" id="practiceAgain">Need practice</button><button class="btn primary" id="practiceRemembered">Remembered</button></div></div>');
-      $('#practiceAgain', body).addEventListener('click', function () { grade(false, 'again'); });
-      $('#practiceRemembered', body).addEventListener('click', function () { grade(true, 'remembered'); });
-      $('#practiceAgain', body).focus({ preventScroll: true });
-    });
-  } else $$('[data-answer]', body).forEach(function (b) {
+  $$('[data-answer]', body).forEach(function (b) {
     b.addEventListener('click', function () { grade(b.dataset.answer === q.id, b.dataset.answer); });
   });
 }

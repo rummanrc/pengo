@@ -109,6 +109,8 @@ Default settings:
 
 Settings exposes theme, autoplay, and `dailyGoal` (3/5/10/20 unique items practiced per local day). The goal is independent of plan new-item pace. `hideBanner` remains a legacy preference.
 
+Legacy `audioEngine` settings are removed on startup/import. Retired listening sessions fail validation and are discarded; other stored progress/history remains compatible.
+
 ### Plan object
 
 ```json
@@ -148,11 +150,15 @@ The labels “This Week” and “This Month” represent rolling seven/thirty l
 
 Daily entries also contain `attempts`, `correct`, and `practiced: { ["type:id"]: true }`. Wrong answers count as attempts and unique practice. Learned and reviewed instances of the same item count once that day. Migration reconstructs known item keys from old learned timestamps; any remaining legacy learned count is preserved as `legacyLearned`.
 
+New answers record `reviewed: { ["type:id"]: true }`; explicit recall ratings additionally record `recalled: { ["type:id"]: true }`. Missing maps in old backups mean zero. Home subject counts derive from `practiced` keys. Legacy listened maps remain historical and earn no current card challenge progress. Challenges derive from the local-date ledger.
+
 ### Practice object
 
 `practice` defaults to `{ session: null, history: [], badges: [], mistakes: {} }` and is included in exports. Old backups get empty practice state. Nested practice containers receive normalization; invalid saved sessions or removed question/option IDs are discarded before rendering.
 
 A version-1 session stores an ID, normalized configuration (`mode`, `kind`, `lv`, `size`, `format`), up to ten question references (`type`, `id`, `lv`, `variant`, `options` as IDs), `cursor`, `answers` (`ok`, `selected`), `startedAt`, and `startingBadges`. Content is resolved from DB; answers are saved before feedback. The cursor can point at an already answered question so its explanation can resume without a second grade.
+
+`format` accepts `quiz` or `recall`. Unknown/retired listening links normalize to a quiz. Saved listening sessions are rejected. Recall cards have no options, use `again` / `remembered` ratings and restore already graded cards without duplicate progress. Revealed-but-unrated cards show the front again on reload.
 
 Completion clears the active session and appends an ID-deduplicated summary to the latest 60 history entries (`id`, `date`, `score`, `total`, `format`, `mode`, `lv`). Recall scores are self-ratings. Badges contain IDs from `Practice.BADGES`. Mistakes are keyed by `type:id`, with `{ type, id, misses, lastMissed }`; correct answers clear that entry. Session replacement preserves previously recorded activity and SRS.
 
@@ -184,3 +190,7 @@ Import replaces rather than merges existing progress and has no preview/confirma
 Startup loading also merges defaults but normalizes settings less thoroughly than import. Invalid JSON starts from defaults; syntactically valid malformed structures may still cause runtime errors. Failed main-store writes display a backup notice; an import success message is not proof of durable persistence.
 
 Backup files are plaintext JSON with notes/progress; native uses a document picker and web uses sharing/download/file input. They carry no content dataset version. Preserve compatible IDs and test old backups before storage changes. See [security](security.md) and [testing](testing.md).
+
+## Layered component content
+
+`data/components.js` exports `KK_COMPONENTS`: KanjiVG `trees` retain nested `c`, `children`, `complete`, and optional `original`, `position`, `partial`, `part`, `number` fields. `complete` means named child groups cover the parent’s strokes; incomplete views are explicitly labeled. Nonconsecutive groups with the same `part` character/number merge; repeated independent characters remain distinct. `names` contains display facts. `stories` contains explicit references extracted only when the CSV mnemonic matches the shipped story. KRADFILE arrays remain available for comparison/fallback; original content IDs and level files are unchanged.

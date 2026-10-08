@@ -1,4 +1,5 @@
 "use strict";
+var homeDate = null;
 /* Pengo's visual identity: original illustrations, real progress, and gentle motion. */
 function pengoIcon(name) {
   var paths = {
@@ -11,7 +12,8 @@ function pengoIcon(name) {
     flag: '<path d="M5 21V3m0 1c6-3 8 3 14 0v10c-6 3-8-3-14 0"/>',
     mountain: '<path d="m2 20 7-12 4 6 3-10 6 16Zm13-9 2 2 2-2"/>',
     trophy: '<path d="M8 3h8v6a4 4 0 0 1-8 0Zm0 2H4v3a4 4 0 0 0 4 4m8-7h4v3a4 4 0 0 1-4 4m-4 1v5m-4 3h8M9 18h6"/>',
-    refresh: '<path d="M20 8V3l-4 4M4 16v5l4-4M4 10a8 8 0 0 1 14-5m2 9a8 8 0 0 1-14 5"/>'
+    refresh: '<path d="M20 8V3l-4 4M4 16v5l4-4M4 10a8 8 0 0 1 14-5m2 9a8 8 0 0 1-14 5"/>',
+    headphones: '<path d="M4 14v-3a8 8 0 0 1 16 0v3M4 12H2v8h5v-8Zm16 0h2v8h-5v-8Z"/>'
   };
   return '<svg viewBox="0 0 24 24" aria-hidden="true" class="pengo-symbol" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (paths[name] || paths.spark) + '</svg>';
 }
@@ -61,13 +63,45 @@ function adventureLibraryHTML(lv) {
     entries.map(function (e) { return '<a class="discovery-card ' + e[4] + '" href="#/' + e[3] + '/' + lv + '"><span class="discovery-kanji" lang="ja">' + e[1] + '</span><strong>' + e[0] + '</strong><span>' + e[2] + '</span>' + pengoIcon('arrow') + '</a>'; }).join('') + '</div></section>';
 }
 function renderAdventureHome(view, hasPlan) {
+  homeDate = Course.todayStr();
   var stats = practiceStats(), lv = hasPlan ? store.course.target : 'N5';
   var status = '<div class="adventure-top"><span class="eyebrow">YOUR JAPANESE JOURNEY</span><div class="journey-pills"><span class="journey-pill streak-pill">' + pengoIcon('fire') + stats.streak + '<span>day streak</span></span><span class="journey-pill">' + pengoIcon('flag') + esc(lv) + '</span></div></div>';
   var pickLevels = '<section class="card choose-level"><span class="eyebrow">PICK YOUR STARTING POINT</span><h2>Where will we go?</h2><p class="explain">Choose the level you’re preparing for. You can change your plan anytime.</p><div class="adventure-levels">' +
     LEVELS.map(function (l, i) { return '<a class="adventure-level level-' + i + '" href="#/course/setup?target=' + l + '"><span class="level-mark">' + pengoIcon(['spark', 'book', 'flag', 'mountain', 'trophy'][i]) + '</span><span><strong>' + l + '</strong><small>' + esc(Course.LEVEL_NAMES[l]) + '</small></span>' + pengoIcon('arrow') + '</a>'; }).join('') + '</div></section>';
   view.innerHTML = '<div class="adventure-home">' + status + pengoHeroHTML(hasPlan) + '<div class="adventure-columns"><div class="adventure-main">' +
-    (hasPlan ? adventurePathHTML() : pickLevels) + adventureLibraryHTML(lv) + '</div><aside class="adventure-aside" aria-label="Your habit and progress">' +
-    dailyPracticeCardHTML() + reminderNudgeHTML() + (hasPlan ? '<section class="card course-treasures"><h2>' + pengoIcon('trophy') + 'Learning milestones</h2>' + courseMilestoneHTML() + '</section>' : '') + '</aside></div></div>';
+    dailyOverviewHTML(lv) + dailyChallengesHTML(lv) + (hasPlan ? adventurePathHTML() : pickLevels) + adventureLibraryHTML(lv) + '</div><aside class="adventure-aside" aria-label="Your habit and progress">' +
+    dailyPracticeCardHTML() + dailyWordHTML(lv) + reminderNudgeHTML() + (hasPlan ? '<section class="card course-treasures"><h2>' + pengoIcon('trophy') + 'Learning milestones</h2>' + courseMilestoneHTML() + '</section>' : '') + '</aside></div></div>';
+}
+function dailyOverviewHTML(lv) {
+  var s = Dashboard.summary(store.study.days, Course.todayStr());
+  var batch = store.course ? courseTodaysBatch() : null;
+  var labels = [['kanji', '漢', 'Kanji', 'coral'], ['vocab', '語', 'Vocabulary', 'mint'], ['grammar', '文', 'Grammar', 'lavender']];
+  return '<section class="card today-overview"><div class="practice-heading"><div><span class="eyebrow">' +
+    esc(new Date().toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' })) + '</span><h2>Your day, in little steps</h2></div><a href="#/progress">All progress</a></div>' +
+    '<p class="explain">Different items studied or practiced today. Every attempt helps.</p><div class="today-subjects">' + labels.map(function (e) {
+      var planned = batch ? batch.items.filter(function (it) { return it.type === e[0]; }) : [];
+      var done = planned.filter(function (it) { return courseIsLearned(it.type, it.id); }).length;
+      return '<a class="today-subject ' + e[3] + '" href="#/practice?start=1&size=3&kind=' + e[0] + '&lv=' + lv + '"><span class="subject-mark" lang="ja">' + e[1] +
+        '</span><strong data-today-count="' + e[0] + '">' + s.counts[e[0]] + '</strong><span>' + e[2] + ' today</span>' +
+        (planned.length ? '<small>Current batch: ' + done + ' / ' + planned.length + ' studied</small>' : '<small>Try a few ' + e[2].toLowerCase() + ' items ' + pengoIcon('arrow') + '</small>') + '</a>';
+    }).join('') + '</div><div class="today-summary"><span>' + s.learned + ' newly studied</span><span>' + s.attempts + ' review attempts</span><span>' + s.recalled + ' cards flipped &amp; rated</span></div>' +
+    (dueCount() ? '<a class="today-review" href="#/practice?mode=due">' + pengoIcon('refresh') + dueCount() + ' items ready for review ' + pengoIcon('arrow') + '</a>' : '<p class="explain today-review">No reviews waiting. Make room for a new discovery.</p>') + '</section>';
+}
+function dailyChallengesHTML(lv) {
+  var quests = Dashboard.challenges(store.study.days, Course.todayStr(), store.settings.dailyGoal, lv);
+  var done = quests.filter(function (q) { return q.done; }).length;
+  return '<section class="card daily-challenges"><div class="practice-heading"><div><span class="eyebrow">A FRESH ADVENTURE EACH DAY</span><h2>Daily challenges</h2></div><span class="challenge-score">' + done + ' / ' + quests.length + '</span></div>' +
+    '<p class="explain">' + (done === quests.length ? 'All three complete. Enjoy the win; tomorrow brings a new adventure.' : 'Pick what feels good. No penalties, no catching up.') + '</p><ul class="challenge-list">' + quests.map(function (q) {
+      return '<li data-challenge="' + q.id + '" class="' + (q.done ? 'challenge-done' : '') + '"><a href="' + q.href + '"><span class="challenge-icon">' + pengoIcon(q.done ? 'check' : q.icon) +
+        '</span><span class="challenge-copy"><strong>' + q.title + '</strong><small>' + q.hint + '</small>' + progressBar(q.percent, q.title) + '</span><span class="challenge-count">' +
+        (q.done ? '<span class="sr-only">Complete: </span>' : '') + Math.min(q.count, q.target) + ' / ' + q.target + '</span></a></li>';
+    }).join('') + '</ul></section>';
+}
+function dailyWordHTML(lv) {
+  var words = DB.vocab[lv] || [], v = words[Dashboard.dailyIndex(Course.todayStr(), words.length)];
+  if (!v) return '';
+  return '<section class="card daily-word"><span class="eyebrow">TODAY’S WORD TO TAKE WITH YOU</span><h2 lang="ja">' + esc(v.word) + '</h2><p lang="ja">' + esc(v.reading) +
+    '</p><p>' + esc(v.meaning) + '</p><div class="practice-actions">' + '<a class="btn soft" href="#/v/' + encodeURIComponent(v.id) + '">Explore word</a></div></section>';
 }
 function reminderNudgeHTML() {
   var r = Reminders.read();

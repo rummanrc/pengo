@@ -1,4 +1,18 @@
+# Current verification
+
+The 2026-10-09 text-only discovery-card and hierarchical-component checks are recorded in [discovery cards](discovery-cards.md). Audio checks below are historical evidence for the removed implementation.
+
 # Documentation verification record
+
+## Natural audio and Home implementation checks — 2026-10-08
+
+Current worktree evidence (separate from historical checks below): course 97, practice 37, reminder rules 17, and worker 7 checks pass, along with the new dashboard/listening rule suite. The dashboard/neural-media browser suite passes 41 checks; device pronunciation passes 35; shared practice passes 46; design/reminders passes 40. The Android Docker toolchain passes all 33 Robolectric/JUnit tests with no failures, errors, or skips. Home screenshots were inspected at mobile/desktop sizes and both themes; 320/390/768/1280px overflow checks pass. Model files match the pinned upstream revision and published SHA-256. Current syntax, local Markdown file links, and diff whitespace checks pass.
+
+The full pack verifier passes: 8,293/8,293 vocabulary records, 7,033 distinct readings plus three sentence clips, all 7,036 files decoded with finite non-silent mono 24kHz samples. Audio occupies 69.0 MiB; durations range 0.50–5.16 seconds. No temporary audio files remain. Real-media browser checks pass 32 assertions over HTTP and staged `file://`, including normal/slow sentences, actual listening-answer gating, and playback without a speech synthesis service. Original content arrays and IDs have no data diff.
+
+The debug APK builds successfully in the cached Android Docker toolchain. The runtime stages 9,463 files (109.7 MiB), and all 9,463 APK web assets match staging byte-for-byte. Exact source-to-staging inventory/bytes also pass. All 7,036 MP3s and the full manifest ship in the APK. The merged manifest declares only notification and boot permissions, with no internet permission. Artifact: `dist/pengo-debug.apk`, 89.0 MiB, SHA-256 `bd5e01fa2f03b1e0ca8e95d9287f3e25d3e401caa8d5bc87c5ee0bfa47fa6561`.
+
+The [implementation checklist](motivation-and-audio-plan.md) is complete. These results verify the implementation, layouts, playback, persistence, and offline packaging. Physical Android speaker/headphone acoustics, interruptions, and proficient-speaker review of pitch/accent and assessment scripts remain release/editorial acceptance checks; automated playback does not establish exam suitability.
 
 **Date:** 2026-10-07 (Asia/Tokyo). **Source baseline:** `e35e5fa`, plus the documentation changes in this workspace. This is a dated engineering-documentation check, not a product/customer acceptance or production-release approval.
 
@@ -81,3 +95,21 @@ The browser suite and Playwright dependency used a separate temporary directory,
 The new asset [pengo-adventure.png](../assets/pengo-adventure.png) was produced with the built-in image generation tool from the existing mascot reference; the exact prompt is in [design and reminders](design-and-reminders.md#mascot-asset-and-generation-record). Browser checks used temporary Playwright dependencies and isolated contexts. No user browser permissions/profile were changed. The local test server was stopped after verification.
 
 Review artifacts are ignored `dist/pengo-debug.apk` and `dist/pengo-home-preview.png`. APK SHA-256: `ac65f57a2b5392463736200fa61c53d4c4feb10c1049a5389ad475de2fb97151`. These are a debug candidate and a visual preview, not a production release. No physical-device/OEM power-management test, external calendar import, accessibility conformance audit, deployment, or retention/learning-outcome study was performed. Browser alerts require an open page; calendar alerts cannot suppress themselves based on Pengo goals.
+
+## Vocabulary pronunciation verification
+
+**Date:** 2026-10-07 (Asia/Tokyo). **Source baseline:** `add0121`, plus the vocabulary speech implementation in this workspace. The earlier records retain their historical scope.
+
+| Check | Result | Scope and limit |
+| --- | --- | --- |
+| Node regression suites | 158 checks passed | 97 course, 37 practice, 17 reminder, 7 worker |
+| Chrome pronunciation integration | 35 checks passed | Tap-only controls, dictionary kana, installed local Japanese voice selection, slow replay, replacement/stale callbacks, navigation/filter/question/background cancellation, missing/late voices, errors/watchdog, native bridge/settings, hidden-answer protection, recall reveal, 44px touch controls, narrow dark layout, unsupported browser |
+| Existing Chrome integration | 46 practice + 40 design/reminder checks passed | Existing persistence, SRS, motion, reminders and responsive behavior |
+| Native JUnit/Robolectric | 33 tests passed; no failures/errors | Seven new speech cases plus 26 existing tests; simulated SDK 33 |
+| Android compilation | Debug APK built successfully | Cached Docker toolchain, JDK 17/Gradle 8.7/SDK 34 |
+| Exact source/staged/APK inventory and bytes | Passed | Fresh bundle: 2,425 files, 42,333,083 bytes; every runtime file equals source and APK asset bytes, with no obsolete staged files |
+| Android manifest | Passed | `TTS_SERVICE` query present; only notification/boot permissions, no added speech/microphone/internet permission |
+| File-mode smoke test | Passed | Staged `www/index.html` loads fallback bundle and 684 N5 speaker buttons without JavaScript errors |
+| Visual/syntax/documentation checks | Passed | Inspected 390px vocabulary list/detail screenshots; tested 320/390/768/1024/1440px list/detail/course layouts, checked changed JS syntax, local documentation targets, and diff whitespace |
+
+The updated ignored artifact is `dist/pengo-debug.apk` (19,545,088 bytes), SHA-256 `3facc4670bcba9582a8d651ce226b6f21a849a7f87b118fcdeb5a4af08c24d68`. Browser checks use isolated contexts and speech doubles; actual headless Chrome exposed no installed voices. Native tests simulate TTS and lifecycle. Audible pronunciation quality, real-device Japanese voice installation, and airplane-mode listening remain manual acceptance checks. No deployment or changes to the user's browser profile were performed. See [pronunciation](pronunciation.md) for voice support and recovery.
