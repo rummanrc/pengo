@@ -29,9 +29,19 @@ A plan targets exactly one level's three lists, not an automatically cumulative 
 
 ## Pace recommendation
 
-`suggestPace` uses actual per-type counts. It searches upward from total/days until each allocated type fits the horizon. No date, zero, or negative days uses 90 days. It returns recommended/relaxed/intensive choices; recommended is clamped to 5–60, intensive to 5–100, and the UI ultimately clamps the chosen value to 5–100.
+Setup is a friendly two-choice page: pick N5–N1, then a daily batch size of 3, 5, 10, or 20, or a custom whole number from 1–100. New plans start at N5 with a gentle suggestion of 5 items. Editing preselects the saved target and pace; changing levels does not overwrite the chosen pace. The exam date is an optional date field in a disclosure and never changes the pace automatically.
 
-Those caps mean a very close exam can still be impossible to meet at the returned recommended pace. The suggestion is guidance, not a guarantee. Setup computes against the full target list, rather than subtracting already learned items. Default course pace is 20, while the setup wizard initially selects the computed recommendation.
+The pure `suggestPace` API remains available for callers/tests. It estimates coverage from actual per-type counts and a horizon (90 days without a positive horizon), returning recommended/relaxed/intensive values. Setup uses the small default above instead of a deadline-driven recommendation. `Course.defaultCourse()` retains its legacy default of 20 for compatibility with direct callers.
+
+Creating a plan at one of the preset paces also seeds `settings.dailyGoal` with that number. Editing an existing plan or choosing a custom pace preserves the independent practice goal, which can still be changed in Settings.
+
+## Level focus
+
+While a valid plan is active, Home, Learn, browse, search, Progress, and every practice mode use the target level. Old URLs requesting a different level cannot override it. Due reviews/mistakes from other levels stay stored and are available again after changing or ending the plan. An unfinished session from another level is discarded without undoing already graded answers. Plan/smart practice retains unlocked-material behavior; explore can sample any item within the target level.
+
+Detail links and related study links follow the target too. A bookmarked out-of-level detail returns to the chosen level’s browser. Overlapping kanji details resolve the target list’s record rather than the global last-indexed record. Explanations/examples remain intact.
+
+Home prominently offers setup when no plan exists. Finishing/skipping the first-launch intro opens setup when there is no plan. Settings places the plan card first and offers changing or ending it; Home’s learning trail links there as well.
 
 ## Progress-based unlocking
 
@@ -61,7 +71,7 @@ Schedule status compares remaining curriculum days, including the current batch,
 
 ## Plan changes
 
-Setup always reconstructs a plan object when saved. The same target retains start date, unlock position, history, milestones, quiz count, and perfect-quiz flag. A changed target resets start date, `unlockedDay`, and milestones while retaining study days, quiz count/perfect flag, and weights. Learned/SRS maps are untouched.
+Setup always reconstructs a plan object when saved. The same target retains start date, unlock position, history, milestones, quiz count, and perfect-quiz flag. A changed target resets start date, `unlockedDay`, and milestones while retaining study days, quiz count/perfect flag, and weights. Learned/SRS maps are untouched. A saved session from another level is cleared; answered-item progress remains.
 
 Changing pace on the same target rebuilds the derived curriculum while retaining its numeric unlock day; the membership of unlocked batches can change. Ending the plan requires confirmation, removes only `store.course`, and returns Home to the level picker. Full data erasure is a separate Settings action.
 

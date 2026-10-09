@@ -50,7 +50,7 @@ Start with the [documentation index](docs/README.md). The engineering docs use M
 - Saved sessions, daily practice goals, weekly activity, supportive achievements, and session summaries with a clear stopping point.
 - An adventure dashboard with distinct kanji/vocabulary/grammar totals for today, rotating daily challenges, a daily word, weekly activity, learning trail, quick practice, Pengo tips, and dark/reduced-motion support.
 - Opt-in daily Android reminders while closed; open-page browser alerts and a calendar download, with goal/duplicate suppression for Pengo alerts.
-- Study plans with explicit batch unlocking, unfinished-material backlog, study days, and milestones.
+- Friendly study-plan setup with a JLPT destination, a suggested 5-item daily pace, custom batch sizes, and level-focused browsing/practice. Change the plan in Settings; batches wait until you are ready. Explicit batch unlocking, unfinished-material backlog, study days, and milestones remain available.
 - Progress with learned counts and rolling seven-/thirty-day activity; themes, backups, confirmed erasure, and intro replay.
 - Offline native Android assets, system document pickers for backups, and no `INTERNET` manifest permission.
 

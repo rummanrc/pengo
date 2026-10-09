@@ -94,7 +94,8 @@ function check(condition, message) { assert.ok(condition, message); checks++; }
     check((await state()).course.quizzes===0,'plan completion counter does not advance on start');
     for(let i=0;i<3;i++){await answer(true);await page.locator('#practiceNext').click();}
     check((await state()).course.quizzes===1 && (await state()).course.perfectQuiz,'plan completion and perfect flag recorded');
-    await page.evaluate(()=>{const word=DB.vocab.N5[0];store.vocabTest=word.id;});
+    // Standalone N5 quiz assertions run after leaving the N4 plan.
+    await page.evaluate(()=>{store.course=null;save();const word=DB.vocab.N5[0];store.vocabTest=word.id;});
     await start({kind:'vocab',size:'10'});
     for(let i=0;i<10;i++){await answer(true);await page.locator('#practiceNext').click();}
     check((await state()).vQuizBest.N5===10,'ten-question level best score preserved');

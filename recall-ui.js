@@ -22,8 +22,8 @@ function renderRecallPlayer(view, s) {
     (item.kun.length ? '<p><span class="lab">Kun </span><span lang="ja">' + esc(item.kun.join('、 ')) + '</span></p>' : '') :
     (item.reading ? '<p lang="ja">' + esc(item.reading) + '</p>' : '');
   var answer = s.answers[cursor], revealed = false;
-  view.innerHTML = '<div class="recall-deck"><div class="practice-heading"><div><span class="eyebrow">GUESS · FLIP · DISCOVER</span><h1>Today’s discovery cards</h1></div>' +
-    '<a id="practicePause" href="#/practice">Pause &amp; save</a></div>' +
+  view.innerHTML = '<div class="recall-deck"><div class="practice-heading"><div><span class="eyebrow">GUESS · FLIP · DISCOVER</span><h1>Flashcards</h1></div>' +
+    '<a id="practicePause" href="#/flashcards">Pause &amp; save</a></div>' +
     '<div class="recall-counter"><span>' + (cursor + 1) + ' / ' + s.questions.length + ' cards</span><span class="badge ' + levelClass(ref.lv) + '">' +
     esc(ref.lv) + ' · ' + courseTypeName(q.type) + '</span></div>' + progressBar(Math.round(s.answers.length / s.questions.length * 100), 'Card deck completion') +
     '<p class="explain recall-instruction">Make a guess. Tap the card to find the story behind the shape.</p>' +
@@ -77,7 +77,7 @@ function renderRecallPlayer(view, s) {
   $('#practiceAgain', view).addEventListener('click', function () { grade(false, 'again'); });
   $('#practiceRemembered', view).addEventListener('click', function () { grade(true, 'remembered'); });
   next.addEventListener('click', advance);
-  $('#practicePause', view).addEventListener('click', function (e) { e.preventDefault(); save(); go('#/practice'); });
+  $('#practicePause', view).addEventListener('click', function (e) { e.preventDefault(); save(); go('#/flashcards'); });
   var start = null;
   stage.addEventListener('pointerdown', function (e) {
     if (e.isPrimary && e.button === 0) start = { x: e.clientX, y: e.clientY };

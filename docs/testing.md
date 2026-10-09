@@ -226,3 +226,15 @@ node tests/test_discovery_browser.cjs
 ```
 
 Browser tests need separately installed Playwright and a local HTTP server; use `NODE_PATH` to point to its installation. Discovery tests use isolated Chrome contexts, cover reveal/rating separation, duplicate grading, reloads, gestures, keyboard navigation, challenge completion, nested story/structural views, retired listening-session migration, file:// loading and staging cleanup. Screenshots at 320/390/768/1280px in light/dark themes default to `/tmp/pengo-discovery-qa`. The structural unit tests cover nested groups, anonymous strokes, disconnected/repeated parts, original/partial annotations and older SVG namespace declarations. Existing practice and reminder browser suites remain applicable. These checks establish behavior and layout, not improved learning outcomes.
+
+## Restored study plan/settings browser checks
+
+Run `tests/test_study_plan_browser.cjs` with the same Playwright/Chrome environment above. It covers Home/intro entry, preset/custom pace validation, persistence, stale route parameters, browse/search/detail/related-level focus, due/mistake/smart/explore/plan pools, overlapping kanji details, changing/ending plans without losing progress, theme-specific progress background/icon alignment, erase cancellation, autoplay, and 320/390/768/1440px layouts in both themes. `PENGO_TEST_ARTIFACTS` optionally writes screenshots. It uses isolated contexts and never erases the user’s active profile.
+
+The ordinary practice browser suite leaves the N4 plan before its standalone N5 quiz/best-score assertions; this respects the restored target-level contract.
+
+Validation on 2026-10-09: 71 study-plan/settings, 46 practice, and 40 design/reminder browser checks passed in isolated headless Google Chrome contexts. Core `npm test` passed (97 Course, 37 Practice, 17 Reminders, 7 worker checks, plus Dashboard checks). JS syntax and `git diff --check` passed. Mobile screenshots in both themes were visually inspected. Docker Android debug build passed; ZIP inspection confirmed that the APK contains the final `app.js`, `design.js`, `practice-ui.js`, and `styles.css`. Physical-device WebView behavior was not tested in this change.
+
+## Flashcard entry and saved-format regression
+
+Run `node tests/test_flashcards_browser.cjs` with Playwright and a local server. The isolated Chrome suite reproduces a saved answered quiz before opening flashcards; checks both sessions’ answers, reloads/imports, switching from daily challenges, finishing/resuming, plan-level isolation and 320/390/1280px layouts. It writes screenshots to `/tmp/pengo-flashcards-qa`.

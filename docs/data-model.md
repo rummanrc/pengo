@@ -107,7 +107,7 @@ Default settings:
 }
 ```
 
-Settings exposes theme, autoplay, and `dailyGoal` (3/5/10/20 unique items practiced per local day). The goal is independent of plan new-item pace. `hideBanner` remains a legacy preference.
+Settings exposes theme, autoplay, and `dailyGoal` (3/5/10/20 unique items practiced per local day). The goal is independent of plan new-item pace. New plans at preset paces seed the goal with that number; later plan edits and custom paces preserve it. `hideBanner` remains a legacy preference.
 
 Legacy `audioEngine` settings are removed on startup/import. Retired listening sessions fail validation and are discarded; other stored progress/history remains compatible.
 
@@ -130,7 +130,7 @@ Legacy `audioEngine` settings are removed on startup/import. Retired listening s
 }
 ```
 
-This is an illustrative default-shaped plan, not a required target/date. `Course.defaultCourse()` computes the local start date. The setup UI assigns `examId` the selected date string; `upcomingExams()` itself returns year-month session IDs. Curriculum and content copies are not stored.
+This is an illustrative default-shaped plan, not a required target/date. `Course.defaultCourse()` computes the local start date. The setup UI assigns `examId` the optional date string and accepts daily batches from 1–100; `upcomingExams()` itself returns year-month session IDs. Curriculum and content copies are not stored.
 
 `unlockedDay` is one-based; `curriculum.length + 1` represents all batches unlocked. `studyDays` is a sorted unique local-date list. Milestone IDs come from `Course.MILESTONES`. See [course](course.md) for changes/resets and grading.
 
@@ -154,7 +154,7 @@ New answers record `reviewed: { ["type:id"]: true }`; explicit recall ratings ad
 
 ### Practice object
 
-`practice` defaults to `{ session: null, history: [], badges: [], mistakes: {} }` and is included in exports. Old backups get empty practice state. Nested practice containers receive normalization; invalid saved sessions or removed question/option IDs are discarded before rendering.
+`practice` defaults to `{ session: null, pausedSession: null, history: [], badges: [], mistakes: {} }` and is included in exports. Old backups get empty practice state. Nested practice containers receive normalization; invalid saved sessions or removed question/option IDs are discarded before rendering.
 
 A version-1 session stores an ID, normalized configuration (`mode`, `kind`, `lv`, `size`, `format`), up to ten question references (`type`, `id`, `lv`, `variant`, `options` as IDs), `cursor`, `answers` (`ok`, `selected`), `startedAt`, and `startingBadges`. Content is resolved from DB; answers are saved before feedback. The cursor can point at an already answered question so its explanation can resume without a second grade.
 
@@ -194,3 +194,9 @@ Backup files are plaintext JSON with notes/progress; native uses a document pick
 ## Layered component content
 
 `data/components.js` exports `KK_COMPONENTS`: KanjiVG `trees` retain nested `c`, `children`, `complete`, and optional `original`, `position`, `partial`, `part`, `number` fields. `complete` means named child groups cover the parent’s strokes; incomplete views are explicitly labeled. Nonconsecutive groups with the same `part` character/number merge; repeated independent characters remain distinct. `names` contains display facts. `stories` contains explicit references extracted only when the CSV mnemonic matches the shipped story. KRADFILE arrays remain available for comparison/fallback; original content IDs and level files are unchanged.
+
+Restored plan setup keeps the existing store schema and accepts existing plans/backups without a new migration. Out-of-level learned/SRS/mistake data remains stored while a target level is active. Persisted sessions from another level are cleared on plan save or session validation, preserving answers already applied to progress. Onboarding remains a separate device preference; first-launch completion without a plan navigates to setup.
+
+### Paused practice format
+
+`practice.pausedSession` retains the other format when a learner switches between quiz and flashcards. It uses the same version-1 schema and validation as `session`; both slots survive backup/import, and both respect the chosen study-plan level. Old backups receive null. Switching swaps slots without grading; finishing clears only the active slot. Generic start links resume active work, while explicit `format=recall` / `format=quiz` starts restore the requested format.

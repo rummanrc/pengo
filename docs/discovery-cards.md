@@ -10,7 +10,7 @@ Removed the bundled MP3 pack/manifest, pronunciation runtime and speaker control
 
 All three daily challenge links use `format=recall`: daily mixed practice, a rotating subject sampler, and three kanji discoveries. The latter counts distinct `kanji:id` recall ratings for the local day. Cards also work for vocabulary and grammar. The level sampler remains available with a small study-plan batch.
 
-The front shows only the Japanese prompt. Tap or activate it by keyboard to flip; the back shows meaning and readings, then memory story, larger components, nested breakdowns and examples below. Explicit **Need practice** or **Remembered** updates the existing SRS/activity ledger exactly once. Reveal alone earns no progress. After rating, swipe left on the card, use Next, or press ArrowRight. Three/five/ten-card sessions finish with the existing summary; there is no automatic endless feed. Existing saved sessions resume rather than being silently replaced; Practice offers an explicit replacement action.
+The front shows only the Japanese prompt. Tap or activate it by keyboard to flip; the back shows meaning and readings, then memory story, larger components, nested breakdowns and examples below. Explicit **Need practice** or **Remembered** updates the existing SRS/activity ledger exactly once. Reveal alone earns no progress. After rating, swipe left on the card, use Next, or press ArrowRight. Three/five/ten-card sessions finish with the existing summary; there is no automatic endless feed. Generic start links resume active work. Explicit flashcard/quiz links restore that format, preserving the other session in a paused slot. Practice offers an explicit replacement action within a format.
 
 The inactive face is inert and hidden from assistive technology. Rating/advance controls stay hidden until appropriate. Reduced-motion users get an immediate reveal. Answered cards restore feedback after reload; an unrated reveal resets to the front. Older route/player handlers cannot grade a newer session.
 
@@ -46,3 +46,11 @@ The generator uses Python’s standard library and the existing fact helpers, wi
 - Final `dist/pengo-debug.apk`: 19,659,793 bytes (18.75 MiB), down from 89.02 MiB (78.9% reduction). SHA-256: `cbfc71416edc44f0e93c9447f5f8393fe2051c65669a709f6af59270b1f9eebf`.
 
 The transient “missing runtime file: components.js” Docker error occurred while the packaging list had been edited before its file was created. All referenced runtime files now exist, and the completed Docker build verifies the fix.
+
+### Discoverability fix — 2026-10-09
+
+Reproduced in the user’s open tab: a daily recall link silently resumed a saved multiple-choice quiz. Added a named Flashcards hub and visible Home/Learn/Review entries. Format switching now preserves the other unfinished session instead of overriding the requested practice style. The user’s quiz remained saved while a kanji card opened and flipped successfully.
+
+`test_flashcards_browser.cjs` covers named entry points, saved-quiz/card swapping, reload/backup persistence, completion, level isolation, vocabulary/grammar cards, and phone/desktop layouts.
+
+Verified: 33 flashcard-access checks, 46 existing practice checks, 49 discovery checks and 71 study-plan/settings checks passed. Pure practice rules now include paused-session backup normalization (38 checks); the full npm suite passes. The open user tab was verified through a real challenge click, card reveal and preserved-quiz resume control. Docker APK assembly passed; all runtime scripts, HTML and styles match the final ZIP inventory. Updated APK: 19,666,149 bytes; SHA-256 `050cd98ff2dbbec871a562ab56734bb6c310a512ecf171d229660ce0b2a52e67`.

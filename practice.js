@@ -75,7 +75,7 @@ var Practice = (function () {
   }
   function normalize(value) {
     var p = value && typeof value === "object" && !Array.isArray(value) ? value : {};
-    return { session: p.session || null,
+    return { session: p.session || null, pausedSession: p.pausedSession || null,
       history: Array.isArray(p.history) ? p.history.filter(function (h) {
         return h && typeof h.date === "string" && Number.isFinite(h.total) && h.total > 0 && Number.isFinite(h.score);
       }).slice(-60) : [],

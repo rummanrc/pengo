@@ -5,12 +5,64 @@ function practiceRecord(type, id) {
     type === "vocab" ? DB.vById[id] : DB.gById[id];
 }
 function practiceStats() { return Practice.stats(store.study.days, Course.todayStr(), store.settings.dailyGoal); }
-function practiceSession() {
-  var s = store.practice.session;
-  if (s && !Practice.validSession(s, function (q) { return !!practiceRecord(q.type, q.id); })) {
-    store.practice.session = null; save(); return null;
+function practiceSession(slot) {
+  slot = slot || 'session';
+  var s = store.practice[slot];
+  if (s && (!Practice.validSession(s, function (q) { return !!practiceRecord(q.type, q.id); }) ||
+      (store.course && s.questions.some(function (q) { return q.lv !== store.course.target; })))) {
+    store.practice[slot] = null; save(); return null;
   }
   return s;
+}
+function resumePausedPractice(view) {
+  var paused = practiceSession('pausedSession');
+  if (!paused) return;
+  store.practice.pausedSession = practiceSession();
+  store.practice.session = paused;
+  save(); renderPracticePlayer(view, paused);
+}
+function openPracticeFormat(view, cfg) {
+  var current = practiceSession(), paused = practiceSession('pausedSession');
+  if (current && current.config.format === cfg.format) { renderPracticePlayer(view, current); return; }
+  if (paused && paused.config.format === cfg.format) { resumePausedPractice(view); return; }
+  // Quiz and flashcard progress can coexist. Switching never overwrites the other format.
+  if (current) {
+    store.practice.pausedSession = current;
+    store.practice.session = null;
+    save();
+  }
+  startPractice(view, cfg);
+}
+function renderFlashcards(view, query) {
+  var current = practiceSession(), paused = practiceSession('pausedSession');
+  var deck = current && current.config.format === 'recall' ? current : paused && paused.config.format === 'recall' ? paused : null;
+  var cfg = Practice.config(Object.assign({ mode: 'explore', kind: 'kanji', size: 3 }, query, { format: 'recall' }), studyLevel(query.lv));
+  cfg.lv = studyLevel(cfg.lv);
+  if (query.start === '1' || query.resume === '1') { openPracticeFormat(view, cfg); return; }
+  view.innerHTML = '<div class="flashcards-hub"><span class="eyebrow">GUESS · FLIP · REMEMBER</span><h1>Flashcards</h1>' +
+    '<p>One card at a time. Guess the meaning, tap to flip, then rate your recall and swipe to the next card.</p>' +
+    '<form class="card" id="flashcardsForm"><h2>' + (deck ? 'Your saved deck' : 'Pick a little deck') + '</h2>' +
+    (deck ? '<p>' + deck.answers.length + ' / ' + deck.questions.length + ' cards rated. Continue where you left off.</p>' : '') +
+    '<div class="practice-fields"><label>Content<select name="kind"' + (deck ? ' disabled' : '') + '>' +
+    [['kanji', 'Kanji'], ['vocab', 'Vocabulary'], ['grammar', 'Grammar'], ['mixed', 'A little of everything']].map(function (option) {
+      return '<option value="' + option[0] + '"' + (option[0] === (deck ? deck.config.kind : cfg.kind) ? ' selected' : '') + '>' + option[1] + '</option>';
+    }).join('') + '</select></label><label>Level<select name="lv"' + (deck ? ' disabled' : '') + '>' + studyLevels().map(function (lv) {
+      return '<option' + (lv === (deck ? deck.config.lv : cfg.lv) ? ' selected' : '') + '>' + lv + '</option>';
+    }).join('') + '</select></label><label>Deck length<select name="size"' + (deck ? ' disabled' : '') + '>' + [3, 5, 10].map(function (n) {
+      return '<option value="' + n + '"' + (n === (deck ? deck.config.size : cfg.size) ? ' selected' : '') + '>' + n + ' cards</option>';
+    }).join('') + '</select></label></div><button class="btn primary" type="submit" id="flashcardsStart">' +
+    (deck ? 'Continue flashcards' : 'Start flashcards') + '</button><p class="explain">Meanings, readings, memory stories and examples appear after you flip. Only your recall rating counts toward practice.</p></form>' +
+    ((current && current.config.format === 'quiz') || (paused && paused.config.format === 'quiz') ?
+      '<section class="card"><h2>Your quiz is safe here</h2><p>Starting flashcards keeps your unfinished quiz and answers saved.</p><button class="btn soft" id="flashcardsQuiz">Continue saved quiz</button></section>' : '') + '</div>';
+  $('#flashcardsForm', view).addEventListener('submit', function (event) {
+    event.preventDefault();
+    var data = new FormData(this);
+    openPracticeFormat(view, deck ? deck.config : Practice.config({ mode: 'explore', kind: data.get('kind'), lv: studyLevel(data.get('lv')), size: data.get('size'), format: 'recall' }, cfg.lv));
+  });
+  var quiz = $('#flashcardsQuiz', view);
+  if (quiz) quiz.addEventListener('click', function () {
+    go('#/practice?start=1&format=quiz');
+  });
 }
 function recordPracticeAnswer(type, id, ok) {
   var day = studyDay(Course.todayStr());
@@ -43,12 +95,13 @@ function practiceBadgesHTML() {
 function practiceDashboardHTML() { return dailyPracticeCardHTML(); }
 
 function practiceSettingsHTML() {
-  return '<div class="card"><h2>Daily practice</h2><label for="practiceGoal">Items to practice each day</label> ' +
+  return '<div class="card"><div class="settings-card-title"><span class="settings-icon sun">' + pengoIcon('check') + '</span><div><h2>Your little daily win</h2><p>A gentle nudge, at your pace.</p></div></div><label for="practiceGoal">Items to practice each day</label> ' +
     '<select id="practiceGoal">' + [3, 5, 10, 20].map(function (n) {
       return '<option value="' + n + '"' + (Practice.goal(store.settings.dailyGoal) === n ? ' selected' : '') + '>' + n + '</option>';
     }).join('') + '</select><p class="explain">Newly studied items and review attempts count. Each item counts once a day, even when you miss it. This goal is separate from your plan’s new-material pace.</p></div>';
 }
 function practicePool(cfg) {
+  cfg = Object.assign({}, cfg, { lv: studyLevel(cfg.lv) });
   if (cfg.mode === 'plan' || (cfg.mode === 'smart' && store.course && cfg.lv === store.course.target)) {
     if (!store.course) return [];
     var un = courseUnlocked().all.map(function (item) { return Object.assign({ lv: cfg.lv }, item); });
@@ -64,7 +117,7 @@ function practicePool(cfg) {
     }
     return un;
   }
-  var out = [], levels = cfg.mode === 'due' || cfg.mode === 'mistakes' ? LEVELS : [cfg.lv];
+  var out = [], levels = cfg.mode === 'due' || cfg.mode === 'mistakes' ? studyLevels() : [cfg.lv];
   levels.forEach(function (lv) {
     Practice.TYPES.forEach(function (type) {
       var recs = type === 'kanji' ? DB.levels[lv] : type === 'vocab' ? DB.vocab[lv] : DB.grammar[lv];
@@ -81,11 +134,14 @@ function practiceSrs(item) {
 }
 function renderPractice(view, query) {
   var cfg = Practice.config(query, (store.course || {}).target || 'N5');
-  var saved = practiceSession();
+  cfg.lv = studyLevel(cfg.lv);
+  var saved = practiceSession(), paused = practiceSession('pausedSession');
+  if (query.start === '1' && ['quiz', 'recall'].includes(query.format)) { openPracticeFormat(view, cfg); return; }
+  if (query.resume === '1' && !saved && paused) { resumePausedPractice(view); return; }
   if (query.resume === '1' && saved) { renderPracticePlayer(view, saved); return; }
-  // A start link always resumes an existing session; replacing it is an explicit choice.
+  // Generic start links resume current work; explicit formats keep a separate paused session.
   if (query.start === '1' && saved) { renderPracticePlayer(view, saved); return; }
-  if (query.start === '1') { startPractice(view, cfg); return; }
+  if (query.start === '1') { openPracticeFormat(view, cfg); return; }
   var counts = {};
   ['smart', 'due', 'mistakes', 'plan'].forEach(function (mode) {
     var c = Object.assign({}, cfg, { mode: mode, size: 10 });
@@ -108,30 +164,33 @@ function renderPractice(view, query) {
     (saved ? '<section class="card"><h2>Your saved session</h2><p>' + saved.answers.length + ' / ' + saved.questions.length +
       ' answered. Your place is saved on this device.</p><div class="practice-actions"><button class="btn primary" id="practiceResume">Resume session</button>' +
       '<button class="btn soft" id="practiceReplace">Start a different session</button></div></section>' : '') +
+    (paused ? '<section class="card"><h2>Your paused ' + (paused.config.format === 'recall' ? 'flashcards' : 'quiz') + '</h2><p>' + paused.answers.length + ' / ' + paused.questions.length + ' answered. Your place is saved.</p><button class="btn soft" id="practiceResumePaused">Resume ' + (paused.config.format === 'recall' ? 'flashcards' : 'quiz') + '</button></section>' : '') +
     quick + '<form class="card practice-form" id="practiceForm"><details class="practice-custom"' + (query.kind || query.lv || cfg.mode === 'plan' ? ' open' : '') + '><summary>Build your own session</summary><div class="practice-fields">' +
     '<label>Focus<select name="mode">' + options([['smart', 'Smart mix'], ['explore', 'Level sampler'], ['due', 'Due reviews (' + counts.due + ')'],
       ['mistakes', 'Mistakes (' + counts.mistakes + ')']].concat(store.course ? [['plan', 'Study plan']] : []), cfg.mode) + '</select></label>' +
     '<label>Content<select name="kind">' + options([['mixed', 'Mixed'], ['kanji', 'Kanji'], ['vocab', 'Vocabulary'], ['grammar', 'Grammar']], cfg.kind) + '</select></label>' +
-    '<label>Level<select name="lv">' + options(LEVELS.map(function (lv) { return [lv, lv]; }), cfg.lv) + '</select></label>' +
+    '<label>Level<select name="lv">' + options(studyLevels().map(function (lv) { return [lv, lv]; }), cfg.lv) + '</select></label>' +
     '<label>Session length<select name="size">' + options([['3', '3 questions · small start'], ['5', '5 questions · daily practice'], ['10', '10 questions · deeper practice']], String(cfg.size)) + '</select></label>' +
-    '<label>Practice style<select name="format">' + options([['quiz', 'Multiple choice'], ['recall', 'Recall cards']], cfg.format) + '</select></label></div>' +
-    '<p class="explain">Due reviews and mistakes include all levels. Study plan questions stay within unlocked material. Recall cards let you think before revealing the answer.</p>' +
+    '<label>Practice style<select name="format">' + options([['quiz', 'Multiple choice'], ['recall', 'Flashcards · tap to flip']], cfg.format) + '</select></label></div>' +
+    '<p class="explain">' + (store.course ? 'Your practice stays in ' + esc(store.course.target) + '. Change your destination in Settings. ' : 'Due reviews and mistakes include all levels. ') + 'Study plan questions stay within unlocked material. Flashcards let you guess, tap to flip, and explore the answer.</p>' +
     '<button class="btn primary" type="submit"' + (saved ? ' disabled' : '') + '>Start session</button></details></form>' +
     (last ? '<section class="card"><h2>Last session</h2><p>' + esc(last.date) + ' &middot; ' + last.score + ' / ' + last.total +
       ' ' + (last.format === 'recall' ? 'remembered' : 'correct') + '</p><p class="explain">' + last.total + ' attempts made. Every session builds your practice habit.</p></section>' : '') + practiceDashboardHTML();
   $$('[data-quick-practice]',view).forEach(function(button) {
     button.addEventListener('click',function() {
+      if (button.dataset.quickPractice === 'recall') { go('#/flashcards'); return; }
       if(store.practice.session)return;
       var choices={smart:{mode:'smart'},due:{mode:'due'},mistakes:{mode:'mistakes'},recall:{mode:'smart',format:'recall'}};
       startPractice(view,Practice.config(Object.assign({},cfg,choices[button.dataset.quickPractice],{size:3}),cfg.lv));
     });
   });
+  if (paused) $('#practiceResumePaused', view).addEventListener('click', function () { resumePausedPractice(view); });
   var form = $('#practiceForm', view);
   function formConfig() {
     var data = new FormData(form), q = {};
     data.forEach(function (v, k) { q[k] = v; });
     var c = Practice.config(q, cfg.lv);
-    if (c.mode === 'plan' && store.course) c.lv = store.course.target;
+    c.lv = studyLevel(c.lv);
     return c;
   }
   form.addEventListener('submit', function (e) { e.preventDefault(); if (!store.practice.session) startPractice(view, formConfig()); });
@@ -144,6 +203,7 @@ function renderPractice(view, query) {
   }
 }
 function startPractice(view, cfg) {
+  cfg = Object.assign({}, cfg, { lv: studyLevel(cfg.lv) });
   var pool = practicePool(cfg);
   var picked = Practice.select(pool, cfg, practiceSrs, store.practice.mistakes, courseStateOf);
   var questions = picked.map(function (item) {

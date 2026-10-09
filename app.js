@@ -13,7 +13,7 @@ const DB = { levels: {}, byChar: {}, vocab: {}, vById: {}, grammar: {}, gById: {
 
 const defaultStore = () => ({ learned: {}, fav: [], notes: {}, srs: {}, vLearned: {}, vFav: [], vNotes: {}, vSrs: {}, gLearned: {}, gFav: [], gNotes: {}, gSrs: {},
   settings: { theme: "light", dailyGoal: 5, autoplay: true, hideBanner: false }, quizBest: {}, vQuizBest: {}, gQuizBest: {}, course: null,
-  study: { days: {}, loggedLearned: {} }, practice: { session: null, history: [], badges: [], mistakes: {} } });
+  study: { days: {}, loggedLearned: {} }, practice: { session: null, pausedSession: null, history: [], badges: [], mistakes: {} } });
 
 let store = defaultStore();
 try {
@@ -359,9 +359,9 @@ function levelStats(lv) {
 function dueCount() {
   const now = Date.now();
   let n = 0;
-  for (const k of Object.keys(store.srs)) if (store.srs[k].due <= now && DB.byChar[k]) n++;
-  for (const k of Object.keys(store.vSrs || {})) if (store.vSrs[k].due <= now && DB.vById[k]) n++;
-  for (const k of Object.keys(store.gSrs || {})) if (store.gSrs[k].due <= now && DB.gById[k]) n++;
+  for (const k of Object.keys(store.srs)) if (store.srs[k].due <= now && DB.byChar[k] && inStudyLevel("kanji", k)) n++;
+  for (const k of Object.keys(store.vSrs || {})) if (store.vSrs[k].due <= now && DB.vById[k] && inStudyLevel("vocab", k)) n++;
+  for (const k of Object.keys(store.gSrs || {})) if (store.gSrs[k].due <= now && DB.gById[k] && inStudyLevel("grammar", k)) n++;
   return n;
 }
 
@@ -424,6 +424,7 @@ async function render() {
     else go("#/review?tab=quiz");
   }
   else if (name === "course") { renderNav("home"); renderCourse(view, seg[1], q); }
+  else if (name === "flashcards") { renderNav("review"); renderFlashcards(view, q); }
   else if (name === "practice") { renderNav("review"); renderPractice(view, q); }
   else if (name === "review") { renderNav("review"); renderReview(view, q); }
   else if (name === "search") { renderNav("search"); renderSearch(view, q); }
@@ -433,9 +434,26 @@ async function render() {
   bindPengoUI(view);
   view.focus({ preventScroll: true });
   window.scrollTo(0, 0);
+  if (name === "settings" && q.section === "plan") $("#studyPlanSettings",view).scrollIntoView({block:"start"});
   if (name === "settings" && q.section === "reminders") $("#reminderSettings",view).scrollIntoView({block:"start"});
 }
 window.addEventListener("hashchange", render);
+
+/* One chosen level follows the learner through browsing, search and practice. */
+function studyLevels() { return store.course && LEVELS.includes(store.course.target) ? [store.course.target] : LEVELS; }
+function studyLevel(requested) {
+  return store.course && LEVELS.includes(store.course.target) ? store.course.target :
+    LEVELS.includes(String(requested || "").toUpperCase()) ? String(requested).toUpperCase() : "N5";
+}
+function inStudyLevel(type, id) {
+  if (!store.course || !LEVELS.includes(store.course.target)) return true;
+  var lv = store.course.target;
+  var rows = type === "kanji" ? DB.levels[lv] : type === "vocab" ? DB.vocab[lv] : DB.grammar[lv];
+  return (rows || []).some(function (r) { return (type === "kanji" ? r.k : r.id) === id; });
+}
+function studyFocusHTML() {
+  return store.course ? '<p class="study-focus">' + pengoIcon('flag') + '<strong>Your ' + esc(store.course.target) + ' adventure</strong><a href="#/settings?section=plan">Change plan</a></p>' : '';
+}
 
 /* ---------- Shared widgets ---------- */
 function kanjiCard(it, lv) {
@@ -506,13 +524,14 @@ function renderHomeDash(view) { renderAdventureHome(view, true); }
 function renderLearn(view, q) {
   const defaultLv = store.course && LEVELS.includes(String(store.course.target || "").toUpperCase())
     ? String(store.course.target).toUpperCase() : "N5";
-  const lv = LEVELS.includes((q.lv || "").toUpperCase()) ? q.lv.toUpperCase() : defaultLv;
+  const lv = studyLevel(q.lv || defaultLv);
   const ks = levelStats(lv), vs = vLevelStats(lv), gs = gLevelStats(lv);
-  const lvBtns = LEVELS.map(l => "<button class=\"chip\" data-lv=\"" + l + "\" aria-pressed=\"" + (l === lv) + "\">" + l + "</button>").join("");
+  const lvBtns = studyLevels().map(l => "<button class=\"chip\" data-lv=\"" + l + "\" aria-pressed=\"" + (l === lv) + "\">" + l + "</button>").join("");
   view.innerHTML =
     "<h1>Learn</h1>" +
-    "<p class=\"explain\">Pick a JLPT level, then choose what to study: kanji, vocabulary, grammar \u2014 or jump straight into a review quiz for that level.</p>" +
+    (store.course ? studyFocusHTML() : "<p class=\"explain\">Pick a JLPT level, then choose kanji, vocabulary or grammar.</p>") +
     "<div class=\"chip-row\" role=\"group\" aria-label=\"Learn level\">" + lvBtns + "</div>" +
+    "<p><a class=\"btn soft\" href=\"#/flashcards?lv=" + lv + "\">Flashcards · guess and flip</a></p>" +
     "<div class=\"level-grid\">" +
     "<a class=\"level-card\" href=\"#/kanji/" + lv + "\"><div class=\"lvl\"><span class=\"dash-tile-ico t1\" aria-hidden=\"true\">\u6f22</span> Kanji <small>" + ks.total + " kanji</small></div>" +
     "<div class=\"count\">" + ks.learned + " / " + ks.total + " learned</div>" + progressBar(ks.pct) +
@@ -546,7 +565,7 @@ function matchQuery(rec, q) {
   return false;
 }
 function renderBrowse(view, level, q) {
-  const lv = LEVELS.includes((level || "").toUpperCase()) ? level.toUpperCase() : "N5";
+  const lv = studyLevel(level);
   const query = q.q || "", filt = q.f || "all", sort = q.s || "freq";
   const link = (over) => "#/kanji/" + lv + "?" + new URLSearchParams(Object.assign({ q: query, f: filt, s: sort }, over)).toString();
   let recs = DB.levels[lv].map(item => ({ item, level: lv }));
@@ -558,7 +577,7 @@ function renderBrowse(view, level, q) {
   else if (sort === "freq") recs.sort((a, b) => (a.item.freq || 99999) - (b.item.freq || 99999));
   else if (sort === "alpha") recs.sort((a, b) => (a.item.meaning < b.item.meaning ? -1 : 1));
   else if (sort === "progress") recs.sort((a, b) => ((store.learned[a.item.k] ? 1 : 0) - (store.learned[b.item.k] ? 1 : 0)));
-  const chips = LEVELS.map(l =>
+  const chips = studyLevels().map(l =>
     "<button class=\"chip\" data-lv=\"" + l + "\" aria-pressed=\"" + (l === lv) + "\">" + l + "</button>").join("");
   const grid = recs.length ? recs.map(r => kanjiCard(r.item, r.level)).join("") :
     "<p class=\"empty\">No kanji match. Try a different search or filter.</p>";
@@ -630,12 +649,13 @@ function compRow(c) {
     "<span class=\"explain\">" + (c.rad ? "True Kangxi radical. " : "Learning component. ") +
     (c.variantOf ? "Written here as " + esc(c.c) + ", standard form " + esc(c.variantOf) + ". " : "") +
     tags.join(" ") + "</span></span>";
-  if (c.link && DB.byChar[c.link])
+  if (c.link && DB.byChar[c.link] && inStudyLevel("kanji", c.link))
     return "<a class=\"comp\" href=\"#/k/" + encodeURIComponent(c.link) + "\">" + inner + "</a>";
   return "<div class=\"comp\">" + inner + "</div>";
 }
 function renderDetail(view, ch) {
-  const rec = DB.byChar[ch];
+  if (!inStudyLevel("kanji", ch)) { renderBrowse(view, studyLevel(), {}); return; }
+  const rec = store.course && LEVELS.includes(store.course.target) ? { item: (DB.levels[store.course.target] || []).find(r => r.k === ch), level: store.course.target } : DB.byChar[ch];
   if (!rec) { view.innerHTML = "<p class=\"empty\">Kanji not found. <a href=\"#/kanji\">Back to browser</a></p>"; return; }
   const it = rec.item, lv = rec.level;
   const list = DB.levels[lv];
@@ -652,7 +672,7 @@ function renderDetail(view, ch) {
     (s.en ? "<div class=\"en\" lang=\"en\">" + esc(s.en) + "</div>" : "") + "</li>").join("") ||
     "<li class=\"explain\">No example sentences in the data for this kanji yet.</li>";
   const conf = (it.confusables || []).map(c =>
-    DB.byChar[c] ? "<a href=\"#/k/" + encodeURIComponent(c) + "\">" + esc(c) + "</a>" : esc(c)).join(" · ") || "—";
+    DB.byChar[c] && inStudyLevel("kanji", c) ? "<a href=\"#/k/" + encodeURIComponent(c) + "\">" + esc(c) + "</a>" : esc(c)).join(" · ") || "—";
   view.innerHTML =
     "<p><a href=\"#/kanji/" + lv + "\">← " + lv + " browser</a></p>" +
     "<div class=\"detail-head\"><div class=\"kanji-hero\" lang=\"ja\">" + esc(it.k) + "</div>" +
@@ -742,6 +762,8 @@ async function initStrokeOrder(it) {
       });
     } catch (e2) { svgText = ""; }
   }
+  // A learner may leave the detail page while the diagram is loading.
+  if (!box.isConnected || $("#strokeBox") !== box) return;
   window.KKDiag = window.KKDiag || {};
   window.KKDiag.stroke = diag + "len" + svgText.length;
   if (!svgText || svgText.indexOf("<svg") < 0) {
@@ -809,7 +831,7 @@ function srsGrade(id, ok) {
 
 function dueCards() {
   const now = Date.now();
-  return Object.keys(store.srs).filter(k => store.srs[k].due <= now && DB.byChar[k]);
+  return Object.keys(store.srs).filter(k => store.srs[k].due <= now && DB.byChar[k] && inStudyLevel("kanji", k));
 }
 /* ---------- Quiz result celebration (Pengo stickers) ---------- */
 
@@ -868,20 +890,20 @@ function renderSearch(view, q) {
     if (!v) { box.innerHTML = "<p class=\"empty\">Try “tree”, “き”, “木”, “mori”... (English, kana, or the character itself).</p>"; return; }
     const out = [];
     const vout = [];
-    for (const lid of LEVELS) {
+    for (const lid of studyLevels()) {
       for (const vv of (DB.vocab[lid] || [])) {
         if (matchVQuery(vv, v)) vout.push(vv);
         if (vout.length >= 120) break;
       }
       if (vout.length >= 120) break;
     }
-    for (const lv of LEVELS)
+    for (const lv of studyLevels())
       for (const it of DB.levels[lv]) {
         if (matchQuery({ item: it }, v)) out.push({ item: it, level: lv });
         if (out.length >= 120) break;
       }
     const gout = [];
-    for (const lid of LEVELS) {
+    for (const lid of studyLevels()) {
       for (const gg of (DB.grammar[lid] || [])) {
         if (matchGQuery(gg, v)) gout.push(gg);
         if (gout.length >= 120) break;
@@ -942,9 +964,9 @@ function studyStatsHTML(period) {
     "<select id=\"studyPeriod\"><option value=\"week\"" + (period === "week" ? " selected" : "") + ">This Week</option>" +
     "<option value=\"month\"" + (period === "month" ? " selected" : "") + ">This Month</option></select></div>" +
     "<div class=\"study-chart-scroll\"><div class=\"study-chart study-chart-" + period + "\" role=\"group\" aria-label=\"Items learned each day\">" + bars + "</div></div>" +
-    "<div class=\"study-summary\"><div><span class=\"study-summary-icon books\" aria-hidden=\"true\">▤</span><span><strong>" + pengoNum(totalLearned) + "</strong><small>Items learned</small></span></div>" +
-    "<div><span class=\"study-summary-icon time\" aria-hidden=\"true\">◷</span><span><strong>" + studyDuration(totalSeconds) + "</strong><small>Study time</small></span></div>" +
-    "<div><span class=\"study-summary-icon calendar\" aria-hidden=\"true\">▦</span><span><strong>" + studied + " / " + count + "</strong><small>Days studied</small></span></div></div></section>";
+    "<div class=\"study-summary\"><div><span class=\"study-summary-icon books\" aria-hidden=\"true\">" + pengoIcon("book") + "</span><span><strong>" + pengoNum(totalLearned) + "</strong><small>Items learned</small></span></div>" +
+    "<div><span class=\"study-summary-icon time\" aria-hidden=\"true\">" + pengoIcon("clock") + "</span><span><strong>" + studyDuration(totalSeconds) + "</strong><small>Study time</small></span></div>" +
+    "<div><span class=\"study-summary-icon calendar\" aria-hidden=\"true\">" + pengoIcon("calendar") + "</span><span><strong>" + studied + " / " + count + "</strong><small>Days studied</small></span></div></div></section>";
 }
 function renderProgress(view) {
   var q = {};
@@ -958,7 +980,7 @@ function renderProgress(view) {
       }
     }
   } catch (e) {}
-  var heroLevel = q.level || (store.course && store.course.target) || "";
+  var heroLevel = store.course ? studyLevel(q.level) : q.level || "";
   if (LEVELS.indexOf(heroLevel) < 0) {
     heroLevel = "N5";
     for (i = 0; i < LEVELS.length; i++) {
@@ -968,7 +990,7 @@ function renderProgress(view) {
   }
   var hero = combinedLevelStats(heroLevel);
   var period = q.period === "month" ? "month" : "week";
-  var chips = LEVELS.map(function (lv) {
+  var chips = studyLevels().map(function (lv) {
     return "<a class=\"pg-chip" + (lv === heroLevel ? " active" : "") + "\" href=\"#/progress?level=" + lv + "&period=" + period + "\">" + lv + "</a>";
   }).join("");
   function categoryRing(label, stats, color) {
@@ -1018,27 +1040,22 @@ function renderProgress(view) {
 function renderSettings(view) {
   const s = store.settings;
   view.innerHTML =
-    "<h1>Settings</h1>" +
-    "<div class=\"card\"><h2>Appearance</h2><div class=\"settings-row\">" +
-    "<button class=\"btn\" id=\"sTheme\">Theme: " + esc(s.theme) + "</button></div></div>" +
-    "<div class=\"card\"><h2>Stroke order</h2><div class=\"settings-row\">" +
-    "<label><input type=\"checkbox\" id=\"sAuto\"" + (s.autoplay ? " checked" : "") + "> Auto-play stroke order</label></div></div>" +
-    practiceSettingsHTML() +
-    reminderSettingsHTML() +
-    "<div class=\"card\"><h2>Backup</h2><div class=\"settings-row\">" +
-    "<button class=\"btn soft\" id=\"sExport\">Export my data</button>" +
-    "<button class=\"btn soft\" id=\"sImportButton\" type=\"button\">Import backup</button>" +
-    "<input type=\"file\" id=\"sImport\" accept=\"application/json\" hidden>" +
-    "<button class=\"btn soft danger\" id=\"sWipe\">Erase everything</button></div>" +
-    "<p class=\"explain\">" + storeNote() + "</p></div>" +
-    courseSettingsCard() +
-    "<div class=\"card\"><h2>About the data</h2>" +
+    '<div class="settings-page"><header class="settings-welcome"><div><span class="eyebrow">MAKE YOURSELF AT HOME</span><h1>Your little corner</h1><p>Settings for a journey that feels like you.</p></div><img src="assets/pengo-study.png" width="110" height="110" alt="Pengo reading a book"></header>' +
+    courseSettingsCard() + '<div class="settings-grid"><div class="settings-column">' +
+    '<section class="card"><div class="settings-card-title"><span class="settings-icon lavender">' + pengoIcon('spark') + '</span><div><h2>Make it comfy</h2><p>Little touches for your study space.</p></div></div>' +
+    '<div class="settings-preference"><div><strong>Appearance</strong><small>A bright day or a cozy evening.</small></div><button class="btn soft" id="sTheme">Theme: ' + esc(s.theme) + '</button></div>' +
+    '<label class="settings-preference" for="sAuto"><span><strong>Stroke order</strong><small>Auto-play when you open a kanji.</small></span><input class="settings-toggle" type="checkbox" id="sAuto"' + (s.autoplay ? ' checked' : '') + '></label></section>' +
+    practiceSettingsHTML() + reminderSettingsHTML() + '</div><div class="settings-column">' +
+    '<section class="card"><div class="settings-card-title"><span class="settings-icon mint">' + pengoIcon('book') + '</span><div><h2>Keep your discoveries</h2><p>Your progress deserves a safe place.</p></div></div><p class="explain">Save a backup to take your learning with you. Importing a backup replaces your current progress.</p><div class="settings-row">' +
+    '<button class="btn soft" id="sExport">Export my data</button><button class="btn soft" id="sImportButton" type="button">Import backup</button><input type="file" id="sImport" accept="application/json" hidden></div><p class="explain">' + storeNote() + '</p></section>' +
+    '<section class="card settings-reset"><div class="settings-card-title"><span class="settings-icon coral">' + pengoIcon('refresh') + '</span><div><h2>A clean slate</h2><p>Only when you want a fresh start.</p></div></div><p class="explain">This removes your progress, notes, plan and settings. Save a backup first if you’d like to keep them.</p><button class="btn soft danger" id="sWipe">Erase everything</button></section>' +
+    "<details class=\"card settings-about\"><summary>Behind the discoveries</summary>" +
     "<p class=\"explain\">Kanji facts: KANJIDIC2 + curated JLPT files. Components: KanjiVG hierarchy; EDRDG KRADFILE fallback. " +
     "Stroke art: KanjiVG (" + (DB.meta ? LEVELS.map(l => DB.meta.levels[l].stroke + "/" + DB.meta.levels[l].count + " " + l).join(" · ") : "") + "). " +
-    "Sentences: Tanaka Corpus + CSV set. Accents: Kanjium. Loader: " + (DB.source || "?") + ". Vocab: JLPT lists (" + (DB.vocabMeta ? DB.vocabMeta.total : vAll().length) + " words) + Tatoeba sentences (" + (DB.vocabMeta ? DB.vocabMeta.withSentences : 0) + " with matches). Grammar: Anki deck ‘Japanese Core Grammar JLPT N5-N1’ (" + (DB.grammarMeta ? DB.grammarMeta.total : gAll().length) + " points, text only, no audio used, no licence stated). Full credits in resources/CREDITS.md.</p></div>" +
+    "Sentences: Tanaka Corpus + CSV set. Accents: Kanjium. Loader: " + (DB.source || "?") + ". Vocab: JLPT lists (" + (DB.vocabMeta ? DB.vocabMeta.total : vAll().length) + " words) + Tatoeba sentences (" + (DB.vocabMeta ? DB.vocabMeta.withSentences : 0) + " with matches). Grammar: Anki deck ‘Japanese Core Grammar JLPT N5-N1’ (" + (DB.grammarMeta ? DB.grammarMeta.total : gAll().length) + " points, text only, no audio used, no licence stated). Full credits in resources/CREDITS.md.</p></details>" +
     "<div class=\"card\"><h2>About this app</h2>" +
     "<p><button class=\"btn soft\" id=\"sIntro\">Replay intro</button></p>" + 
-    "<p class=\"explain\">Pengo " + (window.APP_VERSION || "1.0.0") + " runs fully offline: all kanji, vocabulary and grammar data (incl. example sentences) plus stroke diagrams are bundled, with no account or network needed. Sources: KANJIDIC2, KRADFILE (EDRDG), KanjiVG, Tanaka Corpus, Kanjium. See resources/CREDITS.md for full attribution.</p></div>";
+    "<p class=\"explain\">Pengo " + (window.APP_VERSION || "1.0.0") + " runs fully offline: all kanji, vocabulary and grammar data (incl. example sentences) plus stroke diagrams are bundled, with no account or network needed. Sources: KANJIDIC2, KRADFILE (EDRDG), KanjiVG, Tanaka Corpus, Kanjium. See resources/CREDITS.md for full attribution.</p></div></div></div></div>";
   bindReminderSettings(view);
   $("#sTheme").addEventListener("click", e => {
     s.theme = s.theme === "dark" ? "light" : "dark";
@@ -1115,13 +1132,13 @@ function vDueCount() {
   const now = Date.now();
   let n = 0;
   for (const k of Object.keys(store.vSrs || {})) {
-    if (store.vSrs[k].due <= now && DB.vById[k]) n++;
+    if (store.vSrs[k].due <= now && DB.vById[k] && inStudyLevel("vocab", k)) n++;
   }
   return n;
 }
 function vDueCards() {
   const now = Date.now();
-  return Object.keys(store.vSrs || {}).filter(k => store.vSrs[k].due <= now && DB.vById[k]);
+  return Object.keys(store.vSrs || {}).filter(k => store.vSrs[k].due <= now && DB.vById[k] && inStudyLevel("vocab", k));
 }
 function vSrsGrade(id, ok) {
   store.vSrs[id] = Practice.nextReview(store.vSrs[id], ok, Date.now(), Course.todayStr());
@@ -1148,13 +1165,13 @@ function kanjiCharsOf(v) {
   const out = [];
   const s = v.word || "";
   for (const ch of s) {
-    if (DB.byChar[ch] && out.indexOf(ch) < 0) out.push(ch);
+    if (DB.byChar[ch] && inStudyLevel("kanji", ch) && out.indexOf(ch) < 0) out.push(ch);
   }
   return out;
 }
 function vocabForKanji(ch, limit) {
   const out = [];
-  for (const lv of LEVELS) {
+  for (const lv of studyLevels()) {
     for (const v of (DB.vocab[lv] || [])) {
       if ((v.word || "").indexOf(ch) >= 0) {
         out.push(v);
@@ -1190,8 +1207,9 @@ function vocabCard(v) {
     "<span class=\"meta\"><span class=\"badge " + levelClass(v.jlpt) + "\">" + v.jlpt + "</span>" + vStatusDot(v.id) + "</span></a>" + "</article>";
 }
 function renderVocabHome(view) {
+  if (store.course) { renderVocabBrowse(view, store.course.target, {}); return; }
   const due = vDueCount();
-  const cards = LEVELS.map(lv => {
+  const cards = studyLevels().map(lv => {
     const s = vLevelStats(lv);
     return "<a class=\"level-card\" href=\"#/vocab/" + lv + "\">" +
       "<div class=\"lvl\">JLPT <span lang=\"en\">" + lv + "</span> <small>" + s.total + " words</small></div>" +
@@ -1209,7 +1227,7 @@ function renderVocabHome(view) {
     "<p><a class=\"btn\" href=\"#/vocab/N5\">Browse N5 words</a> <a class=\"btn soft\" href=\"#/search?q=\">Search words</a></p></div>";
 }
 function renderVocabBrowse(view, level, q) {
-  const lv = LEVELS.includes((level || "").toUpperCase()) ? level.toUpperCase() : "N5";
+  const lv = studyLevel(level);
   const query = q.q || "", filt = q.f || "all", sort = q.s || "freq";
   const link = (over) => "#/vocab/" + lv + "?" + new URLSearchParams(Object.assign({ q: query, f: filt, s: sort }, over)).toString();
   let recs = (DB.vocab[lv] || []).slice();
@@ -1222,7 +1240,7 @@ function renderVocabBrowse(view, level, q) {
   else if (sort === "alpha") recs.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
   else if (sort === "reading") recs.sort((a, b) => (a.reading < b.reading ? -1 : 1));
   else if (sort === "progress") recs.sort((a, b) => ((store.vLearned[a.id] ? 1 : 0) - (store.vLearned[b.id] ? 1 : 0)));
-  const chips = LEVELS.map(l =>
+  const chips = studyLevels().map(l =>
     "<button class=\"chip\" data-lv=\"" + l + "\" aria-pressed=\"" + (l === lv) + "\">" + l + "</button>").join("");
   const grid = recs.length ? recs.map(vocabCard).join("") :
     "<p class=\"empty\">No words match. Try a different search or filter.</p>";
@@ -1264,6 +1282,7 @@ function renderVocabBrowse(view, level, q) {
   $("#vs").addEventListener("change", e => go(link({ s: e.target.value })));
 }
 function renderVocabDetail(view, id) {
+  if (!inStudyLevel("vocab", id)) { renderVocabBrowse(view, studyLevel(), {}); return; }
   const v = vById(id);
   if (!v) { view.innerHTML = "<p class=\"empty\">Word not found. <a href=\"#/vocab\">Back to vocabulary</a></p>"; return; }
   const list = DB.vocab[v.jlpt] || [];
@@ -1362,7 +1381,7 @@ function gAll() {
 }
 function gById(id) { return DB.gById[id] || null; }
 function gIdByPoint(point) {
-  for (const lv of LEVELS) for (const g of (DB.grammar[lv] || [])) if (g.point === point) return g.id;
+  for (const lv of studyLevels()) for (const g of (DB.grammar[lv] || [])) if (g.point === point) return g.id;
   return null;
 }
 function isGLearned(id) { return !!store.gLearned[id]; }
@@ -1383,13 +1402,13 @@ function gDueCount() {
   const now = Date.now();
   let n = 0;
   for (const k of Object.keys(store.gSrs || {})) {
-    if (store.gSrs[k].due <= now && DB.gById[k]) n++;
+    if (store.gSrs[k].due <= now && DB.gById[k] && inStudyLevel("grammar", k)) n++;
   }
   return n;
 }
 function gDueCards() {
   const now = Date.now();
-  return Object.keys(store.gSrs || {}).filter(k => store.gSrs[k].due <= now && DB.gById[k]);
+  return Object.keys(store.gSrs || {}).filter(k => store.gSrs[k].due <= now && DB.gById[k] && inStudyLevel("grammar", k));
 }
 function gSrsGrade(id, ok) {
   store.gSrs[id] = Practice.nextReview(store.gSrs[id], ok, Date.now(), Course.todayStr());
@@ -1441,8 +1460,9 @@ function grammarCard(g) {
     "<span class=\"meta\"><span class=\"badge " + levelClass(g.jlpt) + "\">" + g.jlpt + "</span>" + gStatusDot(g.id) + "</span></a>";
 }
 function renderGrammarHome(view) {
+  if (store.course) { renderGrammarBrowse(view, store.course.target, {}); return; }
   const due = gDueCount();
-  const cards = LEVELS.map(lv => {
+  const cards = studyLevels().map(lv => {
     const s = gLevelStats(lv);
     return "<a class=\"level-card\" href=\"#/grammar/" + lv + "\">" +
       "<div class=\"lvl\">JLPT <span lang=\"en\">" + lv + "</span> <small>" + s.total + " points</small></div>" +
@@ -1460,7 +1480,7 @@ function renderGrammarHome(view) {
     "<p><a class=\"btn\" href=\"#/grammar/N5\">Browse N5 grammar</a> <a class=\"btn soft\" href=\"#/search?q=\">Search grammar</a></p></div>";
 }
 function renderGrammarBrowse(view, level, q) {
-  const lv = LEVELS.includes((level || "").toUpperCase()) ? level.toUpperCase() : "N5";
+  const lv = studyLevel(level);
   const query = q.q || "", filt = q.f || "all", sort = q.s || "freq";
   const link = (over) => "#/grammar/" + lv + "?" + new URLSearchParams(Object.assign({ q: query, f: filt, s: sort }, over)).toString();
   let recs = (DB.grammar[lv] || []).slice();
@@ -1471,7 +1491,7 @@ function renderGrammarBrowse(view, level, q) {
   if (sort === "freq") recs = Course.sortGrammar(recs);
   else if (sort === "alpha") recs.sort((a, b) => (a.meaning < b.meaning ? -1 : 1));
   else if (sort === "progress") recs.sort((a, b) => ((store.gLearned[a.id] ? 1 : 0) - (store.gLearned[b.id] ? 1 : 0)));
-  const chips = LEVELS.map(l =>
+  const chips = studyLevels().map(l =>
     "<button class=\"chip\" data-lv=\"" + l + "\" aria-pressed=\"" + (l === lv) + "\">" + l + "</button>").join("");
   const grid = recs.length ? recs.map(grammarCard).join("") :
     "<p class=\"empty\">No grammar points match. Try a different search or filter.</p>";
@@ -1511,13 +1531,13 @@ function renderGrammarBrowse(view, level, q) {
 function kanjiCharsIn(text) {
   const out = [];
   for (const ch of String(text || "")) {
-    if (DB.byChar[ch] && out.indexOf(ch) < 0) out.push(ch);
+    if (DB.byChar[ch] && inStudyLevel("kanji", ch) && out.indexOf(ch) < 0) out.push(ch);
   }
   return out;
 }
 function vocabForExample(jp, limit) {
   const out = [];
-  for (const v of vAll()) {
+  for (const v of vAll().filter(v => inStudyLevel("vocab", v.id))) {
     if ((v.word || "").length >= 2 && jp.indexOf(v.word) >= 0 && out.indexOf(v) < 0) {
       out.push(v);
       if (out.length >= (limit || 6)) break;
@@ -1528,7 +1548,7 @@ function vocabForExample(jp, limit) {
 function grammarLinksForKanji(ch) {
   try {
     const rel = [];
-    for (const lv of LEVELS) {
+    for (const lv of studyLevels()) {
       for (const g of (DB.grammar[lv] || [])) {
         if ((g.point || "").indexOf(ch) >= 0 || (g.examples || []).some(e => (e.jp || "").indexOf(ch) >= 0)) {
           rel.push(g);
@@ -1544,6 +1564,7 @@ function grammarLinksForKanji(ch) {
   } catch (e) { return ""; }
 }
 function renderGrammarDetail(view, id) {
+  if (!inStudyLevel("grammar", id)) { renderGrammarBrowse(view, studyLevel(), {}); return; }
   const g = gById(id);
   if (!g) { view.innerHTML = "<p class=\"empty\">Grammar point not found. <a href=\"#/grammar\">Back to grammar</a></p>"; return; }
   const list = DB.grammar[g.jlpt] || [];
@@ -1812,20 +1833,12 @@ function courseMilestoneHTML() {
   }).join("") + "</div>";
 }
 function courseSettingsCard() {
-  if (typeof Course === "undefined") return "";
-  var inner;
-  if (!store.course) {
-    inner = "<p class=\"explain\">No study plan yet. A plan unlocks a little new material every day and quizzes you on it.</p>" +
-      "<p><a class=\"btn soft\" href=\"#/course/setup\">Create study plan</a></p>";
-  } else {
-    var c = store.course;
-    var planTxt = c.target + ", " + c.dailyNew + " new items/day" +
-      (c.examDate ? ", exam " + esc(c.examLabel || c.examDate) : ", no fixed exam date");
-    inner = "<p class=\"explain\">Current plan: " + planTxt + ".</p>" +
-      "<p><a class=\"btn soft\" href=\"#/course/setup\">Change plan</a> " +
-      "<a class=\"btn soft\" href=\"#/course/reset\">End plan</a></p>";
-  }
-  return "<div class=\"card\"><h2>Study plan</h2>" + inner + "</div>";
+  var c = store.course;
+  return '<section class="card settings-plan" id="studyPlanSettings"><div class="settings-card-title"><span class="settings-icon mint">' + pengoIcon('flag') + '</span><div><span class="eyebrow">YOUR NEXT ADVENTURE</span><h2>Study plan</h2></div></div>' +
+    (c ? '<div class="settings-plan-stats"><span><strong>' + esc(c.target) + '</strong>Your JLPT level</span><span><strong>' + c.dailyNew + '</strong>New items per batch</span></div><p class="explain">One level, little discoveries. Your batch waits for you whenever life gets busy.</p>' :
+      '<p class="explain">Pick your JLPT level and a comfortable number of new discoveries each day. Pengo will keep your learning focused.</p>') +
+    '<div class="settings-row"><a class="btn primary" href="#/course/setup">' + (c ? 'Change my plan' : 'Let’s make a plan') + pengoIcon('arrow') + '</a>' +
+    (c ? '<a class="settings-text-link" href="#/course/reset">End plan</a>' : '') + '</div></section>';
 }
 function renderCourse(view, sub, q) {
   if (typeof Course === "undefined") {
@@ -1847,100 +1860,45 @@ function renderCourse(view, sub, q) {
 }
 function renderCourseSetup(view, q) {
   q = q || {};
-  var preset = LEVELS.indexOf(String(q.target || "").toUpperCase()) >= 0 ? String(q.target).toUpperCase() : null;
-  var sel = { target: preset || (store.course && store.course.target) || "N3",
-    examDate: (store.course && store.course.examDate) || "",
-    pace: "recommended", custom: (store.course && store.course.dailyNew) || 20 };
-  if (LEVELS.indexOf(sel.target) < 0) sel.target = "N3";
-  var exams = Course.upcomingExams(Course.todayStr(), 4);
-  function levelChips() {
-    return LEVELS.map(function (l) {
-      return "<button class=\"chip\" data-lv=\"" + l + "\" aria-pressed=\"" + (l === sel.target) + "\">" + l + "</button>";
-    }).join("");
+  var current = store.course;
+  var sel = { target: LEVELS.includes(String(q.target || '').toUpperCase()) ? String(q.target).toUpperCase() : (current || {}).target || 'N5',
+    daily: current ? current.dailyNew : 5, examDate: (current || {}).examDate || '' };
+  var levels = [ ['N5', 'First steps', 'A friendly place to begin', 'spark'], ['N4', 'Keep exploring', 'Build on the basics', 'book'],
+    ['N3', 'Find your stride', 'Connect more of your Japanese', 'flag'], ['N2', 'Go a little deeper', 'Grow your everyday confidence', 'mountain'], ['N1', 'New horizons', 'Explore advanced Japanese', 'trophy'] ];
+  var paces = [[3, 'A tiny adventure', 'Keep it light'], [5, 'Small & steady', 'Pengo’s suggestion'], [10, 'A little more', 'Room to explore'], [20, 'Feeling curious', 'A bigger handful']];
+  view.innerHTML = '<div class="plan-setup"><a class="settings-text-link" href="' + (current ? '#/settings?section=plan' : '#/') + '">← ' + (current ? 'Back to settings' : 'Back home') + '</a>' +
+    '<header class="plan-welcome"><div><span class="eyebrow">A JOURNEY AT YOUR PACE</span><h1>' + (current ? 'A fresh pace for you' : 'Where shall we go?') + '</h1><p>Choose your next adventure with Pengo. Small steps count, and you can change your mind anytime.</p></div><img src="assets/pengo-adventure.png" width="140" height="140" alt="Pengo, your study buddy"></header>' +
+    '<section class="card plan-section"><div class="plan-step-title"><span>1</span><div><h2>Pick your JLPT destination</h2><p class="explain">We’ll show you kanji, words and grammar from this level.</p></div></div><div class="plan-levels" role="group" aria-label="Target level">' +
+    levels.map(function (l) { return '<button type="button" class="plan-level" data-lv="' + l[0] + '" aria-pressed="' + (l[0] === sel.target) + '"><span class="plan-level-icon">' + pengoIcon(l[3]) + '</span><strong>' + l[0] + '</strong><b>' + l[1] + '</b><small>' + l[2] + '</small><span class="plan-selected" aria-hidden="true">' + pengoIcon('check') + '</span></button>'; }).join('') + '</div></section>' +
+    '<section class="card plan-section"><div class="plan-step-title"><span>2</span><div><h2>How many new discoveries a day?</h2><p class="explain">Try 5 to start. A batch waits until you’re ready; missed days never pile up new work.</p></div></div><div class="plan-paces" role="group" aria-label="Daily learning pace">' +
+    paces.map(function (p) { return '<button type="button" class="plan-pace" data-pace="' + p[0] + '" aria-pressed="' + (p[0] === sel.daily) + '"><strong>' + p[0] + '<small> items</small></strong><b>' + esc(p[1]) + '</b><span>' + esc(p[2]) + '</span></button>'; }).join('') + '</div>' +
+    '<label class="plan-custom" for="paceCustom">Or choose your own <input type="number" id="paceCustom" min="1" max="100" step="1" value="' + sel.daily + '" required> items</label>' +
+    '<details class="plan-exam"><summary>Have an exam date in mind? <span>Optional</span></summary><label for="planExam">Your exam date</label><input type="date" id="planExam" value="' + esc(sel.examDate) + '"><p class="explain">Only a planning note. Your pace is always your choice.</p></details></section>' +
+    '<section class="plan-sendoff"><p id="planPreview" role="status" aria-live="polite"></p><p class="explain">No rush. Take breaks. Pengo will be here.</p><button class="btn primary" id="planStart">' + (current ? 'Save my adventure' : 'Let’s begin') + pengoIcon('arrow') + '</button></section></div>';
+  function update() {
+    $$('[data-lv]', view).forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.lv === sel.target); });
+    $$('[data-pace]', view).forEach(function (b) { b.setAttribute('aria-pressed', Number(b.dataset.pace) === sel.daily); });
+    $('#planPreview', view).textContent = sel.target + ' · ' + sel.daily + ' new discoveries per batch · your own pace';
   }
-  function examRows() {
-    var rows = exams.map(function (e) {
-      var left = Course.daysUntil(e.date, Course.todayStr());
-      var checked = sel.examDate === e.date ? " checked" : "";
-      return "<label class=\"exam-row\"><input type=\"radio\" name=\"exam\" value=\"" + e.date + "\"" + checked + "> " +
-        esc(e.label) + " <small>(" + left + " days remaining)</small></label>";
-    }).join("");
-    rows += "<label class=\"exam-row\"><input type=\"radio\" name=\"exam\" value=\"\"" +
-      (sel.examDate ? "" : " checked") + "> No specific exam date</label>";
-    return rows;
-  }
-  view.innerHTML =
-    "<h1>" + (store.course ? "Change study plan" : "Create study plan") + "</h1>" +
-    "<div class=\"card\"><h2>1. Which JLPT test are you preparing for?</h2>" +
-    "<div class=\"chip-row\" role=\"group\" aria-label=\"Target level\">" + levelChips() + "</div></div>" +
-    "<div class=\"card\"><h2>2. Target exam date</h2><div id=\"examBox\">" + examRows() + "</div>" +
-    "<p class=\"explain\">These dates are planning estimates based on the usual July/December rhythm. Confirm your local session with the JLPT organizer. You can change the target later.</p></div>" +
-    "<div class=\"card\"><h2>3. Daily pace</h2><div id=\"paceBox\"></div>" +
-    "<p class=\"explain\">The suggestion below is computed from the actual " + "content. Pick whatever fits your life.</p></div>" +
-    "<p><button class=\"btn primary\" id=\"planStart\">" + (store.course ? "Save plan" : "Start plan") + "</button> " +
-    "<a class=\"btn soft\" href=\"#/\">Cancel</a></p>";
-  function refreshPace() {
-    var counts = courseLevelCounts(sel.target);
-    var days = sel.examDate ? Course.daysUntil(sel.examDate, Course.todayStr()) : null;
-    var pace = Course.suggestPace(counts, days);
-    function opt(v, label) {
-      return "<label class=\"exam-row\"><input type=\"radio\" name=\"pace\" value=\"" + v + "\"" +
-        (sel.pace === v ? " checked" : "") + "> " + label + "</label>";
-    }
-    $("#paceBox").innerHTML =
-      "<p class=\"explain\">" +
-      (days == null ? "No fixed exam date. " : "About " + days + " days until the exam. ") +
-      "To cover the " + pace.total + " planned " + sel.target + " items, we suggest about " +
-      "<b>" + pace.recommended + " new items per day</b>. You can choose a different pace.</p>" +
-      opt("relaxed", "Relaxed - " + pace.relaxed + "/day") +
-      opt("recommended", "Recommended - " + pace.recommended + "/day") +
-      opt("intensive", "Intensive - " + pace.intensive + "/day") +
-      "<label class=\"exam-row\"><input type=\"radio\" name=\"pace\" value=\"custom\"" +
-      (sel.pace === "custom" ? " checked" : "") + "> Custom: " +
-      "<input type=\"number\" id=\"paceCustom\" min=\"5\" max=\"100\" value=\"" + sel.custom + "\" aria-label=\"Custom items per day\"> /day</label>";
-    $$("input[name=pace]", view).forEach(function (r) {
-      r.addEventListener("change", function () { sel.pace = r.value; });
-    });
-    $("#paceCustom").addEventListener("input", function (e) {
-      sel.custom = parseInt(e.target.value, 10) || sel.custom;
-      sel.pace = "custom";
-      var cr = $("input[name=pace][value=custom]", view);
-      if (cr) cr.checked = true;
-    });
-    view.dataset.rec = pace.recommended;
-    view.dataset.rel = pace.relaxed;
-    view.dataset.int = pace.intensive;
-  }
-  $$("[data-lv]", view).forEach(function (ch) {
-    ch.addEventListener("click", function () {
-      sel.target = ch.dataset.lv;
-      $$("[data-lv]", view).forEach(function (x) { x.setAttribute("aria-pressed", x === ch ? "true" : "false"); });
-      refreshPace();
-    });
+  $$('[data-lv]', view).forEach(function (b) { b.addEventListener('click', function () { sel.target = b.dataset.lv; update(); }); });
+  $$('[data-pace]', view).forEach(function (b) { b.addEventListener('click', function () { sel.daily = Number(b.dataset.pace); $('#paceCustom', view).value = sel.daily; update(); }); });
+  $('#paceCustom', view).addEventListener('input', function (e) { if (e.target.checkValidity()) { sel.daily = Number(e.target.value); update(); } });
+  $('#planStart', view).addEventListener('click', function () {
+    if (!$('#paceCustom', view).reportValidity() || !$('#planExam', view).reportValidity()) return;
+    sel.daily = Number($('#paceCustom', view).value);
+    sel.examDate = $('#planExam', view).value;
+    var isNew = !current || current.target !== sel.target;
+    var keep = current || Course.defaultCourse(sel.target);
+    store.course = { target: sel.target, examId: sel.examDate, examLabel: sel.examDate, examDate: sel.examDate,
+      startDate: isNew ? Course.todayStr() : keep.startDate, dailyNew: sel.daily, weights: keep.weights || Course.defaultCourse(sel.target).weights,
+      unlockedDay: isNew ? 1 : (keep.unlockedDay || 1), studyDays: keep.studyDays || [],
+      milestones: isNew ? [] : (keep.milestones || []), quizzes: keep.quizzes || 0, perfectQuiz: !!keep.perfectQuiz };
+    // Preserve answered progress; an old session cannot lead into another level.
+    if (store.practice.session && store.practice.session.questions.some(function (item) { return item.lv !== sel.target; })) store.practice.session = null;
+    if (!current && [3, 5, 10, 20].includes(sel.daily)) store.settings.dailyGoal = sel.daily;
+    save(); Reminders.syncGoal(); go('#/');
   });
-  $$("input[name=exam]", view).forEach(function (r) {
-    r.addEventListener("change", function () { sel.examDate = r.value; refreshPace(); });
-  });
-  refreshPace();
-  $("#planStart").addEventListener("click", function () {
-    var paceVal = sel.pace === "custom" ? sel.custom
-      : sel.pace === "relaxed" ? parseInt(view.dataset.rel, 10)
-      : sel.pace === "intensive" ? parseInt(view.dataset.int, 10)
-      : parseInt(view.dataset.rec, 10);
-    paceVal = Math.max(5, Math.min(100, paceVal || 20));
-    var label = "";
-    for (var i = 0; i < exams.length; i++) if (exams[i].date === sel.examDate) label = exams[i].label;
-    var isNew = !store.course || store.course.target !== sel.target;
-    var keep = store.course || Course.defaultCourse(sel.target);
-    store.course = { target: sel.target, examId: sel.examDate, examLabel: label, examDate: sel.examDate,
-      startDate: isNew ? Course.todayStr() : keep.startDate,
-      dailyNew: paceVal, weights: keep.weights || Course.defaultCourse("N3").weights,
-      unlockedDay: isNew ? 1 : (keep.unlockedDay || 1),
-      studyDays: keep.studyDays || [], milestones: isNew ? [] : (keep.milestones || []),
-      quizzes: keep.quizzes || 0, perfectQuiz: !!keep.perfectQuiz };
-    save();
-    go("#/");
-  });
+  update();
 }
 function renderCourseDay(view) {
 
@@ -2111,7 +2069,7 @@ var bootOnboard = false;
 try { bootOnboard = (typeof shouldShowOnboarding === "function") && shouldShowOnboarding(); } catch (e) { bootOnboard = false; }
 if (bootOnboard) {
   initChrome();
-  showOnboarding(() => { bootData.then(() => { clearBootGate(); render(); }).catch(bootFailed); });
+  showOnboarding(() => { bootData.then(() => { clearBootGate(); if (!store.course) go("#/course/setup"); render(); }).catch(bootFailed); });
   bootData.catch(() => {});
 } else {
   clearBootGate();

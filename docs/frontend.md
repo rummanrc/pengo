@@ -24,7 +24,8 @@
 | `#/grammar/N5` | Grammar browser | `renderGrammarBrowse` |
 | `#/g/<id>` | Grammar detail | `renderGrammarDetail` |
 | `#/review?kind=vocab&lv=N4` | Shared practice setup with vocabulary/N4 selected | `renderReview`, `renderPractice` |
-| `#/practice` | Five quick starts, optional custom setup, and daily practice | `renderPractice` |
+| `#/practice` | Four quick starts including Flashcards, optional custom setup, and daily practice | `renderPractice` |
+| `#/flashcards` | Named deck chooser with kanji/vocabulary/grammar, level and length; preserves saved quizzes | `renderFlashcards` |
 | `#/practice?start=1&mode=explore&kind=kanji&format=recall&size=3&lv=N5` | Guess, flip, explore memory cues, rate, swipe to continue | `renderRecallPlayer` |
 | `#/practice?mode=due&kind=vocab` | Due-only vocabulary across levels | Shared player |
 | `#/practice?mode=mistakes` | Targeted mistake practice | Shared player |
@@ -101,3 +102,15 @@ Existing support includes a skip link, navigation labels/current state, semantic
 Timers include visible-time tracking (15 seconds), delayed notes/search, progress refresh, stroke animation, and browser reminder checks (30 seconds). The reminder permission callback checks whether its panel remains attached. `stopStrokeTimers()` exists, but rendering does not centrally cancel every asynchronous action. Rapid navigation can expose stale responses; account for lifecycle when changing asynchronous view code.
 
 Vocabulary cards contain a `.vocab-card-link`. Voice controls/settings are removed. Discovery cards use two accessible faces; the inactive face is inert and hidden from assistive technology. Details/ratings stay hidden until reveal, and swipe/keyboard advance requires a prior rating. Reduced-motion users get an immediate flip. See [discovery cards](discovery-cards.md).
+
+## Restored study plan and personal settings
+
+`studyLevels`, `studyLevel`, and `inStudyLevel` in `app.js` centralize the active level. A plan takes priority over route level parameters, and browsing/search/related links/practice filter to that level. Without a plan, free level selection and reviews across levels remain available. `#/settings?section=plan` scrolls to the first Settings card.
+
+The setup view uses `.plan-*` level and pace buttons with `aria-pressed`, a live summary, validated custom pace, and an optional exam date. Settings uses `.settings-*` cards, a mascot header, a desktop two-column grid, and one column on mobile. Existing backup, theme, autoplay, intro and reminder actions keep their IDs. Erasure has its own card and retains inline confirmation/cancellation. The soft danger button explicitly defines theme-specific foreground/background colors.
+
+Progress uses shared theme tokens for its page/card backgrounds, text, chart and borders. Its summary uses aligned SVG book/clock/calendar icons; mobile navigation icons also have identical containers in active/inactive states.
+
+## Flashcard access fix — 2026-10-09
+
+Home offers **Open flashcards** immediately below the hero. Learn has a named Flashcards link; Review’s Flashcards quick start remains enabled with an unfinished quiz. `#/flashcards` opens a deck chooser, then a tap-to-flip player. Explicit format start links restore that format; generic starts continue the active session. Switching quiz/cards stores the other format in `practice.pausedSession`; Review and the flashcard hub expose resume controls. No answers or SRS progress are discarded.
