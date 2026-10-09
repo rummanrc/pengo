@@ -27,4 +27,15 @@ Dashboard.challenges(days,today,5,'N5').forEach(q=>assert.ok(q.href.includes('fo
 const recalled={[today]:{recalled:{'kanji:日':true,'kanji:月':true,'kanji:火':true,'vocab:word':true}}};
 assert.equal(Dashboard.challenges(recalled,today,5,'N5')[2].done,true);
 assert.equal(Dashboard.challenges(recalled,'2026-10-09',5,'N5')[2].done,false);
+const grammarDay = '2026-10-09';
+const partial = {[grammarDay]: {practiced:{'grammar:g1':true}}};
+const grammarQuest = Dashboard.challenges(partial,grammarDay,5,'N5').find(q=>q.id==='focus');
+assert.equal(grammarQuest.kind,'grammar');
+assert.equal(grammarQuest.remaining,2);
+const challengePool=[{type:'grammar',id:'g1'},{type:'grammar',id:'g2'},{type:'grammar',id:'g2'},{type:'kanji',id:'日'}];
+assert.deepEqual(Dashboard.challengeItems(challengePool,grammarQuest,partial[grammarDay]),[{type:'grammar',id:'g2'}]);
+const flipQuest=Dashboard.challenges({},grammarDay,5,'N5').find(q=>q.id==='flip');
+assert.equal(Dashboard.challengeItems([{type:'kanji',id:'日'}],flipQuest,{practiced:{'kanji:日':true}}).length,1,'flip challenge counts ratings, not prior study');
+assert.equal(Dashboard.challengeItems([{type:'kanji',id:'日'}],flipQuest,{recalled:{'kanji:日':true}}).length,0,'flip excludes already rated kanji');
+assert.equal(Dashboard.challenges({[grammarDay]:{practiced:{'grammar:g1':true,'grammar:g2':true,'grammar:g3':true}}},grammarDay,5,'N5').find(q=>q.id==='focus').remaining,0);
 console.log('Dashboard and discovery rules: passed');

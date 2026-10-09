@@ -17,10 +17,8 @@ function check(condition, message) { assert.ok(condition, message); checks++; }
     async function route(hash) { await page.goto(base+hash); await page.waitForFunction(()=>DB.loaded); await page.evaluate(hash=>go(hash),hash); await page.waitForSelector('#view > *'); }
     const state = ()=>page.evaluate(()=>JSON.parse(localStorage.getItem(STORE_KEY)));
     async function start({mode='smart',kind='mixed',lv='N5',size='3',format='quiz'}={}) {
-      await route('#/practice');
-      await page.locator('.practice-custom').evaluate(el=>el.open=true);
-      for(const [name,value] of Object.entries({mode,kind,lv,size})) await page.locator('[name='+name+']').selectOption(value);
-      await page.getByRole('button',{name:'Start quiz',exact:true}).click();
+      await route('#/practice?'+new URLSearchParams({mode,kind,lv,size}));
+      await page.locator('.quiz-choice[data-quiz-kind='+kind+']').click();
     }
     async function answer(ok=true) {
       const s=await state(), q=s.practice.session.questions[s.practice.session.cursor];
@@ -79,20 +77,19 @@ function check(condition, message) { assert.ok(condition, message); checks++; }
     check((await page.locator('#view').textContent()).includes('Nothing is due'),'empty due is truthful');
     // Every old quiz entry point uses the shared player and updates course days/SRS.
     await page.evaluate(()=>{store.course=Course.defaultCourse('N4');save();});
-    await route('#/review?kind=grammar&lv=N4');
-    check(await page.locator('[name=kind]').inputValue()==='grammar','legacy Review retains content choice');
-    check(await page.locator('[name=lv]').inputValue()==='N4','legacy Review retains level choice');
-    await page.locator('[name=size]').selectOption('3');
-    await page.getByRole('button',{name:'Start quiz',exact:true}).click();
+    await route('#/review?kind=grammar&lv=N4&size=3');
+    check(await page.locator('.quiz-choice[data-quiz-kind=grammar]').isEnabled(),'legacy Review retains grammar access');
+    check((await page.locator('.quiz-picker > .practice-heading').textContent()).includes('N4'),'legacy Review retains level choice');
+    await page.locator('.quiz-choice[data-quiz-kind=grammar]').click();
     check(await page.evaluate(()=>store.practice.session.questions.every(q=>courseUnlocked().all.some(u=>u.type===q.type&&u.id===q.id))),'smart plan does not introduce locked material');
     await answer(false);
     check((await state()).course.studyDays.includes(today),'ordinary Review now records course activity');
     await page.evaluate(()=>{store.practice.session=null;save();});
-    await route('#/course/quiz'); await page.locator('[name=size]').selectOption('3');
-    await page.getByRole('button',{name:'Start quiz',exact:true}).click();
+    await route('#/course/quiz');
+    await page.locator('.quiz-choice[data-quiz-kind=mixed]').click();
     check(await page.evaluate(()=>store.practice.session.questions.every(q=>courseUnlocked().all.some(u=>u.type===q.type&&u.id===q.id))),'plan quiz respects unlocking');
     check((await state()).course.quizzes===0,'plan completion counter does not advance on start');
-    for(let i=0;i<3;i++){await answer(true);await page.locator('#practiceNext').click();}
+    for(let i=0,n=(await state()).practice.session.questions.length;i<n;i++){await answer(true);await page.locator('#practiceNext').click();}
     check((await state()).course.quizzes===1 && (await state()).course.perfectQuiz,'plan completion and perfect flag recorded');
     // Standalone N5 quiz assertions run after leaving the N4 plan.
     await page.evaluate(()=>{store.course=null;save();const word=DB.vocab.N5[0];store.vocabTest=word.id;});
@@ -148,10 +145,10 @@ function check(condition, message) { assert.ok(condition, message); checks++; }
     await context.close();
     const fallback=await browser.newContext();const fallbackPage=await fallback.newPage();
     await fallbackPage.route('**/data/*.json',route=>route.abort());
-    await fallbackPage.goto(base+'#/practice');await fallbackPage.waitForSelector('#practiceForm');
+    await fallbackPage.goto(base+'#/practice');await fallbackPage.waitForSelector('.quiz-picker');
     check(await fallbackPage.evaluate(()=>DB.source)==='bundle','practice works with offline fallback bundle');await fallback.close();
     const blocked=await browser.newContext();await blocked.addInitScript(()=>{Storage.prototype.setItem=function(){throw new Error('blocked')};});
-    const blockedPage=await blocked.newPage();await blockedPage.goto(base+'#/practice');await blockedPage.waitForSelector('#practiceForm');
+    const blockedPage=await blocked.newPage();await blockedPage.goto(base+'#/practice');await blockedPage.waitForSelector('.quiz-picker');
     check(await blockedPage.locator('.storage-notice').count()===1,'blocked persistence shows one actionable notice');await blocked.close();
     console.log('Browser practice:',checks,'checks passed');
   }finally{await browser.close();}

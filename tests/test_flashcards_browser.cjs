@@ -20,7 +20,7 @@ function check(value,label){assert.ok(value,label);checks++;}
   const quiz=(await state()).practice.session,today=await page.evaluate(()=>Course.todayStr());
   await route('#/review');
   check(await page.getByRole('link',{name:'Start learning'}).isEnabled(),'learning stays enabled with a saved quiz');
-  check(await page.getByRole('heading',{name:'Check your progress',exact:true}).isVisible(),'legacy Review opens the merged Learn quiz controls');
+  check(await page.getByRole('heading',{name:'Quiz',exact:true}).isVisible(),'legacy Review opens the merged Learn quiz controls');
   await page.getByRole('link',{name:'Start learning'}).click();await page.waitForSelector('#practiceReveal');
   check(await page.locator('#flashcardsForm').count()===0,'daily learning skips setup');
   let s=await state(),deck=s.practice.session;
@@ -39,9 +39,9 @@ function check(value,label){assert.ok(value,label);checks++;}
   check(s.practice.session.id===quiz.id&&s.practice.session.answers.length===1,'quiz returns at its saved answered position');
   check(s.practice.pausedSession.id===deck.id&&s.practice.pausedSession.answers.length===1,'card deck is preserved during quiz resume');
   await route('#/');
-  check(await page.getByRole('link',{name:'Start learning'}).isVisible(),'Home offers an explicit flashcard entry');
-  check(await page.locator('.daily-challenges a').count()===0,'challenges only show progress');
-  await page.getByRole('link',{name:'Start learning'}).click();await page.waitForSelector('#practiceNext');
+  check(await page.locator('.hero-start').textContent().then(s=>s.includes('learning')),'Home offers a learning entry');
+  check(await page.locator('.daily-challenges a').count()>0,'unfinished challenges open targeted cards');
+  await page.locator('.hero-start').click();await page.waitForSelector('#practiceNext');
   s=await state();
   check(s.practice.session.id===deck.id&&s.practice.session.config.format==='recall','daily kanji challenge restores cards instead of quiz');
   check(s.practice.pausedSession.id===quiz.id,'daily challenge retains saved quiz');

@@ -13,7 +13,7 @@ const DB = { levels: {}, byChar: {}, vocab: {}, vById: {}, grammar: {}, gById: {
 
 const defaultStore = () => ({ learned: {}, fav: [], notes: {}, srs: {}, vLearned: {}, vFav: [], vNotes: {}, vSrs: {}, gLearned: {}, gFav: [], gNotes: {}, gSrs: {},
   settings: { theme: "light", dailyGoal: 5, autoplay: true, hideBanner: false }, quizBest: {}, vQuizBest: {}, gQuizBest: {}, course: null,
-  study: { days: {}, loggedLearned: {} }, practice: { session: null, pausedSession: null, history: [], badges: [], mistakes: {} } });
+  study: { days: {}, loggedLearned: {} }, practice: { session: null, pausedSession: null, returnSession: null, history: [], badges: [], mistakes: {} } });
 
 let store = defaultStore();
 try {
@@ -456,7 +456,7 @@ function inStudyLevel(type, id) {
   return (rows || []).some(function (r) { return (type === "kanji" ? r.k : r.id) === id; });
 }
 function studyFocusHTML() {
-  return store.course ? '<p class="study-focus">' + pengoIcon('flag') + '<strong>Your ' + esc(store.course.target) + ' adventure</strong><a href="#/settings?section=plan">Change plan</a></p>' : '';
+  return store.course ? '<p class="study-focus"><strong>Your ' + esc(store.course.target) + ' adventure</strong><a href="#/settings?section=plan">Change plan</a></p>' : '';
 }
 
 /* ---------- Shared widgets ---------- */
@@ -553,18 +553,15 @@ function renderLearn(view, q) {
   const subjects = [['kanji', 'Kanji', '漢', 'kanji', levelStats(lv)],
     ['vocab', 'Vocabulary', '語', 'words', vLevelStats(lv)],
     ['grammar', 'Grammar', '文', 'points', gLevelStats(lv)]];
-  view.innerHTML = '<h1>Learn</h1>' +
-    (store.course ? studyFocusHTML() : '<p class="explain">Pick a JLPT level, then explore something new or check what you remember.</p>') +
-    '<div class="chip-row" role="group" aria-label="Learn level">' + studyLevels().map(l =>
-      '<button class="chip" data-lv="' + l + '" aria-pressed="' + (l === lv) + '">' + l + '</button>').join('') + '</div>' +
-    '<section aria-labelledby="learnDiscover"><h2 id="learnDiscover">Discover something new</h2><p class="explain">Take your time with a card, or browse the lessons below. Learning cards help you explore; quizzes check what you remember.</p>' +
-    flashcardEntryHTML(lv) + '<div class="level-grid learn-subjects">' + subjects.map((subject, i) => {
+  view.innerHTML = '<h1>Learn</h1>' + (store.course ? studyFocusHTML() : '') +
+    (store.course ? '' : '<div class="chip-row" role="group" aria-label="Learn level">' + studyLevels().map(l =>
+      '<button class="chip" data-lv="' + l + '" aria-pressed="' + (l === lv) + '">' + l + '</button>').join('') + '</div>') +
+    flashcardEntryHTML(lv) + '<div class="level-grid learn-subjects" aria-label="Study subjects">' + subjects.map((subject, i) => {
       const stats = subject[4];
       return '<a class="level-card" href="#/' + subject[0] + '/' + lv + '"><div class="lvl"><span class="dash-tile-ico t' + (i + 1) + '" aria-hidden="true">' + subject[2] +
-        '</span><span class="level-title">' + subject[1] + '</span><small>' + stats.total + ' ' + subject[3] + '</small></div>' +
-        '<div class="count">' + stats.learned + ' / ' + stats.total + ' learned</div>' + progressBar(stats.pct) +
-        '<div class="progress-label">' + stats.pct + '% complete · ' + stats.left + ' left</div></a>';
-    }).join('') + '</div></section><section id="learnQuizzes" class="learn-quizzes" aria-labelledby="learnQuizTitle"></section>';
+        '</span><span class="level-title">' + subject[1] + '</span></div><div class="count">' + stats.learned + ' / ' + stats.total +
+        '<span class="sr-only"> learned</span></div>' + progressBar(stats.pct, subject[1] + ' progress') + '</a>';
+    }).join('') + '</div><section id="learnQuizzes" class="learn-quizzes" aria-labelledby="learnQuizTitle"></section>';
   renderPractice($('#learnQuizzes', view), q, view);
   $$('[data-lv]', view).forEach(c => c.addEventListener('click', () => go('#/learn?lv=' + c.dataset.lv)));
 }
@@ -882,27 +879,34 @@ function quizClip(text, limit) {
 function quizReviewHTML(kind, item) {
   if (kind === "kanji") {
     const readings = [];
-    if (item.on && item.on.length) readings.push("<span><strong>On:</strong> <span lang=\"ja\">" + esc(item.on.join("、 ")) + "</span></span>");
-    if (item.kun && item.kun.length) readings.push("<span><strong>Kun:</strong> <span lang=\"ja\">" + esc(item.kun.join("、 ")) + "</span></span>");
-    const parts = storyComponents(item).slice(0, 3).map(c => "<span class=\"badge\"><span lang=\"ja\">" + esc(c.c) + "</span> " + esc(c.m) + "</span>").join(" ");
-    const words = (item.vocab || []).slice(0, 2).map(v => "<li><span lang=\"ja\">" + esc(v.w) + " (" + esc(v.r) + ")</span> — " + esc(v.m) + "</li>").join("");
-    const mnemonic = quizClip(mnemonicFor(item).text, 180);
-    return "<section class=\"card quiz-review\"><h3>Quick review <span lang=\"ja\">" + esc(item.k) + "</span></h3>" +
-      "<p><strong>Meaning:</strong> " + esc(item.meaning) + (item.strokes ? " <span class=\"badge\">" + item.strokes + " strokes</span>" : "") + "</p>" +
-      (readings.length ? "<p class=\"quiz-review-readings\">" + readings.join(" &nbsp; ") + "</p>" : "") +
-      (parts ? "<p><strong>Parts:</strong> " + parts + "</p>" : "") +
-      (mnemonic ? "<p><strong>Memory aid:</strong> " + esc(mnemonic) + "</p>" : "") +
-      (words ? "<p><strong>Example words</strong></p><ul class=\"quiz-review-list\">" + words + "</ul>" : "") + "</section>";
+    if (item.on && item.on.length) readings.push('<span><strong lang="ja">音読み:</strong> <span lang="ja">' + esc(item.on.join('、 ')) + '</span></span>');
+    if (item.kun && item.kun.length) readings.push('<span><strong lang="ja">訓読み:</strong> <span lang="ja">' + esc(item.kun.join('、 ')) + '</span></span>');
+    const parts = learningComponents(item).slice(0, 4).map(c => {
+      const body = '<span lang="ja">' + esc(c.c) + '</span>' + (c.m ? '<small>' + esc(quizClip(c.m, 28)) + '</small>' : '');
+      return c.c !== item.k && DB.byChar[c.c] && inStudyLevel('kanji', c.c) ?
+        '<a class="recap-shape" href="#/k/' + encodeURIComponent(c.c) + '">' + body + '</a>' : '<span class="recap-shape">' + body + '</span>';
+    }).join('');
+    const words = (item.vocab || []).slice(0, 2).map(v => '<li><span lang="ja">' + esc(v.w) + ' (' + esc(v.r) + ')</span> — ' + esc(v.m) + '</li>').join('');
+    const mnemonic = mnemonicFor(item).text;
+    const sentences = (item.sentences || []).filter(s => s.jp && s.en && /[A-Za-z]/.test(s.en) && !/\(#\d|#\d/.test(s.en));
+    const example = sentences.find(s => /<ruby[\s>]/.test(s.furi || '')) || sentences[0];
+    return '<section class="card quiz-review"><h3>Quick recap <span lang="ja">' + esc(item.k) + '</span></h3>' +
+      '<p><strong>Meaning:</strong> ' + esc(item.meaning) + '</p>' +
+      (readings.length ? '<p class="quiz-review-readings">' + readings.join(' ') + '</p>' : '') +
+      (parts ? '<div class="recap-parts"><strong>Shapes</strong><div class="recap-shapes" aria-label="Larger kanji shapes">' + parts + '</div></div>' : '') +
+      (mnemonic ? '<p class="recap-mnemonic"><strong>Memory aid:</strong> ' + esc(mnemonic) + '</p>' : '') +
+      (words ? '<p><strong>Example words</strong></p><ul class="quiz-review-list">' + words + '</ul>' : '') +
+      (example ? '<p class="quiz-review-example jp" lang="ja">' + (example.furi || esc(example.jp)) + '</p><p class="explain quiz-review-translation">' + esc(example.en) + '</p>' : '') + '</section>';
   }
   if (kind === "vocab") {
     const ex = (item.sentences || [])[0];
-    return "<section class=\"card quiz-review\"><h3>Quick review <span lang=\"ja\">" + esc(item.word) + "</span></h3>" + "<p><strong>Reading:</strong> <span lang=\"ja\">" + esc(item.reading) + "</span> &nbsp; <strong>Meaning:</strong> " + esc(item.meaning) + "</p>" +
+    return "<section class=\"card quiz-review\"><h3>Quick recap <span lang=\"ja\">" + esc(item.word) + "</span></h3>" + "<p><strong>Reading:</strong> <span lang=\"ja\">" + esc(item.reading) + "</span> &nbsp; <strong>Meaning:</strong> " + esc(item.meaning) + "</p>" +
       (item.meanings && item.meanings.length > 1 ? "<p><strong>Also:</strong> " + esc(item.meanings.slice(1, 4).join("; ")) + "</p>" : "") +
       (ex ? "<p class=\"quiz-review-example jp\" lang=\"ja\">" + (ex.furi || esc(ex.jp)) + "</p>" + (ex.en ? "<p class=\"explain quiz-review-translation\">" + esc(ex.en) + "</p>" : "") : "") + "</section>";
   }
   const formation = (item.sections || []).find(s => String(s.label || "").toLowerCase() === "formation");
   const example = (item.examples || [])[0];
-  return "<section class=\"card quiz-review\"><h3>Quick review <span lang=\"ja\">" + esc(item.point) + "</span></h3>" +
+  return "<section class=\"card quiz-review\"><h3>Quick recap <span lang=\"ja\">" + esc(item.point) + "</span></h3>" +
     "<p><strong>Meaning:</strong> " + esc(item.meaning) + "</p>" +
     (formation ? "<p><strong>Formation:</strong> " + esc(quizClip(stripTags(formation.html), 220)) + "</p>" : "") +
     (example ? "<p class=\"quiz-review-example jp\" lang=\"ja\">" + (example.furi || esc(example.jp)) + "</p>" + (example.en ? "<p class=\"explain quiz-review-translation\">" + esc(example.en) + "</p>" : "") : "") +
@@ -1057,6 +1061,7 @@ function renderProgress(view) {
   html.push("</section>");
   html.push(practiceDashboardHTML());
   html.push(studyStatsHTML(period));
+  if (store.course) html.push('<section class="card course-treasures"><h2>' + pengoIcon('trophy') + 'Learning milestones</h2>' + courseMilestoneHTML() + '</section>');
   html.push("</div>");
   view.innerHTML = html.join("");
   if (progressStatsTimer) clearInterval(progressStatsTimer);

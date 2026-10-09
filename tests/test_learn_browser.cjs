@@ -16,17 +16,17 @@ function check(ok,label){assert.ok(ok,label);checks++;}
   async function route(hash){await page.goto(base+hash);await page.waitForFunction(()=>DB.loaded);await page.evaluate(h=>go(h),hash);}
   await route('#/learn');
   check(await page.locator('.learn-subjects .level-card').count()===3,'three subjects, no miniature Review tile');
-  check(await page.locator('#practiceForm').isVisible(),'full quiz form lives in Learn');
-  check(await page.locator('#learnQuizzes [data-quick-practice]').count()===3,'smart, due and mistake quizzes live in Learn');
+  check(await page.locator('.quiz-picker').isVisible(),'simple quiz picker lives in Learn');
+  check(await page.locator('.quiz-choices [data-quiz-kind]').count()===4,'four one-tap subject choices live in Learn');
   check(await page.locator('select[name=format]').count()===0,'quiz form does not mix learning cards with test formats');
   check(await page.locator('#sideNav a,#bottomNav a').filter({hasText:'Review'}).count()===0,'standalone Review navigation removed');
   check(await page.locator('#bottomNav a').count()===4,'mobile navigation has four tabs');
   await route('#/review?mode=mistakes&kind=vocab&lv=N4');await page.waitForSelector('#learnQuizzes');
   check((await page.evaluate(()=>location.hash)).startsWith('#/learn?section=quiz'),'old Review bookmarks resolve to Learn');
-  check(await page.locator('[name=kind]').inputValue()==='vocab'&&await page.locator('[name=mode]').inputValue()==='mistakes','legacy review filters survive');
+  check(await page.getByRole('heading',{name:'Revisit mistakes',exact:true}).isVisible()&&await page.locator('.quiz-choice[data-quiz-kind=vocab][data-quiz-mode=mistakes]').count()===1,'legacy review mode survives');
   await route('#/');
-  check(await page.getByRole('heading',{name:'Today’s flashcards'}).count()===1,'home uses learning-oriented copy');
-  check(await page.locator('.flashcard-entry p,.flashcard-entry .eyebrow').count()===0,'home entry keeps copy minimal');
+  check(await page.locator('.hero-start').textContent().then(s=>s.includes('learning')),'hero opens learning');
+  check(await page.locator('.flashcard-entry').count()===0,'home uses the hero instead of a separate flashcard card');
   const today=await page.evaluate(()=>Course.todayStr());
   // Each subject returns to the same revealed card without awarding any result.
   for(const kind of ['kanji','vocab','grammar']){
@@ -80,12 +80,10 @@ function check(ok,label){assert.ok(ok,label);checks++;}
   await page.locator('#practiceNext').click();await page.locator('#practiceReveal').click();await page.locator('#practiceRemembered').click();
   await page.getByRole('heading',{name:'Learning complete',exact:true}).waitFor();
   check(!(await page.locator('#view').textContent()).includes('correct'),'learning completion is not presented as a test score');
-  await page.getByRole('link',{name:'Try a quiz',exact:true}).click();await page.waitForSelector('#practiceForm');
+  await page.getByRole('link',{name:'Try a quiz',exact:true}).click();await page.waitForSelector('#quizChoices');
   check(await page.locator('#learnQuizzes h3').filter({hasText:'Last quiz'}).count()===0,'learning history is not displayed as last quiz');
   // Quiz progress and learning progress remain independently resumable.
-  await page.locator('.practice-custom summary').click();
-  await page.locator('[name=mode]').selectOption('explore');await page.locator('[name=kind]').selectOption('kanji');await page.locator('[name=size]').selectOption('3');
-  await page.getByRole('button',{name:'Start quiz',exact:true}).click();await page.waitForSelector('[data-answer]');
+  await page.locator('.quiz-choice[data-quiz-kind=kanji]').click();await page.waitForSelector('[data-answer]');
   await page.locator('[data-answer]').evaluateAll(b=>b.find(x=>x.dataset.answer===store.practice.session.questions[0].id).click());
   const quiz=(await state()).practice.session;
   await page.locator('#practicePause').click();await page.waitForSelector('#practiceResume');
@@ -99,7 +97,7 @@ function check(ok,label){assert.ok(ok,label);checks++;}
   await route(detailHash);await page.getByRole('link',{name:'← Back to your learning card',exact:true}).click();await page.waitForSelector('#recallDetails:not([hidden])');
   check((await state()).practice.session.id===deck.id&&(await state()).practice.pausedSession.id===quiz.id,'detail back restores even a paused learning deck and retains quiz');
   await route('#/learn?section=quiz');page.on('dialog',d=>d.accept());
-  await page.locator('#practiceReplace').click();await page.waitForSelector('[data-answer]');
+  await page.locator('#practiceReplace').click();await page.locator('.quiz-choice[data-quiz-kind=kanji]').click();await page.waitForSelector('[data-answer]');
   check((await state()).practice.session.id!==quiz.id,'replacing a paused quiz creates a new quiz');
   check((await state()).practice.pausedSession.id===deck.id,'replacing a paused quiz retains the learning deck');
   await route('#/k/日?deck=missing');

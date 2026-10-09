@@ -19,18 +19,28 @@ var Dashboard = (() => {
     const type = ['kanji', 'vocab', 'grammar'][rotation], target = Math.min(3, n);
     const quests = [
       { id: 'daily', title: 'Make your little daily win', hint: 'Study or review ' + n + ' different items.', count: Practice.count((days || {})[today]), target: n,
-        href: '#/flashcards?start=1&format=recall&size=' + (n === 3 ? 3 : 5) + '&lv=' + lv, icon: 'spark' },
+        kind: 'mixed', href: '#/flashcards?challenge=daily&format=recall&lv=' + lv, icon: 'spark' },
       { id: 'focus', title: ['Kanji explorer', 'Word collector', 'Grammar detective'][rotation], hint: 'Give ' + target + ' ' + (type === 'vocab' ? 'vocabulary' : type) + ' items a little attention.',
-        count: s.counts[type], target, href: '#/flashcards?start=1&format=recall&mode=explore&size=3&kind=' + type + '&lv=' + lv, icon: 'book' },
+        count: s.counts[type], target, kind: type, href: '#/flashcards?challenge=focus&format=recall&lv=' + lv, icon: 'book' },
       { id: 'flip', title: 'Three kanji, three discoveries', hint: 'Guess, flip, and rate 3 kanji cards.',
         count: Object.keys(((days || {})[today] || {}).recalled || {}).filter(k => k.startsWith('kanji:')).length, target: 3,
-        href: '#/flashcards?start=1&mode=explore&size=3&kind=kanji&format=recall&lv=' + lv, icon: 'refresh' }
+        kind: 'kanji', href: '#/flashcards?challenge=flip&format=recall&lv=' + lv, icon: 'refresh' }
     ];
-    return quests.map(q => Object.assign(q, { done: q.count >= q.target, percent: Math.min(100, Math.round(q.count / q.target * 100)) }));
+    return quests.map(q => Object.assign(q, { remaining: Math.max(0, q.target - q.count), done: q.count >= q.target,
+      percent: Math.min(100, Math.round(q.count / q.target * 100)) }));
+  }
+  function challengeItems(pool, quest, day) {
+    const counted = ((day || {})[quest.id === 'flip' ? 'recalled' : 'practiced']) || {}, seen = {};
+    return (pool || []).filter(item => {
+      const key = Practice.key(item);
+      if (seen[key] || counted[key] || (quest.kind !== 'mixed' && item.type !== quest.kind)) return false;
+      seen[key] = true;
+      return true;
+    });
   }
   function dailyIndex(today, length) {
     return length ? Math.abs(Course.diffDays('2026-01-01', today)) % length : 0;
   }
-  return { summary, challenges, dailyIndex };
+  return { summary, challenges, challengeItems, dailyIndex };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = Dashboard;

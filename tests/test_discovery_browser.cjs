@@ -16,7 +16,7 @@ function check(value,label){assert.ok(value,label);checks++;}
   async function route(hash){await page.goto(base+hash);await page.waitForFunction(()=>DB.loaded);await page.evaluate(h=>go(h),hash);}
   const state=()=>page.evaluate(()=>JSON.parse(localStorage.getItem(STORE_KEY)));
   await route('#/');
-  check(await page.locator('.challenge-list a').count()===0,'daily challenges show progress without links');
+  check(await page.locator('.challenge-list a').count()===3,'daily challenges open targeted learning');
   check(!(await page.locator('#view').textContent()).includes('undefined'),'dashboard has valid card totals');
   await route('#/flashcards?start=1&mode=explore&size=3&kind=kanji');await page.waitForSelector('#practiceReveal');
   const initial=await state(),first=initial.practice.session.questions[0];

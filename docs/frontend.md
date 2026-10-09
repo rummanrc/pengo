@@ -13,7 +13,7 @@
 | Hash route | Behavior | Owner |
 | --- | --- | --- |
 | `#/` | Adventure welcome, optional level picker, daily flashcards and progress status | `renderHome`, `renderAdventureHome` |
-| `#/learn?lv=N4` | Three subject tiles, learning-card entry and full quiz controls for a level | `renderLearn` |
+| `#/learn?lv=N4` | Three subject cards in one row, learning entry, one-tap quiz choices and visual history | `renderLearn` |
 | `#/kanji` or `#/kanji/N5` | Kanji browser; invalid/missing level defaults to N5 | `renderBrowse` |
 | `#/kanji/<character>` | Detail if character exists in global index | Router, `renderDetail` |
 | `#/k/<character>` | Canonical kanji detail link | `renderDetail` |
@@ -29,6 +29,7 @@
 | `#/learn?section=quiz&start=1&size=3` | Start/resume a quiz, preserving any learning deck | Shared quiz player |
 | `#/learn?section=quiz&resume=1` | Resume the saved quiz | Shared quiz player |
 | `#/flashcards` or `#/flashcards?daily=1` | Start/resume daily learning immediately, preserving a saved quiz | `renderFlashcards` |
+| `#/flashcards?challenge=focus` | Random cards for the rotating subject challenge’s remaining target | `startChallengePractice` |
 | `#/flashcards?choose=1` | Optional content/level/length chooser and saved-session controls after pausing | `renderFlashcards` |
 | `#/today?kind=kanji` | Today’s distinct studied/practiced items, optionally filtered by subject | `renderTodayItems` |
 | `#/flashcards?start=1&mode=explore&kind=kanji&size=3&lv=N5` | Reveal meaning/examples, advance directly with Got it, or use Next/swipe after Still learning | `renderRecallPlayer` |
@@ -90,13 +91,13 @@ Reduced motion displays completed strokes/numbers immediately. Missing art disab
 | Plan/dashboard | `.course-item`, `.mile-*`, `.exam-row`, `.dash-*`, `.splash-*` |
 | Daily practice | `.practice-*`, `.storage-notice` |
 | Adventure Home | `.adventure-*`, `.hero-*`, `.trail-*`, `.discovery-*` |
-| Goal and quick starts | `.daily-quest`, `.quest-ring`, `.quick-practice-*`, `.achievement-drawer`, `.practice-custom` |
+| Goal and quiz choices | `.daily-quest`, `.quest-ring`, `.achievement-drawer`, `.quiz-picker`, `.quiz-choices` |
 | Mascot/reminders | `.pengo-*`, `.practice-coach`, `.celebration-sparkles`, `.reminder-*` |
 | Quiz/results | `.quiz-*`, `.correct`, `.wrong` |
 
 The main navigation switch is at 860/861 px. Other rules handle narrow content, tablets/desktops, and short landscape screens. Safe-area insets protect mobile edges. Japanese fonts are system fallbacks; no web-font download is defined. Later rules override earlier sections, so inspect the cascade before appending duplicate selectors.
 
-The adventure section supplies warm/teal theme overrides, matching dark colors, raised controls, and brief finite animations. Home and Learn use the same real-progress card. Learn keeps custom quiz fields in a details disclosure (open for specific type/level or plan links); quick quiz starts cannot replace a saved quiz. The learning entry stays available with a saved quiz. Subject title/count rows wrap inside responsive cards. See [design and reminders](design-and-reminders.md) for the generated asset and notification behavior.
+The adventure section supplies warm/teal theme overrides, matching dark colors, raised controls, and brief finite animations. Daily practice and milestones live in Progress. Learn omits introductory copy and the daily-practice card; its plan title replaces a redundant level chip. Three compact subject cards stay in one row at every viewport width, followed by four one-tap quiz choices: all subjects, kanji, vocabulary, grammar. Quizzes default to up to five smart questions. Due/mistake shortcuts appear only when items exist. A saved quiz shows Continue and an optional new-quiz picker; opening or closing the picker keeps the saved quiz, while choosing a subject replaces it and preserves graded activity and learning sessions. The learning entry stays available. Recent quizzes show the latest ten results as accessible percentage rings, subject/level, raw score and date in a horizontally scrolling list. See [design and reminders](design-and-reminders.md) for the generated asset and notification behavior.
 
 ## Accessibility and lifecycle
 
@@ -116,6 +117,6 @@ Progress uses shared theme tokens for its page/card backgrounds, text, chart and
 
 ## Flashcard access fix — 2026-10-09
 
-Home and Learn offer **Today’s flashcards / Start learning**. The entry opens daily learning directly and resumes a saved deck before selecting more items. New decks use remaining current-batch items with a plan, or remaining daily-goal items without one, with at most ten cards. Once that target is met, Keep learning opens another deck of unstudied items, avoiding items already practiced today. Pause opens the optional `choose=1` hub. Switching quiz/cards preserves the other format in `practice.pausedSession`. The compact player uses flat overlapping faces for reliable Android rendering, an explicit meaning, Japanese 音読み/訓読み labels, and available example furigana. Got it advances immediately; Still learning retains feedback and manual advance. Daily challenges are status only; the daily subject tiles link to `#/today`.
+Home’s hero offers **Start learning / Continue learning / Learn more**. Learn retains its **Today’s flashcards** entry. The entry opens daily learning directly and resumes a saved deck before selecting more items. New decks use remaining current-batch items with a plan, or remaining daily-goal items without one, with at most ten cards. Once that target is met, Keep learning opens another deck of unstudied items, avoiding items already practiced today. Pause opens the optional `choose=1` hub. Switching quiz/cards preserves the other format in `practice.pausedSession`. The compact player uses flat overlapping faces for reliable Android rendering, an explicit meaning, Japanese 音読み/訓読み labels, and available example furigana. Got it advances immediately; Still learning retains feedback and manual advance. Incomplete daily challenges link to `#/flashcards?challenge=daily|focus|flip`; the renderer recomputes the remaining count and excludes items already counted today. Completed challenges are status only. A normal learning deck is retained in `practice.returnSession` while a challenge occupies the learning slot; completion or expiration restores it. All subjects use a single Quick recap card; kanji includes up to four larger shapes, its memory aid, two words and an annotated sentence. The connected daily subject-list rows link to `#/today`. Pengo tips toggle closed, have a close button and honor Escape. Reminder suggestions hide when enabled or dismissed. Learning milestones are on Progress.
 
 Learning-card detail links carry a validated session ID rather than an arbitrary return URL. The back link returns to the same cursor and revealed face; related details propagate this context. Before leaving the deck, its browser-history entry becomes the resumable card route so native/browser Back also returns correctly. Ordinary detail pages retain their browser links.

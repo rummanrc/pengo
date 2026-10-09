@@ -18,6 +18,8 @@ var Reminders = {
     try { localStorage.setItem(this.key, JSON.stringify(this.normalize(value))); return true; }
     catch (e) { return false; }
   },
+  nudgeDismissed() { try { return localStorage.getItem('pengo:reminder-nudge-dismissed:v1') === '1'; } catch (e) { return false; } },
+  dismissNudge() { try { localStorage.setItem('pengo:reminder-nudge-dismissed:v1', '1'); } catch (e) {} },
   permission() {
     var bridge = this.native();
     if (bridge) { try { return JSON.parse(bridge.getReminderSettings()).permission || 'denied'; } catch (e) { return 'unsupported'; } }
@@ -47,6 +49,7 @@ var Reminders = {
     else this.write(Object.assign(this.read(),{enabled:false}));
   },
   resetDevice() {
+    try { localStorage.removeItem('pengo:reminder-nudge-dismissed:v1'); } catch (e) {}
     var bridge=this.native();
     if(bridge && typeof bridge.resetReminderSettings==='function')bridge.resetReminderSettings();
     else if(bridge)bridge.setReminder(false,'19:00');

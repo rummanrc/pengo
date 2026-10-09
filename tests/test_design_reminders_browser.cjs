@@ -16,17 +16,17 @@ function check(condition,label){assert.ok(condition,label);checks++;}
   check(await page.locator('.hero-pengo').evaluate(img=>img.complete&&img.naturalWidth>0),'generated Pengo illustration loads');
   check((await page.locator('.adventure-level strong').allTextContents()).join(',')==='N5,N4,N3,N2,N1','beginner-friendly level order');
   check(await page.locator('.hero-pengo').evaluate(el=>getComputedStyle(el).animationName)==='none','mascot respects reduced motion');
-  await page.locator('[data-pengo-tip]').click();const tip=await page.locator('[data-pengo-bubble]').textContent();await page.locator('[data-pengo-tip]').click();
+  await page.locator('[data-pengo-tip]').click();const tip=await page.locator('[data-pengo-bubble]').textContent();await page.locator('[data-pengo-tip]').click();check(await page.locator('[data-pengo-bubble]').isHidden(),'tip toggles closed');await page.locator('[data-pengo-tip]').click();
   check(tip!==await page.locator('[data-pengo-bubble]').textContent(),'mascot tips are interactive and rotate');
   check((await page.locator('[data-pengo-bubble]').textContent()).includes('sentence'),'tip handler binds once per route');
   await page.evaluate(()=>{store.course=Course.defaultCourse('N4');save();render();});
   check(await page.locator('.learning-path,.trail-step').count()===0,'learning trail removed from Home');
   await route('#/course/day');
   check((await page.locator('#view').textContent()).includes('Day 1'),'course batch remains available');
-  await route('#/practice');
-  check(await page.locator('.practice-custom').evaluate(el=>!el.open),'detailed settings are optional');
-  check(await page.locator('[data-quick-practice]').count()===3,'three quiz choices separate from learning cards');
-  await page.locator('[data-quick-practice=smart]').click();
+  await route('#/practice?size=3');
+  check(await page.locator('.practice-custom, #practiceForm').count()===0,'custom quiz form removed');
+  check(await page.locator('.quiz-choice').count()===4,'four direct quiz choices separate from learning cards');
+  await page.locator('.quiz-choice[data-quiz-kind=mixed]').click();
   check(await page.evaluate(()=>store.practice.session.questions.length)===3,'quick start opens three-question session');
   for(let i=0;i<3;i++){
     const ok=i!==1;

@@ -36,10 +36,19 @@ test('same-day retry cannot inflate mastery or postpone due',()=>{const first=P.
 test('next-day recall can promote',()=>{const first=P.nextReview(null,true,1000,'2026-10-07');assert.equal(P.nextReview(first,true,2000,'2026-10-08').box,2);});
 test('same-day failure stays reviewable after correct retry',()=>{const first=P.nextReview(null,true,1000,'2026-10-07');const miss=P.nextReview(first,false,2000,'2026-10-07');const retry=P.nextReview(miss,true,3000,'2026-10-07');assert.equal(retry.box,0);assert.equal(retry.due,602000);});
 test('invalid imported SRS boxes remain bounded',()=>assert.equal(P.nextReview({box:999},true,1000,'2026-10-07').box,6));
-test('old backup receives empty practice state',()=>assert.deepEqual(plain(P.normalize(null)),{session:null,pausedSession:null,history:[],badges:[],mistakes:{}}));
+test('old backup receives empty practice state',()=>assert.deepEqual(plain(P.normalize(null)),{session:null,pausedSession:null,returnSession:null,history:[],badges:[],mistakes:{}}));
 test('paused sessions survive backup normalization',()=>{const session={id:'saved-quiz'};assert.deepEqual(plain(P.normalize({pausedSession:session})).pausedSession,session);});
 test('corrupt practice containers normalized',()=>{const p=P.normalize({history:{},badges:['bad','comeback'],mistakes:[]});assert.deepEqual(plain(p.history),[]);assert.deepEqual(plain(p.badges),['comeback']);assert.deepEqual(plain(p.mistakes),{});});
 test('history is bounded',()=>assert.equal(P.normalize({history:Array.from({length:100},()=>({date:'2026-10-07',total:3,score:2}))}).history.length,60));
+test('recent quizzes survive many learning decks in chronological order',()=>{
+ const quizzes=Array.from({length:12},(_,i)=>({id:'q'+i,date:'2026-10-07',total:5,score:i%6,kind:'kanji',format:'quiz',completedAt:i}));
+ const recall=Array.from({length:70},(_,i)=>({id:'r'+i,date:'2026-10-08',total:3,score:2,format:'recall'}));
+ const history=P.normalize({history:quizzes.concat(recall)}).history;
+ assert.equal(history.length,60);
+ assert.deepEqual(plain(history.filter(h=>h.format==='quiz').map(h=>h.id)),quizzes.slice(-10).map(h=>h.id));
+ assert.equal(history[0].kind,'kanji');assert.equal(history[0].completedAt,2);
+ assert.equal(history[history.length-1].id,'r69');
+});
 const session = {version:1,id:'session',config:{...cfg('smart'),format:'quiz'},questions:[{type:'kanji',id:'a',lv:'N5',variant:0,options:['a','d']}],cursor:0,answers:[]};
 const exists = q=>pool.some(i=>i.type===q.type && i.id===q.id);
 test('unanswered saved session accepted',()=>assert.ok(P.validSession(session,exists)));

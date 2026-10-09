@@ -703,6 +703,10 @@ h2 { font-weight: 800; }
 .pengo-tip { cursor: pointer; border: 0; background: var(--card); padding: .6rem .8rem; border-radius: 14px; font-size: .7rem; font-weight: 750; color: var(--accent-ink); max-width: 100%; min-height: 44px; }
 .pengo-tip .pengo-symbol { width: 15px; height: 15px; }
 .pengo-bubble { position: absolute; bottom: 52px; right: 0; width: min(270px, 100%); font-size: .8rem; background: var(--card); border: 2px solid var(--line); box-shadow: var(--shadow); padding: .8rem; border-radius: 16px; margin: 0; z-index: 3; }
+.pengo-bubble p { margin: 0; padding-right: 1.6rem; }
+.dismiss-button { position: absolute; top: .2rem; right: .2rem; display: grid; place-items: center; width: 36px; min-height: 36px; border: 0; border-radius: 50%; background: transparent; color: var(--ink-soft); font-size: 1.35rem; cursor: pointer; }
+.dismiss-button:hover { color: var(--ink); background: var(--bg-soft); }
+.pengo-bubble[hidden] { display: none; }
 .adventure-columns { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 1.5rem; align-items: start; }
 .adventure-columns .card { margin-top: 0; }
 .adventure-main,.adventure-aside { min-width: 0; }
@@ -754,7 +758,7 @@ h2 { font-weight: 800; }
 .achievement-drawer summary span { margin-left: auto; color: var(--ink-soft); }
 .mile { padding: .35rem .6rem; border: 2px solid var(--line); font-weight: 650; font-size: .7rem; border-radius: 12px; }
 .mile.got { background: var(--mint-soft); color: var(--green); border-color: var(--green); }
-.reminder-nudge { display: flex; align-items: flex-start; gap: .8rem; background: var(--sun-soft); padding: 1rem; }
+.reminder-nudge { display: flex; align-items: flex-start; gap: .8rem; background: var(--sun-soft); padding: 1rem 2.4rem 1rem 1rem; position: relative; }
 .nudge-icon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--card); color: var(--gold); }
 .reminder-nudge h2 { font-size: .85rem; margin: 0; }
 .reminder-nudge p { font-size: .75rem; color: var(--ink-soft); margin: .4rem 0; }
@@ -818,22 +822,31 @@ h2 { font-weight: 800; }
 .quick-practice-section { margin: 1.5rem 0; }
 .today-overview h2,.daily-challenges h2 { font-size: 1.25rem; margin: .4rem 0; }
 .today-overview .practice-heading > a { font-size: .75rem; white-space: nowrap; }
-.today-subjects { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .65rem; margin: 1.2rem 0; }
-.today-subject { display: flex; flex-direction: column; gap: .25rem; color: var(--ink); text-decoration: none; border: 2px solid var(--line); border-radius: 18px; padding: .9rem .7rem; background: var(--coral-soft); }
-.today-subject.mint { background: var(--mint-soft); }.today-subject.lavender { background: var(--lavender-soft); }
-.subject-mark { font: 1.3rem var(--jp-font); }.today-subject strong { font-size: 2rem; line-height: 1.3; }.today-subject > span:not(.subject-mark) { font-size: .8rem; font-weight: 750; }
+.today-subjects { list-style: none; padding: 0; margin: 1rem 0 0; }
+.today-subject-row { position: relative; }
+.today-subject-row:not(:last-child)::after { content: ""; position: absolute; top: 46px; bottom: -15px; left: 23px; width: 2px; background: repeating-linear-gradient(to bottom,var(--accent) 0 4px,transparent 4px 8px); opacity: .4; }
+.today-subject { display: grid; grid-template-columns: 48px minmax(0,1fr) auto 18px; align-items: center; gap: .7rem; padding: .6rem 0; color: var(--ink); text-decoration: none; border-radius: 12px; }
+.subject-mark { position: relative; z-index: 1; display: grid; place-items: center; width: 48px; height: 48px; border: 4px solid var(--card); border-radius: 50%; font: 1.25rem var(--jp-font); background: var(--coral-soft); }
+.today-subject.mint .subject-mark { background: var(--mint-soft); }.today-subject.lavender .subject-mark { background: var(--lavender-soft); }
+.today-subject .subject-name { font-size: .9rem; font-weight: 750; }
+.subject-count { color: var(--ink-soft); font-size: .75rem; white-space: nowrap; }
+.today-subject strong { font-size: 1rem; color: var(--ink); }
+.today-subject.is-active .subject-mark { box-shadow: 0 0 0 1px var(--line); }
+.today-subject > .pengo-symbol { width: 16px; height: 16px; color: var(--ink-soft); }
 .today-subject small { font-size: .7rem; color: var(--ink-soft); margin-top: .3rem; }.today-subject small .pengo-symbol { width: 12px; height: 12px; }
 .today-summary { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .75rem; color: var(--ink-soft); }
 .today-review { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: 1rem 0 0; padding-top: .8rem; border-top: 1px solid var(--line); font-size: .8rem; text-decoration: none; }
 .challenge-score { background: var(--mint-soft); padding: .5rem; border-radius: 10px; font-weight: 800; white-space: nowrap; }
 .challenge-list { list-style: none; padding: 0; margin: 1rem 0 0; }.challenge-list li + li { border-top: 1px solid var(--line); }
 .challenge-status { display: flex; align-items: center; gap: .8rem; padding: 1rem 0; color: var(--ink); }
+.challenge-status[href] { text-decoration: none; border-radius: 12px; }
+.challenge-status[href]:hover .challenge-copy strong { color: var(--accent); }
 .challenge-icon { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 13px; background: var(--sun-soft); color: var(--gold); }
 .challenge-done .challenge-icon { background: var(--mint-soft); color: var(--accent); }
 .challenge-copy { flex: 1; min-width: 0; }.challenge-copy strong,.challenge-copy small { display: block; }.challenge-copy strong { font-size: .85rem; }.challenge-copy small { font-size: .75rem; color: var(--ink-soft); margin: .3rem 0 .5rem; }
 .challenge-copy .progress-track { height: 6px; margin: 0; }.challenge-count { font-size: .75rem; font-weight: 750; white-space: nowrap; }
 .daily-word h2 { margin: .8rem 0 .2rem; font: 1.7rem var(--jp-font); }.daily-word p { margin: .4rem 0 .8rem; font-size: .85rem; }
-@media (max-width:480px) { .today-subjects { gap: .35rem; }.today-subject { padding: .7rem .4rem; border-radius: 13px; }.today-subject strong { font-size: 1.6rem; }.today-subject > span:not(.subject-mark) { font-size: .7rem; }.today-subject small { font-size: .6rem; }.challenge-status { gap: .5rem; }.challenge-icon { width: 32px; height: 36px; }.challenge-copy strong { font-size: .8rem; }.challenge-count { font-size: .65rem; }.today-overview .practice-heading { align-items: flex-start; } }
+@media (max-width:480px) { .today-subject { gap: .5rem; }.challenge-status { gap: .5rem; }.challenge-icon { width: 32px; height: 36px; }.challenge-copy strong { font-size: .8rem; }.challenge-count { font-size: .65rem; }.today-overview .practice-heading { align-items: flex-start; } }
 .quick-practice-section h2 { margin: 0 0 .8rem; }
 .quick-practice-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .75rem; }
 .quick-practice-card { display: flex; flex-direction: column; align-items: flex-start; gap: .6rem; text-align: left; padding: 1rem; border: 2px solid var(--line); border-bottom-width: 5px; border-radius: 20px; background: var(--card); color: var(--ink); cursor: pointer; font: inherit; }
@@ -880,6 +893,12 @@ h2 { font-weight: 800; }
 .recall-remembered .recall-back { border-color: var(--green); }
 .recall-learning .recall-back { border-color: var(--gold); }
 .recall-story { border-top: 3px solid var(--gold); }
+.recall-deck .quiz-review { font-size: .85rem; line-height: 1.6; }
+.recall-deck .quiz-review p { margin: .65rem 0; }
+.recap-shapes { display: flex; flex-wrap: wrap; gap: .45rem; margin: .4rem 0; }
+.recap-shape { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .55rem; border-radius: 10px; background: var(--bg-soft); color: var(--ink); text-decoration: none; max-width: 100%; }
+.recap-shape > span { font: 1.3rem var(--jp-font); }
+.recap-shape small { color: var(--ink-soft); font-size: .7rem; overflow-wrap: anywhere; }
 .learning-components .comp-list { margin: .7rem 0; }
 .story-parts { margin-bottom: 1.4rem; }
 .component-branch { min-width: 0; }
@@ -1036,6 +1055,31 @@ h2 { font-weight: 800; }
 .level-card .lvl { flex-wrap: wrap; }
 .level-card .level-title { min-width: 0; overflow-wrap: anywhere; }
 .level-card .lvl small { flex: 0 1 auto; max-width: 100%; overflow-wrap: anywhere; }
-.learn-subjects { grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
-.learn-quizzes { margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid var(--line); scroll-margin-top: 5rem; }
-.learn-quizzes .quick-practice-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+.learn-subjects { grid-template-columns: repeat(3,minmax(0,1fr)); gap: .5rem; margin-top: 1rem; }
+.learn-subjects .level-card { padding: .8rem .4rem; text-align: center; }
+.learn-subjects .lvl { flex-direction: column; gap: .4rem; }
+.learn-subjects .level-title { font-size: clamp(.68rem,2.8vw,.95rem); }
+.learn-subjects .count { font-size: clamp(.6rem,2.5vw,.8rem); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.learn-subjects .progress-track { margin-bottom: 0; }
+.learn-quizzes { margin-top: 1.2rem; scroll-margin-top: 5rem; }
+.quiz-picker > .practice-heading { align-items: center; }
+.quiz-picker .practice-heading h2,.quiz-history h2 { margin: 0; }
+.quiz-picker .practice-heading > .explain { font-size: .7rem; text-align: right; }
+.quiz-choices { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .6rem; margin-top: 1rem; }
+.quiz-choice { display: flex; align-items: center; gap: .6rem; min-width: 0; min-height: 72px; padding: .7rem; border: 2px solid var(--line); border-bottom-width: 4px; border-radius: 16px; background: var(--card); color: var(--ink); text-align: left; cursor: pointer; }
+.quiz-choice strong { font-size: .85rem; overflow-wrap: anywhere; }
+.quiz-choice-icon { display: grid; place-items: center; width: 32px; height: 36px; border-radius: 10px; background: var(--mint-soft); font: 1.2rem var(--jp-font); flex: none; }
+.quiz-choice.coral .quiz-choice-icon { background: var(--coral-soft); }.quiz-choice.lavender .quiz-choice-icon { background: var(--lavender-soft); }
+.quiz-choice:hover:not(:disabled) { border-color: var(--accent); }.quiz-choice:disabled { opacity: .5; cursor: default; }
+.quiz-review-choices { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .8rem; }
+.quiz-review-choices .btn { font-size: .75rem; }
+.quiz-saved { margin-top: 1rem; }.quiz-saved .practice-heading { font-size: .85rem; }
+.quiz-picker [hidden] { display: none !important; }
+.quiz-history > .practice-heading > span { font-size: .7rem; }
+.quiz-history-list { display: grid; grid-auto-flow: column; grid-auto-columns: 122px; gap: .6rem; overflow-x: auto; scroll-snap-type: x proximity; list-style: none; margin: 1rem 0 0; padding: 0 0 .5rem; }
+.quiz-history-item { display: flex; flex-direction: column; align-items: center; gap: .2rem; padding: .8rem .45rem; background: var(--bg); border-radius: 14px; scroll-snap-align: start; }
+.quiz-history-item strong { font-size: .75rem; }.quiz-history-item > span,.quiz-history-item time { font-size: .7rem; color: var(--ink-soft); }
+.quiz-history-ring { width: 62px; height: 62px; margin-bottom: .3rem; }
+.quiz-history-ring circle { fill: none; stroke-width: 4; }.quiz-history-track { stroke: var(--line); }.quiz-history-fill { stroke: var(--accent); stroke-linecap: round; }
+.quiz-history-ring text { font-size: 10px; font-weight: 800; fill: var(--ink); }
+@media (max-width: 360px) { .quiz-choice { gap: .4rem; padding: .6rem .4rem; }.quiz-choice strong { font-size: .75rem; } }

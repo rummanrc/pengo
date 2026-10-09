@@ -46,9 +46,9 @@ Start with the [documentation index](docs/README.md). The engineering docs use M
 - Tap-to-flip discovery cards with meanings, readings, memory stories and nested components. Choose “Got it” or “Still learning”, then swipe or tap to advance. Return from full details to the same card.
 - Text-only learning: pronunciation clips, voice controls and native TTS have been removed to reduce app size.
 - Vocabulary and grammar examples with available furigana and links to related content.
-- Learn combines the reference library and learning cards with separate 3/5/10-question review quizzes, due reviews and mistake practice. Quiz answers update SRS; learning confidence does not change quiz accuracy.
-- Saved sessions, daily practice goals, weekly activity, supportive achievements, and session summaries with a clear stopping point.
-- An adventure dashboard with distinct kanji/vocabulary/grammar totals for today, daily challenge status, a page of today’s studied items, a daily word, weekly activity, daily flashcards, quick practice, Pengo tips, and dark/reduced-motion support.
+- Learn combines three compact subject cards and learning cards with four one-tap quiz choices (up to five questions), due/mistake shortcuts and visual history of the latest ten quizzes. Existing explicit 3/5/10-question links remain supported. Quiz answers update SRS; learning confidence does not change quiz accuracy.
+- Saved sessions, daily practice goals, weekly activity and learning milestones in Progress, supportive achievements, and session summaries with a clear stopping point.
+- An adventure dashboard with distinct kanji/vocabulary/grammar totals for today, targeted daily challenges, a connected list of today’s subject totals, a page of today’s studied items, a daily word, a hero learning button, dismissible Pengo tips, and dark/reduced-motion support.
 - Opt-in daily Android reminders while closed; open-page browser alerts and a calendar download, with goal/duplicate suppression for Pengo alerts.
 - Friendly study-plan setup with a JLPT destination, a suggested 5-item daily pace, custom batch sizes, and level-focused browsing/practice. Change the plan in Settings; batches wait until you are ready. Explicit batch unlocking, unfinished-material backlog, study days, and milestones remain available.
 - Progress with learned counts and rolling seven-/thirty-day activity; themes, backups, confirmed erasure, and intro replay.

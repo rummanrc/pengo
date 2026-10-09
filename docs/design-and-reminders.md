@@ -7,9 +7,9 @@ Implemented and verified on **2026-10-07 (Asia/Tokyo)**. These changes build on 
 | Feature | Learner experience | Implementation |
 | --- | --- | --- |
 | Adventure Home | A welcoming mascot, a clear three-question start, resume after interruption, and encouraging goal-complete copy | `design.js`, Home renderers |
-| Daily learning | Start/resume flashcards directly; remaining plan or daily-goal items determine the deck | `renderFlashcards`, `dailyFlashcardConfig` |
-| Daily progress | A goal ring, seven days of actual practice, streak, achievements, and learning milestones | `dailyPracticeCardHTML`, existing Practice/Course rules |
-| Quick practice | Learn offers a mix, due reviews or mistakes as quizzes, with details under “Build your own quiz”. Learning cards have their own entry. | `practice-ui.js`, `practiceQuickChoicesHTML` |
+| Daily learning | The Home hero starts/resumes flashcards; remaining plan or daily-goal items determine the deck | `renderFlashcards`, `dailyFlashcardConfig` |
+| Daily progress | Home has connected subject totals; Progress has a goal ring, weekly practice, achievements and learning milestones | `dailyPracticeCardHTML`, existing Practice/Course rules |
+| Quiz choices and history | Learn starts up to five questions with one tap on All subjects, Kanji, Vocabulary or Grammar. Due/mistake shortcuts appear for real work. A saved quiz can continue or reveal replacement choices. Recent quizzes shows the last ten results as score rings with subject, level and date. Learning cards have their own entry. | `renderPractice`, `recentQuizzesHTML` |
 | Expressive Pengo | A new waving illustration, rotating study tips, supportive answer feedback, and a brief completion celebration | Mascot assets, `bindPengoUI`, player/result helpers |
 | Consistent styling | Warm backgrounds, teal controls, pastel cards, raised buttons, clear navigation, and matching dark mode | Adventure section in `styles.css`, native system bars |
 | Respectful motion | Short entrance/feedback animations and finite celebrations; reduced motion disables decorative animation | CSS motion rules |

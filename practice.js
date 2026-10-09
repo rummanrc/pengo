@@ -75,10 +75,15 @@ var Practice = (function () {
   }
   function normalize(value) {
     var p = value && typeof value === "object" && !Array.isArray(value) ? value : {};
-    return { session: p.session || null, pausedSession: p.pausedSession || null,
-      history: Array.isArray(p.history) ? p.history.filter(function (h) {
-        return h && typeof h.date === "string" && Number.isFinite(h.total) && h.total > 0 && Number.isFinite(h.score);
-      }).slice(-60) : [],
+    var history = Array.isArray(p.history) ? p.history.filter(function (h) {
+      return h && typeof h.date === "string" && Number.isFinite(h.total) && h.total > 0 && Number.isFinite(h.score);
+    }) : [];
+    // Keep the latest ten quizzes even after many learning decks are completed.
+    var quizIndexes = history.map(function (h, i) { return h.format !== "recall" ? i : -1; }).filter(function (i) { return i >= 0; }).slice(-10);
+    var otherIndexes = history.map(function (_, i) { return i; }).filter(function (i) { return quizIndexes.indexOf(i) < 0; }).slice(-(60 - quizIndexes.length));
+    history = history.filter(function (_, i) { return quizIndexes.indexOf(i) >= 0 || otherIndexes.indexOf(i) >= 0; });
+    return { session: p.session || null, pausedSession: p.pausedSession || null, returnSession: p.returnSession || null,
+      history: history,
       badges: Array.isArray(p.badges) ? p.badges.filter(function (b) { return BADGES.some(function (x) { return x.id === b; }); }) : [],
       mistakes: p.mistakes && typeof p.mistakes === "object" && !Array.isArray(p.mistakes) ? p.mistakes : {} };
   }

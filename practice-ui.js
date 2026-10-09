@@ -9,8 +9,13 @@ function practiceSession(slot) {
   slot = slot || 'session';
   var s = store.practice[slot];
   if (s && (!Practice.validSession(s, function (q) { return !!practiceRecord(q.type, q.id); }) ||
-      (store.course && s.questions.some(function (q) { return q.lv !== store.course.target; })))) {
-    store.practice[slot] = null; save(); return null;
+      (store.course && s.questions.some(function (q) { return q.lv !== store.course.target; })) ||
+      (s.config.challenge && s.config.challengeDate !== Course.todayStr()))) {
+    store.practice[slot] = null;
+    if (slot !== 'returnSession' && s.config && s.config.challenge) {
+      store.practice[slot] = practiceSession('returnSession'); store.practice.returnSession = null;
+    }
+    save(); return store.practice[slot];
   }
   return s;
 }
@@ -34,6 +39,7 @@ function openPracticeFormat(view, cfg) {
   startPractice(view, cfg);
 }
 function renderFlashcards(view, query) {
+  if (query.challenge) { startChallengePractice(view, query.challenge, studyLevel(query.lv)); return; }
   var current = practiceSession(), paused = practiceSession('pausedSession');
   var deck = current && current.config.format === 'recall' ? current : paused && paused.config.format === 'recall' ? paused : null;
   var cfg = Practice.config(Object.assign({ mode: 'explore', kind: 'kanji', size: 3 }, query, { format: 'recall' }), studyLevel(query.lv));
@@ -67,6 +73,31 @@ function renderFlashcards(view, query) {
   if (quiz) quiz.addEventListener('click', function () {
     go('#/learn?section=quiz&start=1&format=quiz');
   });
+}
+function startChallengePractice(view, id, lv) {
+  var today = Course.todayStr();
+  var quest = Dashboard.challenges(store.study.days, today, store.settings.dailyGoal, lv).find(function (q) { return q.id === id; });
+  if (!quest) { go('#/'); return; }
+  if (quest.done) {
+    view.innerHTML = '<h1>Challenge complete</h1><section class="card"><h2>' + esc(quest.title) + '</h2><p>You’ve completed all ' + quest.target + ' items today.</p><a class="btn primary" href="#/">Back home</a></section>';
+    return;
+  }
+  var current = practiceSession(), paused = practiceSession('pausedSession');
+  var saved = [current, paused].find(function (s) { return s && s.config.challenge === id && s.config.challengeDate === today; });
+  if (saved) { if (saved === paused) resumePausedPractice(view); else renderPracticePlayer(view, saved); return; }
+  var want = Math.min(10, quest.remaining);
+  var cfg = { mode: 'explore', kind: quest.kind, lv: lv, size: want <= 3 ? 3 : want <= 5 ? 5 : 10, format: 'recall',
+    challenge: id, challengeDate: today, challengeLimit: want };
+  var pool = Dashboard.challengeItems(practicePool(cfg), quest, store.study.days[today]);
+  if (!pool.length) {
+    view.innerHTML = '<h1>' + esc(quest.title) + '</h1><section class="card"><p>You’ve explored every available item for this challenge at ' + esc(lv) + ' today.</p><a class="btn soft" href="#/">Back home</a></section>';
+    return;
+  }
+  var learning = [current, paused].find(function (s) { return s && s.config.format === 'recall' && !s.config.challenge; });
+  if (learning) store.practice.returnSession = learning;
+  store.practice.pausedSession = [current, paused].find(function (s) { return s && s.config.format === 'quiz'; }) || null;
+  store.practice.session = null;
+  startPractice(view, cfg);
 }
 function dailyFlashcardConfig(lv) {
   var batch = store.course ? courseTodaysBatch() : null;
@@ -153,77 +184,80 @@ function practiceSrs(item) {
   s.due = (map[item.id] || {}).due || 0;
   return s;
 }
+function quizKindLabel(kind) {
+  return { mixed: 'All subjects', kanji: 'Kanji', vocab: 'Vocabulary', grammar: 'Grammar' }[kind] || 'Quiz';
+}
+function recentQuizzesHTML(history) {
+  var quizzes = (history || []).filter(function (h) { return h.format !== 'recall'; }).slice(-10).reverse();
+  if (!quizzes.length) return '';
+  return '<section class="card quiz-history" aria-labelledby="quizHistoryTitle"><div class="practice-heading"><h2 id="quizHistoryTitle">Recent quizzes</h2><span class="explain">Last ' + quizzes.length + '</span></div>' +
+    '<ol class="quiz-history-list" tabindex="0" aria-label="Recent quizzes, newest first">' + quizzes.map(function (h) {
+      var pct = Math.round(h.score / h.total * 100), radius = 21, circumference = 2 * Math.PI * radius;
+      var date = new Date(h.date + 'T12:00:00'), label = Number.isNaN(date.getTime()) ? h.date : date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+      return '<li class="quiz-history-item"' + (h.id ? ' data-quiz-id="' + esc(h.id) + '"' : '') + '><svg class="quiz-history-ring" viewBox="0 0 52 52" role="img" aria-label="' + h.score + ' out of ' + h.total + ' correct, ' + pct + ' percent">' +
+        '<circle class="quiz-history-track" cx="26" cy="26" r="21"/><circle class="quiz-history-fill" cx="26" cy="26" r="21" stroke-dasharray="' + circumference.toFixed(2) + '" stroke-dashoffset="' + (circumference * (1 - pct / 100)).toFixed(2) + '" transform="rotate(-90 26 26)"/>' +
+        '<text x="26" y="30" text-anchor="middle" aria-hidden="true">' + pct + '%</text></svg><strong>' + esc(quizKindLabel(h.kind)) + '</strong><span>' +
+        h.score + ' / ' + h.total + (h.lv ? ' · ' + esc(h.lv) : '') + '</span><time datetime="' + esc(h.date) + '">' + esc(label) + '</time></li>';
+    }).join('') + '</ol></section>';
+}
 function renderPractice(view, query, playerView) {
   playerView = playerView || view;
-  var cfg = Practice.config(Object.assign({}, query, { format: 'quiz' }), (store.course || {}).target || 'N5');
+  var cfg = Practice.config(Object.assign({ mode: 'smart', size: 5 }, query, { format: 'quiz' }), (store.course || {}).target || 'N5');
   cfg.lv = studyLevel(cfg.lv);
   var current = practiceSession(), paused = practiceSession('pausedSession');
   var saved = current && current.config.format === 'quiz' ? current : paused && paused.config.format === 'quiz' ? paused : null;
   if (query.start === '1' || query.resume === '1') { openPracticeFormat(playerView, cfg); return; }
-  var counts = {};
-  ['smart', 'due', 'mistakes', 'plan'].forEach(function (mode) {
-    var c = Object.assign({}, cfg, { mode: mode, size: 10 });
-    var seen = {};
-    counts[mode] = practicePool(c).filter(function (item) {
+  function available(mode, kind) {
+    var c = Object.assign({}, cfg, { mode: mode, kind: kind }), seen = {};
+    return practicePool(c).filter(function (item) {
       var key = Practice.key(item);
-      if (seen[key]) return false;
+      if (seen[key] || (kind !== 'mixed' && item.type !== kind)) return false;
       seen[key] = true;
-      return (c.kind === 'mixed' || c.kind === item.type) &&
-        (mode !== 'due' || (practiceSrs(item).inSrs && practiceSrs(item).isDue)) &&
-        (mode !== 'mistakes' || !!store.practice.mistakes[key]);
+      return (mode !== 'due' || (practiceSrs(item).inSrs && practiceSrs(item).isDue)) && (mode !== 'mistakes' || !!store.practice.mistakes[key]);
     }).length;
-  });
-  var options = function (values, selected) { return values.map(function (v) {
-    return '<option value="' + esc(v[0]) + '"' + (v[0] === selected ? ' selected' : '') + '>' + esc(v[1]) + '</option>';
-  }).join(''); };
-  var quizHistory = store.practice.history.filter(function (h) { return h.format !== 'recall'; });
-  var last = quizHistory[quizHistory.length - 1];
-  var quick = practiceQuickChoicesHTML(cfg,counts,!!saved);
-  view.innerHTML = '<h2 id="learnQuizTitle">Check your progress</h2><p class="explain">Take a short quiz to test what you remember. Your answers update review schedules and mistakes. Learning cards above are for exploring at your own pace.</p>' +
-    (saved ? '<section class="card"><h2>Your saved quiz</h2><p>' + saved.answers.length + ' / ' + saved.questions.length +
-      ' answered. Your place is saved on this device.</p><div class="practice-actions"><button class="btn primary" id="practiceResume">Continue quiz</button>' +
-      '<button class="btn soft" id="practiceReplace">Start a different quiz</button></div></section>' : '') +
-    quick + '<form class="card practice-form" id="practiceForm"><details class="practice-custom"' + (query.kind || (query.section === 'quiz' && query.lv) || cfg.mode === 'plan' ? ' open' : '') + '><summary>Build your own quiz</summary><div class="practice-fields">' +
-    '<label>Focus<select name="mode">' + options([['smart', 'Smart mix'], ['explore', 'Level sampler'], ['due', 'Due reviews (' + counts.due + ')'],
-      ['mistakes', 'Mistakes (' + counts.mistakes + ')']].concat(store.course ? [['plan', 'Study plan']] : []), cfg.mode) + '</select></label>' +
-    '<label>Content<select name="kind">' + options([['mixed', 'Mixed'], ['kanji', 'Kanji'], ['vocab', 'Vocabulary'], ['grammar', 'Grammar']], cfg.kind) + '</select></label>' +
-    '<label>Level<select name="lv">' + options(studyLevels().map(function (lv) { return [lv, lv]; }), cfg.lv) + '</select></label>' +
-    '<label>Session length<select name="size">' + options([['3', '3 questions · small start'], ['5', '5 questions · daily practice'], ['10', '10 questions · deeper practice']], String(cfg.size)) + '</select></label>' +
-    '<input type="hidden" name="format" value="quiz"></div>' +
-    '<p class="explain">' + (store.course ? 'Your practice stays in ' + esc(store.course.target) + '. Change your destination in Settings. ' : 'Due reviews and mistakes include all levels. ') + 'Study plan questions stay within unlocked material. Each quiz uses multiple-choice questions.</p>' +
-    '<button class="btn primary" type="submit"' + (saved ? ' disabled' : '') + '>Start quiz</button></details></form>' +
-    (last ? '<section class="card"><h3>Last quiz</h3><p>' + esc(last.date) + ' &middot; ' + last.score + ' / ' + last.total +
-      ' correct</p><p class="explain">' + last.total + ' attempts made. Every session builds your practice habit.</p></section>' : '') + practiceDashboardHTML();
-  $$('[data-quick-practice]',view).forEach(function(button) {
-    button.addEventListener('click',function() {
-      if (saved) return;
-      var choices = { smart: {mode:'smart'}, due: {mode:'due'}, mistakes: {mode:'mistakes'} };
-      openPracticeFormat(playerView, Practice.config(Object.assign({}, cfg, choices[button.dataset.quickPractice], {size:3, format:'quiz'}), cfg.lv));
+  }
+  var due = available('due', cfg.kind), mistakes = available('mistakes', cfg.kind);
+  var title = cfg.mode === 'due' ? 'Review due items' : cfg.mode === 'mistakes' ? 'Revisit mistakes' : 'Quiz';
+  var kinds = [['mixed', '文', 'mint'], ['kanji', '漢', 'coral'], ['vocab', '語', 'mint'], ['grammar', '文', 'lavender']];
+  view.innerHTML = '<section class="card quiz-picker"><div class="practice-heading"><h2 id="learnQuizTitle">' + title + '</h2><span class="explain">' + esc(cfg.lv) + ' · Up to ' + cfg.size + ' questions</span></div>' +
+    (saved ? '<div class="quiz-saved"><div class="practice-heading"><strong>' + esc(quizKindLabel(saved.config.kind)) + ' · ' + esc(saved.config.lv) + '</strong><span>' + saved.answers.length + ' / ' + saved.questions.length + '</span></div>' +
+      progressBar(Math.round(saved.answers.length / saved.questions.length * 100), 'Saved quiz completion') + '<div class="practice-actions"><button class="btn primary" id="practiceResume">Continue quiz</button>' +
+      '<button class="btn soft" id="practiceReplace" aria-expanded="false" aria-controls="quizChoices">Choose a new quiz</button></div></div>' : '') +
+    '<div id="quizChoices"' + (saved ? ' hidden' : '') + '><div class="quiz-choices">' + kinds.map(function (kind) {
+      var n = available(cfg.mode, kind[0]);
+      return '<button class="quiz-choice ' + kind[2] + '" data-quiz-kind="' + kind[0] + '" data-quiz-mode="' + cfg.mode + '"' + (!n ? ' disabled' : '') + '><span class="quiz-choice-icon" lang="ja" aria-hidden="true">' + kind[1] + '</span><strong>' + quizKindLabel(kind[0]) + '</strong></button>';
+    }).join('') + '</div>' +
+    (cfg.mode === 'due' && !due ? '<p class="explain">No reviews due right now.</p>' : cfg.mode === 'mistakes' && !mistakes ? '<p class="explain">No mistakes to revisit.</p>' : '') +
+    (due || mistakes ? '<div class="quiz-review-choices">' +
+      (due && cfg.mode !== 'due' ? '<button class="btn soft" data-quiz-mode="due" data-quiz-kind="' + cfg.kind + '">Review due · ' + due + '</button>' : '') +
+      (mistakes && cfg.mode !== 'mistakes' ? '<button class="btn soft" data-quiz-mode="mistakes" data-quiz-kind="' + cfg.kind + '">Revisit mistakes · ' + mistakes + '</button>' : '') + '</div>' : '') + '</div></section>' +
+    recentQuizzesHTML(store.practice.history);
+  $$('[data-quiz-kind]', view).forEach(function (button) {
+    button.addEventListener('click', function () {
+      if (saved) {
+        if (store.practice.session === saved) store.practice.session = null;
+        else if (store.practice.pausedSession === saved) store.practice.pausedSession = null;
+        save();
+      }
+      openPracticeFormat(playerView, Practice.config({ mode: button.dataset.quizMode, kind: button.dataset.quizKind, lv: cfg.lv, size: cfg.size, format: 'quiz' }, cfg.lv));
     });
   });
-  var form = $('#practiceForm', view);
-  function formConfig() {
-    var data = new FormData(form), q = {};
-    data.forEach(function (v, k) { q[k] = v; });
-    var c = Practice.config(q, cfg.lv);
-    c.lv = studyLevel(c.lv);
-    return c;
-  }
-  form.addEventListener('submit', function (e) { e.preventDefault(); if (!saved) openPracticeFormat(playerView, formConfig()); });
   if (saved) {
     $('#practiceResume', view).addEventListener('click', function () { openPracticeFormat(playerView, saved.config); });
     $('#practiceReplace', view).addEventListener('click', function () {
-      if (!confirm('Replace this saved quiz? Your answered items and progress will stay.')) return;
-      if (store.practice.session === saved) store.practice.session = null;
-      else store.practice.pausedSession = null;
-      save(); openPracticeFormat(playerView, formConfig());
+      var picker = $('#quizChoices', view);
+      picker.hidden = !picker.hidden; this.setAttribute('aria-expanded', String(!picker.hidden));
+      this.textContent = picker.hidden ? 'Choose a new quiz' : 'Keep saved quiz';
+      if (!picker.hidden) { var choice = $('.quiz-choice:not(:disabled)', picker); if (choice) choice.focus({ preventScroll: true }); }
     });
   }
 }
 function startPractice(view, cfg) {
   cfg = Object.assign({}, cfg, { lv: studyLevel(cfg.lv) });
   var pool = cfg.daily ? dailyFlashcardPool(cfg) : practicePool(cfg);
-  var picked = Practice.select(pool, cfg, practiceSrs, store.practice.mistakes, courseStateOf);
+  var quest = cfg.challenge ? Dashboard.challenges(store.study.days, Course.todayStr(), store.settings.dailyGoal, cfg.lv).find(function (q) { return q.id === cfg.challenge; }) : null;
+  var picked = quest ? shuffle(Dashboard.challengeItems(pool, quest, store.study.days[Course.todayStr()])).slice(0, cfg.challengeLimit) :
+    Practice.select(pool, cfg, practiceSrs, store.practice.mistakes, courseStateOf);
   if (cfg.daily) picked = picked.slice(0, cfg.dailyLimit);
   var questions = picked.map(function (item) {
     if (cfg.format === 'recall') return Object.assign({}, item, { variant: 0, options: [] });
@@ -303,8 +337,8 @@ function finishPractice(view, s) {
   var fresh = store.practice.badges.filter(function (b) { return !(s.startingBadges || []).includes(b); });
   if (!store.practice.history.some(function (h) { return h.id === s.id; })) {
     store.practice.history.push({ id: s.id, date: Course.todayStr(), score: score, total: s.questions.length,
-      format: s.config.format, mode: s.config.mode, lv: s.config.lv });
-    store.practice.history = store.practice.history.slice(-60);
+      format: s.config.format, mode: s.config.mode, kind: s.config.kind, lv: s.config.lv, completedAt: Date.now() });
+    store.practice.history = Practice.normalize({ history: store.practice.history }).history;
     if (s.config.format === 'quiz' && s.config.mode === 'plan' && store.course && store.course.target === s.config.lv) {
       store.course.quizzes = (store.course.quizzes || 0) + 1;
       if (score === s.questions.length) store.course.perfectQuiz = true;
@@ -316,17 +350,23 @@ function finishPractice(view, s) {
     }
     courseCheckMilestones();
   }
-  store.practice.session = null; save(); renderNav('learn');
+  store.practice.session = s.config.challenge ? practiceSession('returnSession') : null;
+  if (s.config.challenge) store.practice.returnSession = null;
+  save(); renderNav('learn');
   var stats = practiceStats();
   if (s.config.format === 'recall') {
+    var challenge = s.config.challenge ? Dashboard.challenges(store.study.days, Course.todayStr(), store.settings.dailyGoal, s.config.lv).find(function (q) { return q.id === s.config.challenge; }) : null;
     view.innerHTML = '<h1>Learning complete</h1><section class="card quiz-result good">' + pengoCelebrationHTML() +
       '<h2>A few new discoveries to take with you</h2><p>' + s.questions.length + ' cards explored · ' + score + ' marked “Got it”.</p>' +
       '<p class="explain">Learning confidence is separate from quiz results. Check what you remember with a quiz when you feel ready.</p>' +
       '<p>' + stats.done + ' / ' + stats.goal + ' items toward your daily goal.</p>' +
-      '<div class="practice-actions"><button class="btn primary" id="recallContinue">Keep learning</button><a class="btn soft" href="#/today">Today’s items</a><a class="btn soft" href="#/learn?section=quiz">Try a quiz</a><a class="btn soft" href="#/">Done for now</a></div></section>' +
+      (challenge ? '<p>' + esc(challenge.title) + ' · ' + Math.min(challenge.count, challenge.target) + ' / ' + challenge.target + (challenge.done ? ' complete' : ' items') + '</p>' : '') +
+      '<div class="practice-actions"><button class="btn primary" id="recallContinue">' + (challenge && !challenge.done ? 'Continue challenge' : 'Keep learning') + '</button><a class="btn soft" href="#/today">Today’s items</a><a class="btn soft" href="#/learn?section=quiz">Try a quiz</a><a class="btn soft" href="#/">Done for now</a></div></section>' +
       (missed.length ? '<section class="card"><h2>Keep exploring</h2><p class="explain">You marked these “Still learning”. Revisit their details whenever you like.</p>' +
         missed.map(function (q) { return courseItemRow(q.type, q.id, false); }).join('') + '</section>' : '');
-    $('#recallContinue', view).addEventListener('click', function () { renderFlashcards(view, { daily: '1', lv: s.config.lv }); });
+    $('#recallContinue', view).addEventListener('click', function () {
+      renderFlashcards(view, challenge && !challenge.done ? { challenge: challenge.id, lv: s.config.lv } : { daily: '1', lv: s.config.lv });
+    });
     view.focus({preventScroll:true}); window.scrollTo(0,0); return;
   }
   var bestMap = s.config.kind === 'kanji' ? store.quizBest : s.config.kind === 'vocab' ? store.vQuizBest : store.gQuizBest;

@@ -1,22 +1,6 @@
 "use strict";
 /* A finite, resumable card deck. Learning confidence stays separate from graded quiz results. */
-function recallDetailsHTML(q) {
-  var item = q.head;
-  if (q.type === 'kanji') {
-    var example = (item.vocab || [])[0];
-    var sentences = (item.sentences || []).filter(function (s) { return s.jp && s.en && /[A-Za-z]/.test(s.en) && !/\(#\d|#\d/.test(s.en); });
-    var sentence = sentences.find(function (s) { return /<ruby[\s>]/.test(s.furi || ''); }) || sentences[0];
-    return '<section class="card recall-story"><span class="eyebrow">MAKE IT STICK</span><h2>A little memory story</h2><p class="mnemonic">' +
-      esc(mnemonicFor(item).text) + '</p><p class="explain">Memory aid, not etymology.</p></section>' +
-      '<section class="card"><h2>Find the shapes</h2>' + componentsHTML(item) + '</section>' +
-      (example ? '<section class="card"><h2>Take it into a word</h2><p class="jp" lang="ja">' + esc(example.w) +
-        '</p><p lang="ja">' + esc(example.r) + '</p><p>' + esc(example.m) + '</p>' +
-        '</section>' : '') +
-      (sentence ? '<section class="card"><h2>Example sentence</h2><p class="jp" lang="ja">' + (sentence.furi || esc(sentence.jp)) +
-        '</p><p class="explain">' + esc(sentence.en) + '</p></section>' : '');
-  }
-  return quizReviewHTML(q.type, item);
-}
+function recallDetailsHTML(q) { return quizReviewHTML(q.type, q.head); }
 function renderRecallPlayer(view, s) {
   if (s.cursor >= s.questions.length) { finishPractice(view, s); return; }
   var cursor = s.cursor, ref = s.questions[cursor], q = practiceHydrate(ref), item = q.head;

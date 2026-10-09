@@ -1,5 +1,7 @@
 # Current verification
 
+The latest Learn/quiz verification on 2026-10-09 passed 541 isolated Chrome browser checks across quiz redesign (68), Learn (72), practice (46), study plans/settings (71), design/reminders (41), flashcard access (34), daily learning (98), Home refinement (62) and discovery (49). Node checks passed: course 97, practice 39, reminders 17, worker 7, plus dashboard rules. JavaScript syntax and diff whitespace passed. The new suite verifies one-tap starts, protected quiz history and resume/replacement; mobile through desktop layouts were checked at 320–1440px in both themes, with screenshots inspected. See [testing](testing.md) for commands and coverage. Docker debug APK assembly succeeded. Sixteen runtime/data/credits files match source, `www`, Android staging and packaged bytes. APK: `dist/pengo-debug.apk`, 19,669,693 bytes, SHA-256 `0a2012c1565e5372b46fe80e3e46df83f9d75c18267bd83ab6d520375766b8ff`. Physical Android testing remains pending.
+
 The 2026-10-09 text-only discovery-card and hierarchical-component checks are recorded in [discovery cards](discovery-cards.md). Audio checks below are historical evidence for the removed implementation.
 
 # Documentation verification record

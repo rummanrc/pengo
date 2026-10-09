@@ -12,7 +12,7 @@ function check(ok,label){assert.ok(ok,label);checks++;}
   const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   async function route(hash){await page.goto(base+hash);await page.waitForFunction(()=>DB.loaded);await page.evaluate(hash=>go(hash),hash);}
-  await route('#/');await page.locator('.hero-start').click();await page.waitForSelector('#planStart');
+  await route('#/');await page.locator('.adventure-level').first().click();await page.waitForSelector('#planStart');
   check(await page.locator('[data-lv][aria-pressed=true]').getAttribute('data-lv')==='N5','new learner begins at N5');
   check(await page.locator('[data-pace][aria-pressed=true]').getAttribute('data-pace')==='5','five is the gentle suggestion');
   await page.locator('[data-lv=N4]').click();await page.locator('[data-pace="3"]').click();
@@ -22,7 +22,7 @@ function check(ok,label){assert.ok(ok,label);checks++;}
   await page.reload();await page.waitForFunction(()=>DB.loaded);
   check(await page.evaluate(()=>store.course.target==='N4'&&store.course.dailyNew===3),'plan survives reload');
   await route('#/learn?lv=N1');
-  check(await page.locator('[data-lv]').count()===1&&await page.locator('[data-lv]').getAttribute('data-lv')==='N4','learn ignores stale level URLs');
+  check(await page.locator('[data-lv]').count()===0&&await page.locator('.study-focus strong').textContent()==='Your N4 adventure'&&await page.locator('.learn-subjects a').evaluateAll(a=>a.every(el=>el.getAttribute('href').endsWith('/N4'))),'learn ignores stale level URLs without a redundant level badge');
   for(const [routeName,selector] of [['kanji','.kcard .badge'],['vocab','.vcard .badge'],['grammar','.gcard .badge']]){
    await route('#/'+routeName+'/N1');
    check(await page.locator('[data-lv]').count()===1,routeName+' exposes only the plan level');
@@ -50,7 +50,7 @@ function check(ok,label){assert.ok(ok,label);checks++;}
   await page.evaluate(()=>{store.practice.session=null;save();});
   await route('#/practice?mode=mistakes');
   check(await page.evaluate(()=>practicePool(Practice.config({mode:'mistakes',lv:'N2'})).every(q=>q.lv==='N4')),'mistakes pool stays at target');
-  check(await page.locator('[name=lv] option').count()===1,'practice level follows saved plan');
+  check((await page.locator('.quiz-picker > .practice-heading').textContent()).includes('N4')&&await page.locator('[name=lv]').count()===0,'quiz level follows saved plan without a selector');
   for(const mode of ['smart','explore','plan']){
    await page.evaluate(()=>{store.practice.session=null;save();});
    await route('#/practice?mode='+mode+'&format=recall&lv=N1&start=1');
@@ -95,7 +95,7 @@ function check(ok,label){assert.ok(ok,label);checks++;}
   }
   page.on('dialog',d=>d.accept());await route('#/course/reset');await page.waitForSelector('.choose-level');
   check(await page.evaluate(k=>store.course===null&&!!store.learned[k],learned),'ending plan preserves progress');
-  await route('#/practice');check(await page.locator('[name=lv] option').count()===5,'ending plan restores free browsing');
+  await route('#/practice');check(await page.locator('[data-lv]').count()===5,'ending plan restores free browsing');
   check(await page.evaluate(()=>practicePool(Practice.config({mode:'due'})).some(q=>q.lv==='N2')),'older-level reviews remain stored and accessible after plan ends');
   check(errors.length===0,'no browser errors: '+errors.join(', '));
   await context.close();

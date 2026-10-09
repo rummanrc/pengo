@@ -22,10 +22,10 @@ function check(value,label){assert.ok(value,label);checks++;}
   await page.locator('.ob-back').click();check(await page.locator('.ob-brand').count()===1,'intro back returns to combined page');
   await page.locator('.ob-cta').click();await page.locator('.ob-cta').click();check(await page.locator('.ob-root').count()===0,'intro finishes after two pages');
   await route('#/');
-  check(await page.locator('.daily-challenges a,.daily-challenges button').count()===0,'challenges are noninteractive');
+  check(await page.locator('.daily-challenges a').count()===3,'unfinished challenges open learning');
   check(!(await page.locator('.daily-challenges').textContent()).includes('Pick what'),'challenge instruction removed');
   check(await page.locator('.learning-path').count()===0,'learning trail removed');
-  check(!(await page.locator('.practice-daily').textContent()).includes('TODAY’S LITTLE WIN'),'daily practice eyebrow removed');
+  check(await page.locator('.practice-daily').count()===0,'daily practice card removed from Home');
   check(await page.locator('.today-summary,.today-review,.today-subject small').count()===0,'daily overview has no footer or batch copy');
   await page.getByRole('link',{name:'View items',exact:true}).click();await page.waitForSelector('.today-items');
   check(await page.locator('.today-items .course-item').count()===0,'empty day shows no invented items');
