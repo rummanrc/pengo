@@ -19,12 +19,12 @@ var Dashboard = (() => {
     const type = ['kanji', 'vocab', 'grammar'][rotation], target = Math.min(3, n);
     const quests = [
       { id: 'daily', title: 'Make your little daily win', hint: 'Study or review ' + n + ' different items.', count: Practice.count((days || {})[today]), target: n,
-        href: '#/practice?start=1&format=recall&size=' + (n === 3 ? 3 : 5) + '&lv=' + lv, icon: 'spark' },
+        href: '#/flashcards?start=1&format=recall&size=' + (n === 3 ? 3 : 5) + '&lv=' + lv, icon: 'spark' },
       { id: 'focus', title: ['Kanji explorer', 'Word collector', 'Grammar detective'][rotation], hint: 'Give ' + target + ' ' + (type === 'vocab' ? 'vocabulary' : type) + ' items a little attention.',
-        count: s.counts[type], target, href: '#/practice?start=1&format=recall&mode=explore&size=3&kind=' + type + '&lv=' + lv, icon: 'book' },
+        count: s.counts[type], target, href: '#/flashcards?start=1&format=recall&mode=explore&size=3&kind=' + type + '&lv=' + lv, icon: 'book' },
       { id: 'flip', title: 'Three kanji, three discoveries', hint: 'Guess, flip, and rate 3 kanji cards.',
         count: Object.keys(((days || {})[today] || {}).recalled || {}).filter(k => k.startsWith('kanji:')).length, target: 3,
-        href: '#/practice?start=1&mode=explore&size=3&kind=kanji&format=recall&lv=' + lv, icon: 'refresh' }
+        href: '#/flashcards?start=1&mode=explore&size=3&kind=kanji&format=recall&lv=' + lv, icon: 'refresh' }
     ];
     return quests.map(q => Object.assign(q, { done: q.count >= q.target, percent: Math.min(100, Math.round(q.count / q.target * 100)) }));
   }

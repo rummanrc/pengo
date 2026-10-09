@@ -19,35 +19,35 @@ function check(value,label){assert.ok(value,label);checks++;}
   await page.locator('[data-answer]').evaluateAll(buttons=>buttons.find(b=>b.dataset.answer===store.practice.session.questions[0].id).click());
   const quiz=(await state()).practice.session,today=await page.evaluate(()=>Course.todayStr());
   await route('#/review');
-  check(await page.locator('[data-quick-practice=recall]').isEnabled(),'flashcard quick start stays enabled with a saved quiz');
-  check((await page.locator('[data-quick-practice=recall]').textContent()).includes('Flashcards'),'Review explicitly calls the feature Flashcards');
-  await page.locator('[data-quick-practice=recall]').click();await page.waitForSelector('#flashcardsForm');
-  check(await page.locator('#flashcardsQuiz').isVisible(),'flashcard hub keeps saved quiz accessible');
-  await page.locator('#flashcardsStart').click();await page.waitForSelector('#practiceReveal');
+  check(await page.getByRole('link',{name:'Start learning'}).isEnabled(),'learning stays enabled with a saved quiz');
+  check(await page.getByRole('heading',{name:'Check your progress',exact:true}).isVisible(),'legacy Review opens the merged Learn quiz controls');
+  await page.getByRole('link',{name:'Start learning'}).click();await page.waitForSelector('#practiceReveal');
+  check(await page.locator('#flashcardsForm').count()===0,'daily learning skips setup');
   let s=await state(),deck=s.practice.session;
   check(s.practice.session.config.format==='recall','flashcard intent opens cards rather than saved quiz');
-  check(s.practice.session.questions.every(q=>q.type==='kanji'),'default deck teaches kanji');
+  check(s.practice.session.config.kind==='mixed','daily deck includes the available subjects');
   assert.deepEqual(s.practice.pausedSession,quiz);checks++;
   check(s.study.days[today].attempts===1,'switching does not grade or discard quiz progress');
   await page.locator('#practiceReveal').click();
   check(await page.locator('#recallDetails').isVisible(),'tap reveals details');
   await page.locator('#practiceAgain').click();
-  check((await state()).study.days[today].attempts===2,'explicit card rating records one new attempt');
+  check((await state()).study.days[today].attempts===1,'learning confidence does not record a quiz attempt');
   await page.locator('#practicePause').click();await page.waitForSelector('#flashcardsStart');
-  check(await page.locator('#flashcardsStart').textContent()==='Continue flashcards','paused deck has a clearly labeled resume control');
+  check(await page.locator('#flashcardsStart').textContent()==='Continue learning','paused deck has a clearly labeled resume control');
   await page.locator('#flashcardsQuiz').click();await page.waitForSelector('[data-answer]');
   s=await state();
   check(s.practice.session.id===quiz.id&&s.practice.session.answers.length===1,'quiz returns at its saved answered position');
   check(s.practice.pausedSession.id===deck.id&&s.practice.pausedSession.answers.length===1,'card deck is preserved during quiz resume');
   await route('#/');
-  check(await page.getByRole('link',{name:'Open flashcards'}).isVisible(),'Home offers an explicit flashcard entry');
-  await page.locator('[data-challenge=flip] a').click();await page.waitForSelector('#practiceNext');
+  check(await page.getByRole('link',{name:'Start learning'}).isVisible(),'Home offers an explicit flashcard entry');
+  check(await page.locator('.daily-challenges a').count()===0,'challenges only show progress');
+  await page.getByRole('link',{name:'Start learning'}).click();await page.waitForSelector('#practiceNext');
   s=await state();
   check(s.practice.session.id===deck.id&&s.practice.session.config.format==='recall','daily kanji challenge restores cards instead of quiz');
   check(s.practice.pausedSession.id===quiz.id,'daily challenge retains saved quiz');
   await page.reload();await page.waitForSelector('#practiceNext');
   s=await state();check(s.practice.session.id===deck.id&&s.practice.pausedSession.id===quiz.id,'both formats survive reload');
-  check(s.study.days[today].attempts===2,'reload never double grades');
+  check(s.study.days[today].attempts===1,'reload never double grades');
   await page.evaluate(()=>{const backup=JSON.stringify(store);importBackupText(backup);});
   check((await state()).practice.pausedSession.id===quiz.id,'backup import retains paused quiz');
   while((await state()).practice.session){
@@ -55,16 +55,16 @@ function check(value,label){assert.ok(value,label);checks++;}
    else{await page.locator('#practiceReveal').click();await page.locator('#practiceRemembered').click();}
   }
   check((await state()).practice.pausedSession.id===quiz.id,'finishing cards keeps quiz available');
-  await route('#/review');await page.locator('#practiceResumePaused').click();
+  await route('#/review');await page.locator('#practiceResume').click();
   check((await state()).practice.session.id===quiz.id,'Review resumes paused quiz after cards complete');
-  await route('#/learn');check(await page.getByRole('link',{name:'Flashcards · guess and flip'}).isVisible(),'Learn also exposes flashcards');
-  await page.getByRole('link',{name:'Flashcards · guess and flip'}).click();await page.waitForSelector('#flashcardsForm');
+  await route('#/learn');check(await page.getByRole('link',{name:'Start learning'}).isVisible(),'Learn also exposes flashcards');
+  await route('#/flashcards?choose=1');await page.waitForSelector('#flashcardsForm');
   await page.locator('[name=kind]').selectOption('vocab');await page.locator('#flashcardsStart').click();
   check((await state()).practice.session.questions.every(q=>q.type==='vocab'),'hub can start vocabulary cards');
   await page.locator('#practiceReveal').click();check(await page.locator('#recallBack').isVisible(),'vocabulary card flips');
   await page.locator('#practicePause').click();
   await page.evaluate(()=>{store.course=Course.defaultCourse('N4');save();});
-  await route('#/flashcards');
+  await route('#/flashcards?choose=1');
   check(await page.locator('[name=lv] option').count()===1&&await page.locator('[name=lv]').inputValue()==='N4','flashcards honor chosen study-plan level');
   check((await state()).practice.session===null&&(await state()).practice.pausedSession===null,'changing plan invalidates both old-level sessions');
   await page.locator('[name=kind]').selectOption('grammar');await page.locator('#flashcardsStart').click();
@@ -74,7 +74,7 @@ function check(value,label){assert.ok(value,label);checks++;}
    await page.setViewportSize({width,height:844});
    await route('#/');check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Home entry fits '+width+'px');
    await page.screenshot({path:path.join(artifacts,'home-'+width+'.png'),fullPage:true});
-   await page.getByRole('link',{name:'Open flashcards'}).click();await page.waitForSelector('#flashcardsForm');
+   await route('#/flashcards?choose=1');await page.waitForSelector('#flashcardsForm');
    check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'flashcard hub fits '+width+'px');
    await page.screenshot({path:path.join(artifacts,'hub-'+width+'.png')});
   }

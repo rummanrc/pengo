@@ -20,12 +20,12 @@ function check(condition,label){assert.ok(condition,label);checks++;}
   check(tip!==await page.locator('[data-pengo-bubble]').textContent(),'mascot tips are interactive and rotate');
   check((await page.locator('[data-pengo-bubble]').textContent()).includes('sentence'),'tip handler binds once per route');
   await page.evaluate(()=>{store.course=Course.defaultCourse('N4');save();render();});
-  check(await page.locator('.trail-step').count()===3,'learning trail offers real actionable steps');
-  await page.locator('.trail-step').last().locator('a').click();await page.waitForFunction(()=>location.hash==='#/course/day');
-  check((await page.locator('#view').textContent()).includes('Day 1'),'trail opens actual course batch');
+  check(await page.locator('.learning-path,.trail-step').count()===0,'learning trail removed from Home');
+  await route('#/course/day');
+  check((await page.locator('#view').textContent()).includes('Day 1'),'course batch remains available');
   await route('#/practice');
   check(await page.locator('.practice-custom').evaluate(el=>!el.open),'detailed settings are optional');
-  check(await page.locator('[data-quick-practice]').count()===4,'four text practice choices');
+  check(await page.locator('[data-quick-practice]').count()===3,'three quiz choices separate from learning cards');
   await page.locator('[data-quick-practice=smart]').click();
   check(await page.evaluate(()=>store.practice.session.questions.length)===3,'quick start opens three-question session');
   for(let i=0;i<3;i++){

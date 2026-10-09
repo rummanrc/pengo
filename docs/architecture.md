@@ -40,11 +40,11 @@ flowchart TD
 | `course.js` | Dates, pace, order, batches, sampling, streaks, milestones | Built-ins and state callbacks |
 | `practice.js` | Pure practice selection, grading, validation, goals, badges | Course and built-ins |
 | `components.js`, `data/components.js` | KanjiVG hierarchy and existing story-reference views | Generated component data, app facts |
-| `recall-ui.js` | Resumable tap-to-flip player, explicit recall ratings and swipe navigation | Practice, Course, activity ledger |
+| `recall-ui.js` | Resumable tap-to-flip player, learning confidence and swipe navigation | Practice, Course, activity ledger |
 | `dashboard.js` | Pure daily subject totals, rotating challenges and date-based discovery | Course, Practice, activity ledger |
 | `JapaneseSpeech.java` | Lazy offline Japanese engine, request lifecycle and queue replacement | Android TextToSpeech |
 | `practice-ui.js` | Shared quiz/recall player, session summaries, daily dashboard | App globals, Practice, Course |
-| `design.js` | Adventure Home, learning trail, progress cards, tips, quick starts | App globals, Practice, Course, Reminders |
+| `design.js` | Adventure Home, progress cards, tips, quick starts | App globals, Practice, Course, Reminders |
 | `reminders.js` | Device opt-in, native goal sync, browser alerts, calendar file | Browser APIs, optional native bridge |
 | `reminder-worker.js` | Notification tap navigation | Service-worker clients API; no caching |
 | `platform.js` | Detection, export, import callback, theme, Back | Browser APIs, optional native globals |

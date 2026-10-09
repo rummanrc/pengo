@@ -43,12 +43,12 @@ Start with the [documentation index](docs/README.md). The engineering docs use M
 
 - Browse and search all three content types by level, reading, and meaning; filter learned items and favorites.
 - Kanji readings, components, memory aids, examples, notes, similar characters, and animated KanjiVG stroke diagrams.
-- Tap-to-flip discovery cards with meanings, readings, memory stories and nested components. Rate recall, then swipe or tap to advance.
+- Tap-to-flip discovery cards with meanings, readings, memory stories and nested components. Choose “Got it” or “Still learning”, then swipe or tap to advance. Return from full details to the same card.
 - Text-only learning: pronunciation clips, voice controls and native TTS have been removed to reduce app size.
 - Vocabulary and grammar examples with available furigana and links to related content.
-- Short 3/5/10-question sessions, recall cards, due-only review, and mistake practice; every answer updates shared SRS.
+- Learn combines the reference library and learning cards with separate 3/5/10-question review quizzes, due reviews and mistake practice. Quiz answers update SRS; learning confidence does not change quiz accuracy.
 - Saved sessions, daily practice goals, weekly activity, supportive achievements, and session summaries with a clear stopping point.
-- An adventure dashboard with distinct kanji/vocabulary/grammar totals for today, rotating daily challenges, a daily word, weekly activity, learning trail, quick practice, Pengo tips, and dark/reduced-motion support.
+- An adventure dashboard with distinct kanji/vocabulary/grammar totals for today, daily challenge status, a page of today’s studied items, a daily word, weekly activity, daily flashcards, quick practice, Pengo tips, and dark/reduced-motion support.
 - Opt-in daily Android reminders while closed; open-page browser alerts and a calendar download, with goal/duplicate suppression for Pengo alerts.
 - Friendly study-plan setup with a JLPT destination, a suggested 5-item daily pace, custom batch sizes, and level-focused browsing/practice. Change the plan in Settings; batches wait until you are ready. Explicit batch unlocking, unfinished-material backlog, study days, and milestones remain available.
 - Progress with learned counts and rolling seven-/thirty-day activity; themes, backups, confirmed erasure, and intro replay.
@@ -68,7 +68,7 @@ practice-ui.js      Shared practice player and daily dashboard
 components.js       Layered KanjiVG and existing mnemonic-part views
 recall-ui.js        Resumable flip-card player
 dashboard.js        Daily subject counts, challenges, and discovery rules
-design.js           Adventure Home, learning trail, mascot, quick choices
+design.js           Adventure Home, daily progress, mascot, quick choices
 reminders.js        Opt-in device reminder settings and browser delivery
 reminder-worker.js  Browser notification taps; no caching or scheduling
 platform.js         Browser/native adapter

@@ -38,9 +38,13 @@ function renderFlashcards(view, query) {
   var deck = current && current.config.format === 'recall' ? current : paused && paused.config.format === 'recall' ? paused : null;
   var cfg = Practice.config(Object.assign({ mode: 'explore', kind: 'kanji', size: 3 }, query, { format: 'recall' }), studyLevel(query.lv));
   cfg.lv = studyLevel(cfg.lv);
+  if (query.daily === '1' || (!query.start && !query.resume && query.choose !== '1')) {
+    cfg = dailyFlashcardConfig(cfg.lv);
+    openPracticeFormat(view, cfg); return;
+  }
   if (query.start === '1' || query.resume === '1') { openPracticeFormat(view, cfg); return; }
-  view.innerHTML = '<div class="flashcards-hub"><span class="eyebrow">GUESS · FLIP · REMEMBER</span><h1>Flashcards</h1>' +
-    '<p>One card at a time. Guess the meaning, tap to flip, then rate your recall and swipe to the next card.</p>' +
+  view.innerHTML = '<div class="flashcards-hub"><span class="eyebrow">GUESS · FLIP · REMEMBER</span><h1>Learn one card at a time</h1>' +
+    '<p>One card at a time. Guess the meaning, tap to flip, then choose how confident you feel and swipe to the next card.</p>' +
     '<form class="card" id="flashcardsForm"><h2>' + (deck ? 'Your saved deck' : 'Pick a little deck') + '</h2>' +
     (deck ? '<p>' + deck.answers.length + ' / ' + deck.questions.length + ' cards rated. Continue where you left off.</p>' : '') +
     '<div class="practice-fields"><label>Content<select name="kind"' + (deck ? ' disabled' : '') + '>' +
@@ -51,9 +55,9 @@ function renderFlashcards(view, query) {
     }).join('') + '</select></label><label>Deck length<select name="size"' + (deck ? ' disabled' : '') + '>' + [3, 5, 10].map(function (n) {
       return '<option value="' + n + '"' + (n === (deck ? deck.config.size : cfg.size) ? ' selected' : '') + '>' + n + ' cards</option>';
     }).join('') + '</select></label></div><button class="btn primary" type="submit" id="flashcardsStart">' +
-    (deck ? 'Continue flashcards' : 'Start flashcards') + '</button><p class="explain">Meanings, readings, memory stories and examples appear after you flip. Only your recall rating counts toward practice.</p></form>' +
+    (deck ? 'Continue learning' : 'Start learning') + '</button><p class="explain">Meanings, readings, memory stories and examples appear after you flip. Cards count toward your daily learning goal. Quiz scores and review results only change when you answer a quiz.</p></form>' +
     ((current && current.config.format === 'quiz') || (paused && paused.config.format === 'quiz') ?
-      '<section class="card"><h2>Your quiz is safe here</h2><p>Starting flashcards keeps your unfinished quiz and answers saved.</p><button class="btn soft" id="flashcardsQuiz">Continue saved quiz</button></section>' : '') + '</div>';
+      '<section class="card"><h2>Your quiz is safe here</h2><p>Learning with cards keeps your unfinished quiz and answers saved.</p><button class="btn soft" id="flashcardsQuiz">Continue saved quiz</button></section>' : '') + '</div>';
   $('#flashcardsForm', view).addEventListener('submit', function (event) {
     event.preventDefault();
     var data = new FormData(this);
@@ -61,8 +65,25 @@ function renderFlashcards(view, query) {
   });
   var quiz = $('#flashcardsQuiz', view);
   if (quiz) quiz.addEventListener('click', function () {
-    go('#/practice?start=1&format=quiz');
+    go('#/learn?section=quiz&start=1&format=quiz');
   });
+}
+function dailyFlashcardConfig(lv) {
+  var batch = store.course ? courseTodaysBatch() : null;
+  var remaining = batch ? batch.items.filter(function (item) { return !courseIsLearned(item.type, item.id); }).length :
+    Math.max(0, practiceStats().goal - practiceStats().done);
+  var want = Math.min(10, remaining || Practice.goal(store.settings.dailyGoal));
+  return { mode: 'explore', kind: 'mixed', lv: studyLevel(lv), size: want <= 3 ? 3 : want <= 5 ? 5 : 10,
+    format: 'recall', daily: true, dailyLimit: want };
+}
+function dailyFlashcardPool(cfg) {
+  var batch = store.course ? courseTodaysBatch() : null;
+  var pending = batch ? batch.items.filter(function (item) { return !courseIsLearned(item.type, item.id); }) : [];
+  if (pending.length) return pending.map(function (item) { return Object.assign({ lv: cfg.lv }, item); });
+  var practiced = (store.study.days[Course.todayStr()] || {}).practiced || {};
+  var pool = practicePool(cfg).filter(function (item) { return !practiced[Practice.key(item)]; });
+  var fresh = pool.filter(function (item) { return !courseIsLearned(item.type, item.id); });
+  return fresh.length ? fresh : pool;
 }
 function recordPracticeAnswer(type, id, ok) {
   var day = studyDay(Course.todayStr());
@@ -98,7 +119,7 @@ function practiceSettingsHTML() {
   return '<div class="card"><div class="settings-card-title"><span class="settings-icon sun">' + pengoIcon('check') + '</span><div><h2>Your little daily win</h2><p>A gentle nudge, at your pace.</p></div></div><label for="practiceGoal">Items to practice each day</label> ' +
     '<select id="practiceGoal">' + [3, 5, 10, 20].map(function (n) {
       return '<option value="' + n + '"' + (Practice.goal(store.settings.dailyGoal) === n ? ' selected' : '') + '>' + n + '</option>';
-    }).join('') + '</select><p class="explain">Newly studied items and review attempts count. Each item counts once a day, even when you miss it. This goal is separate from your plan’s new-material pace.</p></div>';
+    }).join('') + '</select><p class="explain">Newly studied items and review attempts count. Each item counts once a day, even when you miss it. Learning cards also count. This goal is separate from your plan’s new-material pace.</p></div>';
 }
 function practicePool(cfg) {
   cfg = Object.assign({}, cfg, { lv: studyLevel(cfg.lv) });
@@ -132,16 +153,13 @@ function practiceSrs(item) {
   s.due = (map[item.id] || {}).due || 0;
   return s;
 }
-function renderPractice(view, query) {
-  var cfg = Practice.config(query, (store.course || {}).target || 'N5');
+function renderPractice(view, query, playerView) {
+  playerView = playerView || view;
+  var cfg = Practice.config(Object.assign({}, query, { format: 'quiz' }), (store.course || {}).target || 'N5');
   cfg.lv = studyLevel(cfg.lv);
-  var saved = practiceSession(), paused = practiceSession('pausedSession');
-  if (query.start === '1' && ['quiz', 'recall'].includes(query.format)) { openPracticeFormat(view, cfg); return; }
-  if (query.resume === '1' && !saved && paused) { resumePausedPractice(view); return; }
-  if (query.resume === '1' && saved) { renderPracticePlayer(view, saved); return; }
-  // Generic start links resume current work; explicit formats keep a separate paused session.
-  if (query.start === '1' && saved) { renderPracticePlayer(view, saved); return; }
-  if (query.start === '1') { openPracticeFormat(view, cfg); return; }
+  var current = practiceSession(), paused = practiceSession('pausedSession');
+  var saved = current && current.config.format === 'quiz' ? current : paused && paused.config.format === 'quiz' ? paused : null;
+  if (query.start === '1' || query.resume === '1') { openPracticeFormat(playerView, cfg); return; }
   var counts = {};
   ['smart', 'due', 'mistakes', 'plan'].forEach(function (mode) {
     var c = Object.assign({}, cfg, { mode: mode, size: 10 });
@@ -158,33 +176,31 @@ function renderPractice(view, query) {
   var options = function (values, selected) { return values.map(function (v) {
     return '<option value="' + esc(v[0]) + '"' + (v[0] === selected ? ' selected' : '') + '>' + esc(v[1]) + '</option>';
   }).join(''); };
-  var last = store.practice.history[store.practice.history.length - 1];
+  var quizHistory = store.practice.history.filter(function (h) { return h.format !== 'recall'; });
+  var last = quizHistory[quizHistory.length - 1];
   var quick = practiceQuickChoicesHTML(cfg,counts,!!saved);
-  view.innerHTML = '<h1>Daily practice</h1><p class="explain">A small session, one clear finish. Choose what fits today.</p>' +
-    (saved ? '<section class="card"><h2>Your saved session</h2><p>' + saved.answers.length + ' / ' + saved.questions.length +
-      ' answered. Your place is saved on this device.</p><div class="practice-actions"><button class="btn primary" id="practiceResume">Resume session</button>' +
-      '<button class="btn soft" id="practiceReplace">Start a different session</button></div></section>' : '') +
-    (paused ? '<section class="card"><h2>Your paused ' + (paused.config.format === 'recall' ? 'flashcards' : 'quiz') + '</h2><p>' + paused.answers.length + ' / ' + paused.questions.length + ' answered. Your place is saved.</p><button class="btn soft" id="practiceResumePaused">Resume ' + (paused.config.format === 'recall' ? 'flashcards' : 'quiz') + '</button></section>' : '') +
-    quick + '<form class="card practice-form" id="practiceForm"><details class="practice-custom"' + (query.kind || query.lv || cfg.mode === 'plan' ? ' open' : '') + '><summary>Build your own session</summary><div class="practice-fields">' +
+  view.innerHTML = '<h2 id="learnQuizTitle">Check your progress</h2><p class="explain">Take a short quiz to test what you remember. Your answers update review schedules and mistakes. Learning cards above are for exploring at your own pace.</p>' +
+    (saved ? '<section class="card"><h2>Your saved quiz</h2><p>' + saved.answers.length + ' / ' + saved.questions.length +
+      ' answered. Your place is saved on this device.</p><div class="practice-actions"><button class="btn primary" id="practiceResume">Continue quiz</button>' +
+      '<button class="btn soft" id="practiceReplace">Start a different quiz</button></div></section>' : '') +
+    quick + '<form class="card practice-form" id="practiceForm"><details class="practice-custom"' + (query.kind || (query.section === 'quiz' && query.lv) || cfg.mode === 'plan' ? ' open' : '') + '><summary>Build your own quiz</summary><div class="practice-fields">' +
     '<label>Focus<select name="mode">' + options([['smart', 'Smart mix'], ['explore', 'Level sampler'], ['due', 'Due reviews (' + counts.due + ')'],
       ['mistakes', 'Mistakes (' + counts.mistakes + ')']].concat(store.course ? [['plan', 'Study plan']] : []), cfg.mode) + '</select></label>' +
     '<label>Content<select name="kind">' + options([['mixed', 'Mixed'], ['kanji', 'Kanji'], ['vocab', 'Vocabulary'], ['grammar', 'Grammar']], cfg.kind) + '</select></label>' +
     '<label>Level<select name="lv">' + options(studyLevels().map(function (lv) { return [lv, lv]; }), cfg.lv) + '</select></label>' +
     '<label>Session length<select name="size">' + options([['3', '3 questions · small start'], ['5', '5 questions · daily practice'], ['10', '10 questions · deeper practice']], String(cfg.size)) + '</select></label>' +
-    '<label>Practice style<select name="format">' + options([['quiz', 'Multiple choice'], ['recall', 'Flashcards · tap to flip']], cfg.format) + '</select></label></div>' +
-    '<p class="explain">' + (store.course ? 'Your practice stays in ' + esc(store.course.target) + '. Change your destination in Settings. ' : 'Due reviews and mistakes include all levels. ') + 'Study plan questions stay within unlocked material. Flashcards let you guess, tap to flip, and explore the answer.</p>' +
-    '<button class="btn primary" type="submit"' + (saved ? ' disabled' : '') + '>Start session</button></details></form>' +
-    (last ? '<section class="card"><h2>Last session</h2><p>' + esc(last.date) + ' &middot; ' + last.score + ' / ' + last.total +
-      ' ' + (last.format === 'recall' ? 'remembered' : 'correct') + '</p><p class="explain">' + last.total + ' attempts made. Every session builds your practice habit.</p></section>' : '') + practiceDashboardHTML();
+    '<input type="hidden" name="format" value="quiz"></div>' +
+    '<p class="explain">' + (store.course ? 'Your practice stays in ' + esc(store.course.target) + '. Change your destination in Settings. ' : 'Due reviews and mistakes include all levels. ') + 'Study plan questions stay within unlocked material. Each quiz uses multiple-choice questions.</p>' +
+    '<button class="btn primary" type="submit"' + (saved ? ' disabled' : '') + '>Start quiz</button></details></form>' +
+    (last ? '<section class="card"><h3>Last quiz</h3><p>' + esc(last.date) + ' &middot; ' + last.score + ' / ' + last.total +
+      ' correct</p><p class="explain">' + last.total + ' attempts made. Every session builds your practice habit.</p></section>' : '') + practiceDashboardHTML();
   $$('[data-quick-practice]',view).forEach(function(button) {
     button.addEventListener('click',function() {
-      if (button.dataset.quickPractice === 'recall') { go('#/flashcards'); return; }
-      if(store.practice.session)return;
-      var choices={smart:{mode:'smart'},due:{mode:'due'},mistakes:{mode:'mistakes'},recall:{mode:'smart',format:'recall'}};
-      startPractice(view,Practice.config(Object.assign({},cfg,choices[button.dataset.quickPractice],{size:3}),cfg.lv));
+      if (saved) return;
+      var choices = { smart: {mode:'smart'}, due: {mode:'due'}, mistakes: {mode:'mistakes'} };
+      openPracticeFormat(playerView, Practice.config(Object.assign({}, cfg, choices[button.dataset.quickPractice], {size:3, format:'quiz'}), cfg.lv));
     });
   });
-  if (paused) $('#practiceResumePaused', view).addEventListener('click', function () { resumePausedPractice(view); });
   var form = $('#practiceForm', view);
   function formConfig() {
     var data = new FormData(form), q = {};
@@ -193,19 +209,22 @@ function renderPractice(view, query) {
     c.lv = studyLevel(c.lv);
     return c;
   }
-  form.addEventListener('submit', function (e) { e.preventDefault(); if (!store.practice.session) startPractice(view, formConfig()); });
+  form.addEventListener('submit', function (e) { e.preventDefault(); if (!saved) openPracticeFormat(playerView, formConfig()); });
   if (saved) {
-    $('#practiceResume', view).addEventListener('click', function () { renderPracticePlayer(view, saved); });
+    $('#practiceResume', view).addEventListener('click', function () { openPracticeFormat(playerView, saved.config); });
     $('#practiceReplace', view).addEventListener('click', function () {
-      if (!confirm('Replace this saved session? Your answered items and progress will stay.')) return;
-      store.practice.session = null; save(); startPractice(view, formConfig());
+      if (!confirm('Replace this saved quiz? Your answered items and progress will stay.')) return;
+      if (store.practice.session === saved) store.practice.session = null;
+      else store.practice.pausedSession = null;
+      save(); openPracticeFormat(playerView, formConfig());
     });
   }
 }
 function startPractice(view, cfg) {
   cfg = Object.assign({}, cfg, { lv: studyLevel(cfg.lv) });
-  var pool = practicePool(cfg);
+  var pool = cfg.daily ? dailyFlashcardPool(cfg) : practicePool(cfg);
   var picked = Practice.select(pool, cfg, practiceSrs, store.practice.mistakes, courseStateOf);
+  if (cfg.daily) picked = picked.slice(0, cfg.dailyLimit);
   var questions = picked.map(function (item) {
     if (cfg.format === 'recall') return Object.assign({}, item, { variant: 0, options: [] });
     var built = courseBuildQuestion(item, item.lv, undefined);
@@ -215,9 +234,10 @@ function startPractice(view, cfg) {
   if (!questions.length) {
     var msg = cfg.mode === 'due' ? 'You are caught up. Nothing is due for this content right now.' :
       cfg.mode === 'mistakes' ? 'No mistakes waiting for practice. You can try a smart mix when you feel ready.' :
+      cfg.daily ? 'You have explored every available item at this level today. Come back tomorrow or browse your lessons.' :
       'No questions available for this selection. Try recall cards or study a few items first.';
     view.innerHTML = '<h1>Daily practice</h1><section class="card"><h2>All clear</h2><p>' + msg +
-      '</p><div class="practice-actions"><a class="btn soft" href="#/practice">Choose practice</a><a class="btn soft" href="#/learn">Browse lessons</a></div></section>';
+      '</p><div class="practice-actions"><a class="btn soft" href="#/learn?section=quiz">Choose practice</a><a class="btn soft" href="#/learn">Browse lessons</a></div></section>';
     return;
   }
   var s = { version: 1, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), config: cfg,
@@ -234,22 +254,22 @@ function renderPracticePlayer(view, s) {
   var cursor = s.cursor;
   var ref = s.questions[s.cursor], q = practiceHydrate(ref), answer = s.answers[s.cursor];
   var total = s.questions.length;
-  view.innerHTML = '<h1>Practice session</h1><div class="practice-heading"><p class="explain">' +
+  view.innerHTML = '<h1>Review quiz</h1><div class="practice-heading"><p class="explain">' +
     (s.cursor + 1) + ' of ' + total + ' &middot; ' + esc(ref.lv) + ' ' + courseTypeName(q.type) +
-    '</p><a href="#/practice" id="practicePause">Pause &amp; save</a></div>' + progressBar(Math.round(s.answers.length / total * 100), "Practice session completion") + pengoPracticeCoachHTML(false) +
+    '</p><a href="#/learn?section=quiz" id="practicePause">Pause &amp; save</a></div>' + progressBar(Math.round(s.answers.length / total * 100), "Practice session completion") + pengoPracticeCoachHTML(false) +
     '<div id="practiceBody"><section class="card practice-question">' + '<p class="quiz-q">' + courseQuizPrompt(q) + '</p>' +
     '<div class="quiz-opts">' + q.opts.map(function (o) {
         return '<button class="btn quiz-opt" data-answer="' + esc(courseQuizKey(q, o)) + '"' + (q.variant === 0 || q.variant === 2 && q.type === 'grammar' ? '' : ' lang="ja"') + '>' +
           esc(courseQuizOptionLabel(q, o)) + '</button>';
       }).join('') + '</div>' + '<p id="qFb" class="explain" role="status" aria-live="polite"></p></section></div>';
   var body = $('#practiceBody', view);
-  $('#practicePause', view).addEventListener('click', function (e) { e.preventDefault(); save(); go('#/practice'); });
+  $('#practicePause', view).addEventListener('click', function (e) { e.preventDefault(); save(); go('#/learn?section=quiz'); });
   function grade(ok, selected) {
     if (s.cursor !== cursor || s.answers[s.cursor] || store.practice.session !== s) return;
     s.answers[s.cursor] = { ok: ok, selected: selected };
     courseGrade(q.type, q.id, ok);
     save(); feedback(s.answers[s.cursor]);
-    renderNav('review');
+    renderNav('learn');
   }
   function feedback(a) {
     $$('[data-answer]', body).forEach(function (b) {
@@ -285,7 +305,7 @@ function finishPractice(view, s) {
     store.practice.history.push({ id: s.id, date: Course.todayStr(), score: score, total: s.questions.length,
       format: s.config.format, mode: s.config.mode, lv: s.config.lv });
     store.practice.history = store.practice.history.slice(-60);
-    if (s.config.mode === 'plan' && store.course && store.course.target === s.config.lv) {
+    if (s.config.format === 'quiz' && s.config.mode === 'plan' && store.course && store.course.target === s.config.lv) {
       store.course.quizzes = (store.course.quizzes || 0) + 1;
       if (score === s.questions.length) store.course.perfectQuiz = true;
     }
@@ -296,20 +316,31 @@ function finishPractice(view, s) {
     }
     courseCheckMilestones();
   }
-  store.practice.session = null; save(); renderNav('review');
+  store.practice.session = null; save(); renderNav('learn');
   var stats = practiceStats();
+  if (s.config.format === 'recall') {
+    view.innerHTML = '<h1>Learning complete</h1><section class="card quiz-result good">' + pengoCelebrationHTML() +
+      '<h2>A few new discoveries to take with you</h2><p>' + s.questions.length + ' cards explored · ' + score + ' marked “Got it”.</p>' +
+      '<p class="explain">Learning confidence is separate from quiz results. Check what you remember with a quiz when you feel ready.</p>' +
+      '<p>' + stats.done + ' / ' + stats.goal + ' items toward your daily goal.</p>' +
+      '<div class="practice-actions"><button class="btn primary" id="recallContinue">Keep learning</button><a class="btn soft" href="#/today">Today’s items</a><a class="btn soft" href="#/learn?section=quiz">Try a quiz</a><a class="btn soft" href="#/">Done for now</a></div></section>' +
+      (missed.length ? '<section class="card"><h2>Keep exploring</h2><p class="explain">You marked these “Still learning”. Revisit their details whenever you like.</p>' +
+        missed.map(function (q) { return courseItemRow(q.type, q.id, false); }).join('') + '</section>' : '');
+    $('#recallContinue', view).addEventListener('click', function () { renderFlashcards(view, { daily: '1', lv: s.config.lv }); });
+    view.focus({preventScroll:true}); window.scrollTo(0,0); return;
+  }
   var bestMap = s.config.kind === 'kanji' ? store.quizBest : s.config.kind === 'vocab' ? store.vQuizBest : store.gQuizBest;
   var bestText = s.config.format === 'quiz' && s.config.kind !== 'mixed' && s.questions.length === 10 && s.questions.every(function (q) { return q.lv === s.config.lv; })
     ? '<p class="explain">Best on ' + esc(s.config.lv) + ': ' + bestMap[s.config.lv] + ' / 10</p>' : '';
   view.innerHTML = '<h1>Session complete</h1><section class="card quiz-result good">' + pengoCelebrationHTML() + '<img class="quiz-result-img" src="assets/pengo-happy.png" alt="Pengo celebrating your practice">' +
-    '<h2>You showed up. That counts.</h2><div class="result-stats"><div><strong>' + s.questions.length + '</strong><span>attempts made</span></div><div><strong>' + score + ' / ' + s.questions.length + '</strong><span>' + (s.config.format === 'recall' ? 'remembered' : 'correct') + '</span></div><div><strong>' + stats.streak + '</strong><span>day streak</span></div></div><p class="explain">' +
-    (s.config.format === 'recall' ? 'Self-rated recall: ' : '') + score + ' ' + (s.config.format === 'recall' ? 'remembered' : 'correct') +
+    '<h2>You showed up. That counts.</h2><div class="result-stats"><div><strong>' + s.questions.length + '</strong><span>attempts made</span></div><div><strong>' + score + ' / ' + s.questions.length + '</strong><span>correct</span></div><div><strong>' + stats.streak + '</strong><span>day streak</span></div></div><p class="explain">' +
+    score + ' correct' +
     ', ' + missed.length + ' to keep practicing.</p>' + bestText + '<p>' + stats.done + ' / ' + stats.goal + ' items practiced today.</p>' +
     '<p class="explain">' + (stats.goalMet ? 'Daily goal complete. This is a good place to stop.' : 'A small session is still progress. Come back when it fits your day.') + '</p>' +
     (fresh.length ? '<p>New achievement: ' + fresh.map(function (id) { return esc(Practice.BADGES.find(function (b) { return b.id === id; }).label); }).join(', ') + '</p>' : '') +
     '<div class="practice-actions"><a class="btn primary" href="#/">Done for now</a>' +
-    (missed.length ? '<a class="btn soft" href="#/practice?mode=mistakes">Practice mistakes</a>' : '<a class="btn soft" href="#/practice">Choose another session</a>') + '</div></section>' +
-    (missed.length ? '<section class="card"><h2>What to revisit</h2><p class="explain">These items are saved in Mistakes. Correctly recalling them clears that list.</p>' +
+    (missed.length ? '<a class="btn soft" href="#/learn?section=quiz&mode=mistakes">Practice mistakes</a>' : '<a class="btn soft" href="#/learn?section=quiz">Choose another session</a>') + '</div></section>' +
+    (missed.length ? '<section class="card"><h2>What to revisit</h2><p class="explain">These items are saved in Mistakes. Answering them correctly in a quiz clears that list.</p>' +
       missed.map(function (q) { return courseItemRow(q.type, q.id, false); }).join('') + '</section>' : '');
   view.focus({ preventScroll: true }); window.scrollTo(0, 0);
 }

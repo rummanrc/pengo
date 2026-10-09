@@ -448,6 +448,7 @@ body.ob-open { overflow: hidden; }
 .ob-brand .peng-o { color: #2f80ed; }
 .ob-tag { color: #1c3553; font-weight: 600; font-size: 1.05rem; margin: .4rem 0 0; }
 .ob-title { color: #1c3553; font-size: 1.6rem; line-height: 1.25; margin: 2.2rem 0 .5rem; }
+.ob-welcome-title { margin-top: 1.2rem; }
 .ob-sub { color: #1c3553; font-size: 1.05rem; margin: 0; }
 .ob-sub small { display: block; font-size: .95rem; color: #416084; margin-top: .2rem; }
 .ob-scene { position: relative; flex: 1; min-height: 260px; margin: .5rem -1.4rem 0; }
@@ -826,13 +827,13 @@ h2 { font-weight: 800; }
 .today-review { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: 1rem 0 0; padding-top: .8rem; border-top: 1px solid var(--line); font-size: .8rem; text-decoration: none; }
 .challenge-score { background: var(--mint-soft); padding: .5rem; border-radius: 10px; font-weight: 800; white-space: nowrap; }
 .challenge-list { list-style: none; padding: 0; margin: 1rem 0 0; }.challenge-list li + li { border-top: 1px solid var(--line); }
-.challenge-list a { display: flex; align-items: center; gap: .8rem; padding: 1rem 0; color: var(--ink); text-decoration: none; }
+.challenge-status { display: flex; align-items: center; gap: .8rem; padding: 1rem 0; color: var(--ink); }
 .challenge-icon { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 13px; background: var(--sun-soft); color: var(--gold); }
 .challenge-done .challenge-icon { background: var(--mint-soft); color: var(--accent); }
 .challenge-copy { flex: 1; min-width: 0; }.challenge-copy strong,.challenge-copy small { display: block; }.challenge-copy strong { font-size: .85rem; }.challenge-copy small { font-size: .75rem; color: var(--ink-soft); margin: .3rem 0 .5rem; }
 .challenge-copy .progress-track { height: 6px; margin: 0; }.challenge-count { font-size: .75rem; font-weight: 750; white-space: nowrap; }
 .daily-word h2 { margin: .8rem 0 .2rem; font: 1.7rem var(--jp-font); }.daily-word p { margin: .4rem 0 .8rem; font-size: .85rem; }
-@media (max-width:480px) { .today-subjects { gap: .35rem; }.today-subject { padding: .7rem .4rem; border-radius: 13px; }.today-subject strong { font-size: 1.6rem; }.today-subject > span:not(.subject-mark) { font-size: .7rem; }.today-subject small { font-size: .6rem; }.challenge-list a { gap: .5rem; }.challenge-icon { width: 32px; height: 36px; }.challenge-copy strong { font-size: .8rem; }.challenge-count { font-size: .65rem; }.today-overview .practice-heading { align-items: flex-start; } }
+@media (max-width:480px) { .today-subjects { gap: .35rem; }.today-subject { padding: .7rem .4rem; border-radius: 13px; }.today-subject strong { font-size: 1.6rem; }.today-subject > span:not(.subject-mark) { font-size: .7rem; }.today-subject small { font-size: .6rem; }.challenge-status { gap: .5rem; }.challenge-icon { width: 32px; height: 36px; }.challenge-copy strong { font-size: .8rem; }.challenge-count { font-size: .65rem; }.today-overview .practice-heading { align-items: flex-start; } }
 .quick-practice-section h2 { margin: 0 0 .8rem; }
 .quick-practice-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .75rem; }
 .quick-practice-card { display: flex; flex-direction: column; align-items: flex-start; gap: .6rem; text-align: left; padding: 1rem; border: 2px solid var(--line); border-bottom-width: 5px; border-radius: 20px; background: var(--card); color: var(--ink); cursor: pointer; font: inherit; }
@@ -850,24 +851,30 @@ h2 { font-weight: 800; }
 /* Discovery cards: one clear prompt, a tactile reveal, then useful context. */
 .recall-deck { max-width: 680px; margin: 0 auto; }
 .recall-deck h1 { font-size: clamp(1.35rem, 4vw, 2rem); margin: .3rem 0; }
-.recall-counter { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin: 1rem 0 .6rem; }
+.recall-counter { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin: 0 0 .6rem; }
 .recall-instruction { text-align: center; margin: 1.2rem 0; }
-.recall-stage { perspective: 1200px; touch-action: pan-y; }
-.recall-flipper { display: grid; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.2,.75,.25,1); }
-.recall-flipper.is-flipped { transform: rotateY(180deg); }
-.recall-face { grid-area: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; min-height: 365px; padding: 2rem 1.5rem; border: 1px solid var(--line); border-radius: 28px; background: var(--card); color: var(--ink); box-shadow: 0 12px 35px rgba(20,60,55,.09); backface-visibility: hidden; -webkit-backface-visibility: hidden; text-align: center; overflow-wrap: anywhere; }
+.recall-stage { touch-action: pan-y; margin-top: .8rem; }
+.recall-flipper { display: grid; }
+/* Flat overlapping faces keep every answer visible in Android WebView. */
+.recall-face { grid-area: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .65rem; min-height: 290px; padding: 1.2rem 1rem; border: 1px solid var(--line); border-radius: 28px; background: var(--card); color: var(--ink); box-shadow: 0 12px 35px rgba(20,60,55,.09); text-align: center; overflow-wrap: anywhere; }
 .recall-front { width: 100%; font: inherit; cursor: pointer; background: radial-gradient(ellipse at 50% 25%, var(--accent-soft), transparent 65%), var(--card); }
 .recall-front:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
 .recall-glyph { font-family: var(--jp-font); font-size: clamp(3rem, 14vw, 6rem); line-height: 1.4; max-width: 100%; }
 .recall-tap { display: flex; align-items: center; gap: .5rem; font-size: .9rem; color: var(--ink-soft); }
 .recall-tap .pengo-symbol { width: 18px; height: 18px; }
-.recall-back { transform: rotateY(180deg); visibility: hidden; }
+.recall-back { visibility: hidden; }
 .is-flipped .recall-front { visibility: hidden; }
 .is-flipped .recall-back { visibility: visible; }
 .recall-back-glyph { font-family: var(--jp-font); font-size: 2.4rem; color: var(--accent); }
 .recall-back h2 { font-size: clamp(1.35rem, 4vw, 2rem); margin: 0; }
+.recall-meaning { max-width: 100%; }
+.recall-readings .lab { font-size: .85rem; color: var(--ink-soft); }
 .recall-readings p { margin: .3rem 0; }
 .recall-dock { text-align: center; margin: 1rem 0 1.5rem; }
+.recall-dock #practiceRatings > p { margin: .5rem 0; }
+.recall-dock #qFb:empty { display: none; }
+.recall-deck ruby { ruby-position: over; }
+.recall-deck rt { font-size: .6em; }
 .recall-dock .practice-actions { justify-content: center; }
 .recall-dock .btn { min-height: 48px; }
 .recall-remembered .recall-back { border-color: var(--green); }
@@ -881,7 +888,8 @@ h2 { font-weight: 800; }
 .component-children { padding-left: .8rem; border-left: 2px solid var(--line); }
 .component-children .comp { margin-top: .5rem; }
 .component-attribution { font-size: .75rem; line-height: 1.6; }
-@media (max-width: 420px) { .recall-face { min-height: 330px; padding: 1.5rem 1rem; } .recall-deck .practice-heading { align-items: flex-start; } .recall-deck .practice-heading > a { flex: 0 0 85px; text-align: right; } }
+@media (max-width: 420px) { .recall-face { min-height: 260px; padding: 1rem .8rem; } .recall-meaning h2 { font-size: 1.1rem; line-height: 1.4; } }
+@media (max-height: 700px) and (max-width: 640px) { .recall-face { min-height: 220px; gap: .4rem; padding: .7rem; } .recall-back-glyph { font-size: 1.6rem; } .recall-glyph-kanji { font-size: 5rem; } .recall-dock { margin-top: .5rem; } }
 @media (prefers-reduced-motion: reduce) { .recall-flipper { transition: none; } }
 
 .recall-deck [hidden] { display: none !important; }
@@ -1022,3 +1030,12 @@ h2 { font-weight: 800; }
 .flashcards-hub > p { color: var(--ink-soft); line-height: 1.6; }
 .flashcards-hub .practice-fields { margin: 1rem 0; }
 @media (max-width: 640px) { .flashcard-entry { grid-template-columns: 74px 1fr; } .flashcard-entry > .btn { grid-column: 1 / -1; justify-content: center; } }
+
+/* Learning and assessment share Learn, with room for titles and counts to wrap. */
+.level-card { min-width: 0; }
+.level-card .lvl { flex-wrap: wrap; }
+.level-card .level-title { min-width: 0; overflow-wrap: anywhere; }
+.level-card .lvl small { flex: 0 1 auto; max-width: 100%; overflow-wrap: anywhere; }
+.learn-subjects { grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+.learn-quizzes { margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid var(--line); scroll-margin-top: 5rem; }
+.learn-quizzes .quick-practice-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }

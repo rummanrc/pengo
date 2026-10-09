@@ -16,9 +16,9 @@ function check(value,label){assert.ok(value,label);checks++;}
   async function route(hash){await page.goto(base+hash);await page.waitForFunction(()=>DB.loaded);await page.evaluate(h=>go(h),hash);}
   const state=()=>page.evaluate(()=>JSON.parse(localStorage.getItem(STORE_KEY)));
   await route('#/');
-  check(await page.locator('.challenge-list a').evaluateAll(a=>a.every(x=>x.hash.includes('format=recall'))),'all daily challenges open recall decks');
+  check(await page.locator('.challenge-list a').count()===0,'daily challenges show progress without links');
   check(!(await page.locator('#view').textContent()).includes('undefined'),'dashboard has valid card totals');
-  await page.locator('[data-challenge=flip] a').click();await page.waitForSelector('#practiceReveal');
+  await route('#/flashcards?start=1&mode=explore&size=3&kind=kanji');await page.waitForSelector('#practiceReveal');
   const initial=await state(),first=initial.practice.session.questions[0];
   check(initial.practice.session.questions.length===3,'daily deck is three cards');
   check(initial.practice.session.questions.every(q=>q.type==='kanji'),'kanji challenge keeps kanji focus');
@@ -35,23 +35,23 @@ function check(value,label){assert.ok(value,label);checks++;}
   check(await page.locator('#practiceRatings').isHidden(),'turning back hides recall ratings');
   await page.locator('#practiceReveal').click();await page.locator('#practiceAgain').click();
   let s=await state(),today=await page.evaluate(()=>Course.todayStr());
-  check(s.study.days[today].attempts===1,'rating records one practice attempt');
+  check((s.study.days[today].attempts||0)===0,'learning does not add a quiz attempt');
   check(s.study.days[today].recalled['kanji:'+first.id],'rating records distinct card challenge progress');
-  check(s.practice.mistakes['kanji:'+first.id],'need practice schedules a revisit');
+  check(!s.practice.mistakes['kanji:'+first.id],'learning confidence does not create quiz mistakes');
   await page.evaluate(()=>document.querySelector('#practiceRemembered').click());
-  check((await state()).study.days[today].attempts===1,'double click cannot double grade');
+  check(((await state()).study.days[today].attempts||0)===0,'double click cannot double grade');
   await page.reload();await page.waitForSelector('#practiceNext');
   check(await page.locator('#practiceNext').isVisible(),'answered card restores feedback on reload');
-  check((await state()).study.days[today].attempts===1,'resume cannot double grade');
+  check(((await state()).study.days[today].attempts||0)===0,'resume cannot double grade');
   await page.locator('#practiceNext').click();
-  await page.locator('#practiceReveal').click();await page.locator('#practiceRemembered').click();
+  await page.locator('#practiceReveal').click();await page.locator('#practiceAgain').click();
   await page.locator('#recallStage').evaluate(el=>{
    el.dispatchEvent(new PointerEvent('pointerdown',{clientX:250,clientY:100,button:0,isPrimary:true,bubbles:true}));
    el.dispatchEvent(new PointerEvent('pointerup',{clientX:100,clientY:110,button:0,isPrimary:true,bubbles:true}));
   });
   check((await state()).practice.session.cursor===2,'rated card advances with a horizontal swipe');
-  await page.locator('#practiceReveal').click();await page.locator('#practiceRemembered').click();
-  await page.keyboard.press('ArrowRight');await page.getByRole('heading',{name:'Session complete',exact:true}).waitFor();
+  await page.locator('#practiceReveal').click();await page.locator('#practiceAgain').click();
+  await page.keyboard.press('ArrowRight');await page.getByRole('heading',{name:'Learning complete',exact:true}).waitFor();
   check((await state()).practice.history.length===1,'completed deck records one summary');
   await route('#/');
   check(await page.locator('[data-challenge=flip]').evaluate(el=>el.classList.contains('challenge-done')),'three unique ratings finish daily kanji challenge');

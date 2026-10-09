@@ -150,7 +150,7 @@ The labels “This Week” and “This Month” represent rolling seven/thirty l
 
 Daily entries also contain `attempts`, `correct`, and `practiced: { ["type:id"]: true }`. Wrong answers count as attempts and unique practice. Learned and reviewed instances of the same item count once that day. Migration reconstructs known item keys from old learned timestamps; any remaining legacy learned count is preserved as `legacyLearned`.
 
-New answers record `reviewed: { ["type:id"]: true }`; explicit recall ratings additionally record `recalled: { ["type:id"]: true }`. Missing maps in old backups mean zero. Home subject counts derive from `practiced` keys. Legacy listened maps remain historical and earn no current card challenge progress. Challenges derive from the local-date ledger.
+Quiz answers record `reviewed: { ["type:id"]: true }` and increment attempts/correct. Learning confidence choices record `recalled` and `practiced` item keys, without changing quiz attempts/correct/mistakes or promoting/resetting SRS. “Got it” also calls `courseMarkStudied`, preserving an existing review record or initializing the first review. Missing maps in old backups mean zero. Home subject counts derive from `practiced` keys. Legacy listened maps remain historical and earn no current card challenge progress. Challenges derive from the local-date ledger.
 
 ### Practice object
 
@@ -158,9 +158,9 @@ New answers record `reviewed: { ["type:id"]: true }`; explicit recall ratings ad
 
 A version-1 session stores an ID, normalized configuration (`mode`, `kind`, `lv`, `size`, `format`), up to ten question references (`type`, `id`, `lv`, `variant`, `options` as IDs), `cursor`, `answers` (`ok`, `selected`), `startedAt`, and `startingBadges`. Content is resolved from DB; answers are saved before feedback. The cursor can point at an already answered question so its explanation can resume without a second grade.
 
-`format` accepts `quiz` or `recall`. Unknown/retired listening links normalize to a quiz. Saved listening sessions are rejected. Recall cards have no options, use `again` / `remembered` ratings and restore already graded cards without duplicate progress. Revealed-but-unrated cards show the front again on reload.
+`format` accepts `quiz` or `recall`. Unknown/retired listening links normalize to a quiz. Saved listening sessions are rejected. Learning cards have no options and retain the compatible `again` / `remembered` values for “Still learning” / “Got it”. Optional `revealedCursor` preserves a revealed card through details navigation and reload; it clears when the front is shown or the cursor advances. Stored choices resume without duplicate activity. No new storage version or destructive migration is required; historical grading stays intact.
 
-Completion clears the active session and appends an ID-deduplicated summary to the latest 60 history entries (`id`, `date`, `score`, `total`, `format`, `mode`, `lv`). Recall scores are self-ratings. Badges contain IDs from `Practice.BADGES`. Mistakes are keyed by `type:id`, with `{ type, id, misses, lastMissed }`; correct answers clear that entry. Session replacement preserves previously recorded activity and SRS.
+Completion clears the active session and appends an ID-deduplicated summary to the latest 60 history entries (`id`, `date`, `score`, `total`, `format`, `mode`, `lv`). Recall scores count learning-confidence choices and are excluded from Last quiz; card completion never awards plan quiz/perfect-quiz flags. Badges contain IDs from `Practice.BADGES`. Mistakes are keyed by `type:id`, with `{ type, id, misses, lastMissed }`; correct answers clear that entry. Session replacement preserves previously recorded activity and SRS.
 
 ## Separate onboarding state
 
@@ -199,4 +199,4 @@ Restored plan setup keeps the existing store schema and accepts existing plans/b
 
 ### Paused practice format
 
-`practice.pausedSession` retains the other format when a learner switches between quiz and flashcards. It uses the same version-1 schema and validation as `session`; both slots survive backup/import, and both respect the chosen study-plan level. Old backups receive null. Switching swaps slots without grading; finishing clears only the active slot. Generic start links resume active work, while explicit `format=recall` / `format=quiz` starts restore the requested format.
+`practice.pausedSession` retains the other format when a learner switches between quiz and flashcards. It uses the same version-1 schema and validation as `session`; both slots survive backup/import, and both respect the chosen study-plan level. Old backups receive null. Switching swaps slots without grading; finishing clears only the active slot. Learning routes resume learning decks; Learn quiz routes resume quizzes. Format switching and completion preserve the other slot. Detail routes accept a `deck` ID only when a valid matching learning session exists.

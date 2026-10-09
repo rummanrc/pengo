@@ -8,11 +8,11 @@ Removed the bundled MP3 pack/manifest, pronunciation runtime and speaker control
 
 ## Daily cards
 
-All three daily challenge links use `format=recall`: daily mixed practice, a rotating subject sampler, and three kanji discoveries. The latter counts distinct `kanji:id` recall ratings for the local day. Cards also work for vocabulary and grammar. The level sampler remains available with a small study-plan batch.
+Daily challenges now show status without links: daily practice, a rotating subject, and three kanji discoveries. The latter counts distinct `kanji:id` recall ratings for the local day. Cards also work for vocabulary and grammar. The level sampler remains available with a small study-plan batch.
 
-The front shows only the Japanese prompt. Tap or activate it by keyboard to flip; the back shows meaning and readings, then memory story, larger components, nested breakdowns and examples below. Explicit **Need practice** or **Remembered** updates the existing SRS/activity ledger exactly once. Reveal alone earns no progress. After rating, swipe left on the card, use Next, or press ArrowRight. Three/five/ten-card sessions finish with the existing summary; there is no automatic endless feed. Generic start links resume active work. Explicit flashcard/quiz links restore that format, preserving the other session in a paused slot. Practice offers an explicit replacement action within a format.
+The front shows only the Japanese prompt. Tap or activate it by keyboard to flip; the back shows meaning and readings, then memory story, larger components, nested breakdowns and examples below. Explicit **Still learning** or **Got it** records learning effort exactly once. “Got it” marks an item studied and initializes its first review if needed. These choices do not grade SRS, count quiz attempts, or change mistakes. Reveal alone earns no progress. Got it advances directly to the next card or completion. After Still learning, swipe left, use Next, or press ArrowRight. Daily decks contain the exact remaining plan/goal count, up to ten cards, and finish with a learning summary; there is no automatic endless feed. Learning and quiz routes each resume their own saved format. Explicit flashcard/quiz links restore that format, preserving the other session in a paused slot. Practice offers an explicit replacement action within a format.
 
-The inactive face is inert and hidden from assistive technology. Rating/advance controls stay hidden until appropriate. Reduced-motion users get an immediate reveal. Answered cards restore feedback after reload; an unrated reveal resets to the front. Older route/player handlers cannot grade a newer session.
+The inactive face is inert and hidden from assistive technology. Rating/advance controls stay hidden until appropriate. Reduced-motion users get an immediate reveal. Answered cards restore feedback after reload; an unrated reveal keeps its face through details navigation and reload. Older route/player handlers cannot grade a newer session.
 
 ## Source research and choice
 
@@ -54,3 +54,21 @@ Reproduced in the user’s open tab: a daily recall link silently resumed a save
 `test_flashcards_browser.cjs` covers named entry points, saved-quiz/card swapping, reload/backup persistence, completion, level isolation, vocabulary/grammar cards, and phone/desktop layouts.
 
 Verified: 33 flashcard-access checks, 46 existing practice checks, 49 discovery checks and 71 study-plan/settings checks passed. Pure practice rules now include paused-session backup normalization (38 checks); the full npm suite passes. The open user tab was verified through a real challenge click, card reveal and preserved-quiz resume control. Docker APK assembly passed; all runtime scripts, HTML and styles match the final ZIP inventory. Updated APK: 19,666,149 bytes; SHA-256 `050cd98ff2dbbec871a562ab56734bb6c310a512ecf171d229660ce0b2a52e67`.
+
+### Learn and quiz separation — 2026-10-09
+
+Learn now contains the library, a learning-card entry, and the full quiz controls: smart/due/mistakes, content/level/length/plan selection, saved quiz resume/replacement, Last quiz, daily goal and achievements. The standalone Review tab/page is removed; old URLs redirect with their parameters and replace their history entry. Home says “Discover one card at a time” / “Start learning”. Learning cards and quiz results keep separate meaning and saved progress. Existing historical results remain intact.
+
+Detail exploration keeps a validated deck ID across kanji/vocabulary/grammar and related details. Returning restores the original cursor, revealed face and confidence/next controls, including after reload or while that deck is paused behind a quiz. Native/browser history Back also returns to the card. Ordinary/stale detail links retain their normal browse destinations.
+
+Subject headings wrap and the grid gives long titles/counts enough room. Integration checks inspect actual element bounds as well as page overflow at 320/390/768/1024/1440px in both themes. See `tests/test_learn_browser.cjs` and the existing browser suites.
+
+Verified: 310 browser checks across the Learn/access/discovery/practice/design/plan suites, full npm rules, syntax and diff checks passed. The open user tab verified the detail-return path and merged Learn controls. Docker APK assembly passed; all 16 checked runtime/data/credits files match their packaged bytes. Updated APK: 19,667,537 bytes (18.76 MiB); SHA-256 `eb8f6b4e77fda7db2ca989cd709f3294527dce35b3074fc591e56e727d7d96e9`.
+
+### Daily learning simplification — 2026-10-09
+
+Merged the first two intro slides into a JLPT-focused welcome. Home now has a compact direct-learning flashcard entry, status-only challenges and daily totals linking to a separate subject-filtered `#/today` item list. Removed the learning trail, daily practice eyebrow, overview explanation/footer and kanji-detail grammar card. Daily decks use the remaining current-batch items with a plan, or the remaining daily goal without one, in groups of at most ten; Keep learning starts another deck. Saved quizzes and decks remain independent.
+
+Cards use compact flat faces, an explicit meaning, Japanese 音読み/訓読み labels, and available ruby furigana in examples for every subject. Got it advances immediately, including directly to completion on the last card. Still learning retains feedback and manual advance.
+
+Verified: the full npm rules suite passed, along with 410 browser checks (98 daily-learning, 34 flashcard access, 72 Learn, 49 discovery, 46 practice, 40 design/reminder, 71 plan/settings). Button bounds at 320×568, 360×640 and 390×844 and tablet/desktop overflow pass in both themes. Intro, card and daily-list screenshots were reviewed. Syntax/diff checks and Docker APK assembly passed. All 16 checked runtime/data/credits files match the APK bytes. Local staging was refreshed. APK: 19,667,217 bytes; SHA-256 `140bdde6cf273bf0becfc8c01597655005655d729d14dca25ce9e7d577cb1523`. Physical Android-device interaction remains untested.

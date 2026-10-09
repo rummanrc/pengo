@@ -2,9 +2,8 @@
 /* First-launch onboarding (Android app only).
    Startup sequence:
    0. Native splash (android res/drawable/splash.xml) covers the cold start.
-   1. Slide 0 "Splash": pengo brand + mascot reading, button to continue.
-   2. Slide 1 "Welcome": journey pitch + encouragement bubble.
-   3. Slide 2 "Features": JLPT success cards + Start learning.
+   1. Slide 0 "Welcome": pengo brand, JLPT prep pitch and mascot.
+   2. Slide 1 "Features": JLPT success cards + Start learning.
    Shown once (localStorage ONBOARD_KEY). The web build never shows it,
    except with ?onboarding=1 for preview. Replay via Settings. */
 var ONBOARD_KEY = "pengo:onboarded:v1";
@@ -41,20 +40,13 @@ function showOnboarding(onDone) {
     { t: "Track Progress", d: "See your improvement", i: "&#x1F4CA;", c: "purple" }
   ];
   var idx = 0;
-  var total = 3;
+  var total = 2;
   function slideHtml() {
     if (idx === 0) {
       return "<div class=\"ob-slide\">" +
         "<div class=\"ob-brand\">peng<span class=\"peng-o\">o</span></div>" +
-        "<p class=\"ob-tag\">Small steps. Big Japanese.</p>" +
-        "<div class=\"ob-scene\" aria-hidden=\"true\"><div class=\"ob-cloud c1\"></div><div class=\"ob-cloud c2\"></div>" +
-        "<div class=\"ob-fuji\"></div><div class=\"ob-fuji-cap\"></div><div class=\"ob-ice\"></div>" +
-        "<img class=\"ob-mascot\" src=\"assets/pengo-mascot.png\" alt=\"\"></div></div>";
-    }
-    if (idx === 1) {
-      return "<div class=\"ob-slide\">" +
-        "<h2 class=\"ob-title\">Learn Japanese<br>for your next journey</h2>" +
-        "<p class=\"ob-sub\">Kanji &bull; Vocabulary &bull; JLPT<small>All in one place</small></p>" +
+        "<h2 class=\"ob-title ob-welcome-title\">Prepare for your JLPT<br>one day at a time</h2>" +
+        "<p class=\"ob-sub\">Kanji &bull; Vocabulary &bull; Grammar<small>Exam prep from N5 to N1</small></p>" +
         "<div class=\"ob-scene\" aria-hidden=\"true\"><div class=\"ob-cloud c1\"></div><div class=\"ob-cloud c2\"></div>" +
         "<div class=\"ob-fuji\"></div><div class=\"ob-fuji-cap\"></div><div class=\"ob-ice\"></div>" +
         "<img class=\"ob-mascot flip\" src=\"assets/pengo-mascot.png\" alt=\"\"></div></div>";
@@ -71,7 +63,6 @@ function showOnboarding(onDone) {
   }
   function ctaLabel() {
     if (idx === 0) return "See how it works &#x2192;";
-    if (idx === 1) return "Let&#x2019;s Start &#x2192;";
     return "Start learning &#x2192;";
   }
   function draw() {

@@ -41,7 +41,7 @@ While a valid plan is active, Home, Learn, browse, search, Progress, and every p
 
 Detail links and related study links follow the target too. A bookmarked out-of-level detail returns to the chosen level’s browser. Overlapping kanji details resolve the target list’s record rather than the global last-indexed record. Explanations/examples remain intact.
 
-Home prominently offers setup when no plan exists. Finishing/skipping the first-launch intro opens setup when there is no plan. Settings places the plan card first and offers changing or ending it; Home’s learning trail links there as well.
+Home prominently offers setup when no plan exists. Finishing/skipping the first-launch intro opens setup when there is no plan. Settings places the plan card first and offers changing or ending it. Home’s flashcards begin with the remaining current-batch items, in decks of up to ten. The learning trail has been removed.
 
 ## Progress-based unlocking
 
@@ -101,8 +101,8 @@ Practice STEPS = [1, 3, 7, 16, 35, 80, 180] days
 | Action | State effect |
 | --- | --- |
 | Mark learned/studied for first time | Learned timestamp; initialize missing SRS as box 1 due in one day |
-| Correct practice answer | Once per local day, increment box up to index 6; due after `STEPS[newBox]`; mark learned if needed |
-| Wrong practice answer | Reset box 0; due after ten minutes; existing learned flag stays |
+| Correct quiz answer | Once per local day, increment box up to index 6; due after `STEPS[newBox]`; mark learned if needed |
+| Wrong quiz answer | Reset box 0; due after ten minutes; existing learned flag stays |
 | Remove learned flag | Remove timestamp only; SRS remains |
 | Same-day successful retry | Preserve box/due; cannot repeatedly advance mastery or postpone review |
 
@@ -125,3 +125,5 @@ Date functions use local midnight and fixed 24-hour arithmetic with rounded diff
 ## Validation
 
 [Testing](testing.md) describes the existing 97 course assertions and the manual integration checks. Practice unit checks and an optional browser suite additionally exercise selection, SRS, and persistence integration. Native device behavior is still a separate check. [Maintenance](maintenance.md) records the remaining implementation gaps.
+
+Learning-card confidence does not call these graders. “Got it” marks the item studied and initializes a missing first review, while preserving an existing box/due record; “Still learning” records effort only. Neither awards quiz-completion or perfect-quiz milestones.

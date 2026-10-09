@@ -15,7 +15,7 @@ const source=fs.readFileSync(path.join(__dirname,'../reminder-worker.js'),'utf8'
   vm.runInNewContext(source,{self,URL});
   handler({notification:{close:()=>{closed=true;}},waitUntil:promise=>{awaited=promise;}});await awaited;
   assert.ok(closed);checks++;
-  const target=scope+'index.html#/practice?start=1&size=3';
+  const target=scope+'index.html#/learn?section=quiz&start=1&size=3';
   if(existing){assert.equal(navigated,target);assert.ok(focused);assert.equal(opened,'');checks+=3;}
   else{assert.equal(opened,target);assert.equal(navigated,'');checks+=2;}
  }

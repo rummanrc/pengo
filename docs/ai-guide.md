@@ -9,7 +9,7 @@ Pengo is a static JavaScript Japanese-learning app plus a Java Android WebView s
 | Shell/theme/responsive UI | `index.html`, `styles.css`, `design.js`, relevant renderer in `app.js` | [Frontend](frontend.md), [design/reminders](design-and-reminders.md) |
 | Browse/search/details | `match*Query`, `render*Browse`, `bindBrowseSearch`, detail renderers | [Frontend](frontend.md), [data model](data-model.md) |
 | Plan/curriculum | `course.js`, `course*` helpers and `renderCourse*` in `app.js` | [Course](course.md), [interfaces](interfaces.md) |
-| Ordinary quizzes | `renderReview`, `renderQuiz`, `renderVQuiz`, `renderGQuiz` | [Product](product.md), [testing](testing.md) |
+| Ordinary quizzes | `renderLearn`, `renderPractice`, `renderPracticePlayer` | [Product](product.md), [testing](testing.md) |
 | Progress | `recordStudyItem`, `migrateStudyItems`, `flushStudyTime`, `renderProgress` | [Data model](data-model.md) |
 | Backup/storage | `defaultStore`, startup normalization, `save`, import/export; Platform/Java bridge | [Data model](data-model.md), [security](security.md) |
 | Content/furigana | Relevant `scripts/build_*.py`, `furigana.py`, `sudachi_furigana.py` | [Pipeline](data-pipeline.md) |
@@ -24,7 +24,7 @@ Pengo is a static JavaScript Japanese-learning app plus a Java Android WebView s
 - `knowkanji:v1`, `com.knowkanji.app`, npm name `knowkanji`, and legacy `KK*` hooks remain compatibility identifiers despite Pengo branding.
 - Kanji progress is by character across overlapping level lists; global details resolve the last indexed occurrence.
 - Vocab/grammar IDs can change if sources are reordered. Review ID→record mappings before regeneration.
-- All Review/plan entry points share the practice player and grade SRS/activity. Due-only review and recall cards are exposed through `#/practice`.
+- Learn contains the full quiz setup; quiz answers grade SRS/activity. Learning cards at `#/flashcards` record learning confidence without changing test accuracy/mistakes. Old Review/practice routes are aliases.
 - Plan unlocking is explicit and progress-based; dates do not skip batches. Pace/data changes derive new batches.
 - Main backup replaces state and excludes onboarding/content/device reminders. It is not a cloud-sync merge format.
 - Hosted web has a notification-only worker after opt-in, with no offline caching or closed-page push. Native offline behavior depends on a complete packaged runtime.

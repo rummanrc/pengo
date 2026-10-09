@@ -75,3 +75,7 @@ For a new architectural change, record ID/date, status (proposed/accepted/supers
 ## D-12: Text-only discovery cards and KanjiVG hierarchy (2026-10-09)
 
 D-10 and the audio portion of D-11 are superseded: remove bundled speech, voice controls and native TTS to reduce size. Keep the date-scoped dashboard; challenges now open recall decks and use explicit, unique ratings. Use the existing KanjiVG Japanese group structure directly rather than importing an experimental graph or flat named WaniKani radicals. Preserve original KRADFILE content and mnemonic stories, expose larger/secondary groupings and matching story references separately. See [source research and implementation](discovery-cards.md).
+
+## D-13: Separate learning confidence from quiz results (2026-10-09)
+
+Cards support discovery and explicit learning confidence; quizzes assess recall and update SRS/mistakes/accuracy. Keep the compatible saved format/answer values, preserve both session slots, and add only an optional revealed cursor. Move full quiz controls into Learn, remove Review navigation, and redirect old bookmarks without creating history loops. Detail links carry validated deck context so the learner returns to the same card, including through related items and reload.

@@ -369,7 +369,6 @@ function dueCount() {
 const NAV = [
   { path: "#/", label: "Home", ico: "<svg viewBox=\"0 0 24 24\"><path d=\"m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z\"/></svg>", match: "home" },
   { path: "#/learn", label: "Learn", ico: "<svg viewBox=\"0 0 24 24\"><path d=\"M12 7v14M12 7C9 4 5 4 2 5v14c4-1 7 0 10 2m0-14c3-3 7-3 10-2v14c-4-1-7 0-10 2\"/></svg>", match: "learn" },
-  { path: "#/review", label: "Review", ico: "<svg viewBox=\"0 0 24 24\"><path d=\"M20 7v5h-5M4 17v-5h5\"/><path d=\"M5.6 9A7 7 0 0 1 18 6l2 2M4 16l2 2a7 7 0 0 0 12.4-3\"/></svg>", match: "review" },
   { path: "#/search", label: "Search", ico: "<svg viewBox=\"0 0 24 24\"><circle cx=\"10.8\" cy=\"10.8\" r=\"6.8\"/><path d=\"m16 16 5 5\"/></svg>", match: "search" },
   { path: "#/progress", label: "Progress", ico: "<svg viewBox=\"0 0 24 24\"><path d=\"M4 20V12h4v8zm6 0V4h4v16zm6 0V9h4v11z\"/></svg>", match: "progress" },
   { path: "#/settings", label: "Settings", ico: "<svg viewBox=\"0 0 24 24\"><path d=\"M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z\"/><path d=\"m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.8 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.8-1l-1.7.6-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.8-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.8 1l1.7-.6 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2Z\"/></svg>", match: "settings" }
@@ -392,12 +391,12 @@ function renderNav(active) {
     "<a href=\"" + n.path + "\"" + (n.match === active ? " aria-current=\"page\"" : "") + ">" +
     "<span class=\"ico\" aria-hidden=\"true\">" + n.ico + "</span><span>" + n.label + "</span></a>").join("");
   $("#sideNav").innerHTML = html;
-  $("#bottomNav").innerHTML = NAV.filter(n => ["home", "learn", "review", "progress", "settings"].indexOf(n.match) >= 0).map(n =>
+  $("#bottomNav").innerHTML = NAV.filter(n => ["home", "learn", "progress", "settings"].indexOf(n.match) >= 0).map(n =>
     "<a href=\"" + n.path + "\"" + (n.match === active ? " aria-current=\"page\"" : "") + ">" +
     "<span class=\"ico\" aria-hidden=\"true\">" + n.ico + "</span><span>" + n.label + "</span></a>").join("");
   const d = dueCount();
   const pill = $("#duePill");
-  if (d > 0) { pill.hidden = false; pill.innerHTML = '<a href="#/practice?mode=due">' + d + ' due</a>'; }
+  if (d > 0) { pill.hidden = false; pill.innerHTML = '<a href="#/learn?section=quiz&mode=due">' + d + ' due</a>'; }
   else pill.hidden = true;
 }
 async function render() {
@@ -419,21 +418,26 @@ async function render() {
   else if (name === "grammar") { renderNav("learn"); renderGrammarHome(view); }
   else if (name === "g" && seg[1]) { renderNav("learn"); renderGrammarDetail(view, seg[1]); }
   else if (name === "study") { // removed study, redirect to quiz
-    if (q.kind === "vocab") go("#/review?tab=quiz&kind=vocab");
-    else if (q.kind === "grammar") go("#/review?tab=quiz&kind=grammar");
-    else go("#/review?tab=quiz");
+    if (q.kind === "vocab") go("#/learn?section=quiz&tab=quiz&kind=vocab");
+    else if (q.kind === "grammar") go("#/learn?section=quiz&tab=quiz&kind=grammar");
+    else go("#/learn?section=quiz&tab=quiz");
   }
   else if (name === "course") { renderNav("home"); renderCourse(view, seg[1], q); }
-  else if (name === "flashcards") { renderNav("review"); renderFlashcards(view, q); }
-  else if (name === "practice") { renderNav("review"); renderPractice(view, q); }
-  else if (name === "review") { renderNav("review"); renderReview(view, q); }
+  else if (name === "flashcards") { renderNav("learn"); renderFlashcards(view, q); }
+  else if (name === "practice" || name === "review") {
+    const target = q.format === "recall" ? "#/flashcards?" : "#/learn?section=quiz&";
+    history.replaceState(null, '', target + new URLSearchParams(q).toString()); render(); return;
+  }
   else if (name === "search") { renderNav("search"); renderSearch(view, q); }
   else if (name === "progress") { renderNav("progress"); renderProgress(view); }
+  else if (name === "today") { renderNav("home"); renderTodayItems(view, q); }
   else if (name === "settings") { renderNav("settings"); renderSettings(view); }
   else { renderNav("home"); renderHome(view); }
+  bindLearningCardReturn(view, q, name);
   bindPengoUI(view);
   view.focus({ preventScroll: true });
   window.scrollTo(0, 0);
+  if (name === "learn" && q.section === "quiz" && !q.start && !q.resume) $("#learnQuizzes", view).scrollIntoView({block:"start"});
   if (name === "settings" && q.section === "plan") $("#studyPlanSettings",view).scrollIntoView({block:"start"});
   if (name === "settings" && q.section === "reminders") $("#reminderSettings",view).scrollIntoView({block:"start"});
 }
@@ -520,35 +524,71 @@ function renderHome(view) {
 }
 function renderHomeSplash(view) { renderAdventureHome(view, false); }
 function renderHomeDash(view) { renderAdventureHome(view, true); }
+function renderTodayItems(view, q) {
+  var day = store.study.days[Course.todayStr()] || {};
+  var items = Object.keys(day.practiced || {}).map(function (key) {
+    var colon = key.indexOf(':');
+    return { type: key.slice(0, colon), id: key.slice(colon + 1) };
+  }).filter(function (item) { return Practice.TYPES.includes(item.type) && practiceRecord(item.type, item.id); });
+  var kind = Practice.TYPES.includes(q.kind) ? q.kind : 'all';
+  var groups = Practice.TYPES.filter(function (type) { return kind === 'all' || kind === type; });
+  view.innerHTML = '<p><a href="#/">← Home</a></p><h1>Today’s learned items</h1>' +
+    '<p class="explain">Items you studied or practiced today.</p><div class="chip-row" role="group" aria-label="Today’s subjects">' +
+    [['all', 'All'], ['kanji', 'Kanji'], ['vocab', 'Vocabulary'], ['grammar', 'Grammar']].map(function (entry) {
+      return '<button class="chip" data-today-kind="' + entry[0] + '" aria-pressed="' + (kind === entry[0]) + '">' + entry[1] + '</button>';
+    }).join('') + '</div>' + groups.map(function (type) {
+      var studied = items.filter(function (item) { return item.type === type; });
+      return '<section class="card today-items" data-today-subject="' + type + '"><h2>' + courseTypeName(type) + ' <span class="badge">' + studied.length + '</span></h2>' +
+        (studied.length ? studied.map(function (item) { return courseItemRow(type, item.id, false); }).join('') :
+          '<p class="explain">No ' + (type === 'vocab' ? 'vocabulary' : type) + ' items studied yet today.</p>') + '</section>';
+    }).join('');
+  $$('[data-today-kind]', view).forEach(function (button) {
+    button.addEventListener('click', function () { go('#/today?kind=' + button.dataset.todayKind); });
+  });
+}
 /* ---------- Learn (one tab for Kanji, Vocabulary, Grammar) ---------- */
 function renderLearn(view, q) {
-  const defaultLv = store.course && LEVELS.includes(String(store.course.target || "").toUpperCase())
-    ? String(store.course.target).toUpperCase() : "N5";
-  const lv = studyLevel(q.lv || defaultLv);
-  const ks = levelStats(lv), vs = vLevelStats(lv), gs = gLevelStats(lv);
-  const lvBtns = studyLevels().map(l => "<button class=\"chip\" data-lv=\"" + l + "\" aria-pressed=\"" + (l === lv) + "\">" + l + "</button>").join("");
-  view.innerHTML =
-    "<h1>Learn</h1>" +
-    (store.course ? studyFocusHTML() : "<p class=\"explain\">Pick a JLPT level, then choose kanji, vocabulary or grammar.</p>") +
-    "<div class=\"chip-row\" role=\"group\" aria-label=\"Learn level\">" + lvBtns + "</div>" +
-    "<p><a class=\"btn soft\" href=\"#/flashcards?lv=" + lv + "\">Flashcards · guess and flip</a></p>" +
-    "<div class=\"level-grid\">" +
-    "<a class=\"level-card\" href=\"#/kanji/" + lv + "\"><div class=\"lvl\"><span class=\"dash-tile-ico t1\" aria-hidden=\"true\">\u6f22</span> Kanji <small>" + ks.total + " kanji</small></div>" +
-    "<div class=\"count\">" + ks.learned + " / " + ks.total + " learned</div>" + progressBar(ks.pct) +
-    "<div class=\"progress-label\">" + ks.pct + "% complete \u00b7 " + ks.left + " left</div></a>" +
-    "<a class=\"level-card\" href=\"#/vocab/" + lv + "\"><div class=\"lvl\"><span class=\"dash-tile-ico t2\" aria-hidden=\"true\">\u8a9e</span> Vocab <small>" + vs.total + " words</small></div>" +
-    "<div class=\"count\">" + vs.learned + " / " + vs.total + " learned</div>" + progressBar(vs.pct) +
-    "<div class=\"progress-label\">" + vs.pct + "% complete \u00b7 " + vs.left + " left</div></a>" +
-    "<a class=\"level-card\" href=\"#/grammar/" + lv + "\"><div class=\"lvl\"><span class=\"dash-tile-ico t3\" aria-hidden=\"true\">\u6587</span> Grammar <small>" + gs.total + " points</small></div>" +
-    "<div class=\"count\">" + gs.learned + " / " + gs.total + " learned</div>" + progressBar(gs.pct) +
-    "<div class=\"progress-label\">" + gs.pct + "% complete \u00b7 " + gs.left + " left</div></a>" +
-    "<div class=\"level-card\"><div class=\"lvl\"><span class=\"dash-tile-ico t4\" aria-hidden=\"true\">\u8a66</span> Review <small>" + lv + " quiz</small></div>" +
-    "<div class=\"count\">Test yourself on " + lv + "</div>" +
-    "<p><a class=\"btn soft\" href=\"#/review?kind=kanji&lv=" + lv + "\">Kanji</a> " +
-    "<a class=\"btn soft\" href=\"#/review?kind=vocab&lv=" + lv + "\">Vocab</a> " +
-    "<a class=\"btn soft\" href=\"#/review?kind=grammar&lv=" + lv + "\">Grammar</a></p></div>" +
-    "</div>";
-  $$(".chip", view).forEach(c => c.addEventListener("click", () => go("#/learn?lv=" + c.dataset.lv)));
+  if (q.start === '1' || q.resume === '1') { renderPractice(view, q); return; }
+  const lv = studyLevel(q.lv);
+  const subjects = [['kanji', 'Kanji', '漢', 'kanji', levelStats(lv)],
+    ['vocab', 'Vocabulary', '語', 'words', vLevelStats(lv)],
+    ['grammar', 'Grammar', '文', 'points', gLevelStats(lv)]];
+  view.innerHTML = '<h1>Learn</h1>' +
+    (store.course ? studyFocusHTML() : '<p class="explain">Pick a JLPT level, then explore something new or check what you remember.</p>') +
+    '<div class="chip-row" role="group" aria-label="Learn level">' + studyLevels().map(l =>
+      '<button class="chip" data-lv="' + l + '" aria-pressed="' + (l === lv) + '">' + l + '</button>').join('') + '</div>' +
+    '<section aria-labelledby="learnDiscover"><h2 id="learnDiscover">Discover something new</h2><p class="explain">Take your time with a card, or browse the lessons below. Learning cards help you explore; quizzes check what you remember.</p>' +
+    flashcardEntryHTML(lv) + '<div class="level-grid learn-subjects">' + subjects.map((subject, i) => {
+      const stats = subject[4];
+      return '<a class="level-card" href="#/' + subject[0] + '/' + lv + '"><div class="lvl"><span class="dash-tile-ico t' + (i + 1) + '" aria-hidden="true">' + subject[2] +
+        '</span><span class="level-title">' + subject[1] + '</span><small>' + stats.total + ' ' + subject[3] + '</small></div>' +
+        '<div class="count">' + stats.learned + ' / ' + stats.total + ' learned</div>' + progressBar(stats.pct) +
+        '<div class="progress-label">' + stats.pct + '% complete · ' + stats.left + ' left</div></a>';
+    }).join('') + '</div></section><section id="learnQuizzes" class="learn-quizzes" aria-labelledby="learnQuizTitle"></section>';
+  renderPractice($('#learnQuizzes', view), q, view);
+  $$('[data-lv]', view).forEach(c => c.addEventListener('click', () => go('#/learn?lv=' + c.dataset.lv)));
+}
+
+/* Detail pages keep a validated route back to the exact saved learning deck. */
+function learningCardReturn(query) {
+  if (!query.deck) return null;
+  const deck = [practiceSession(), practiceSession('pausedSession')].find(s =>
+    s && s.id === query.deck && s.config.format === 'recall');
+  return deck ? '#/flashcards?resume=1&deck=' + encodeURIComponent(deck.id) : null;
+}
+function bindLearningCardReturn(view, query, name) {
+  if (!['k', 'v', 'g', 'kanji'].includes(name)) return;
+  const back = learningCardReturn(query);
+  if (!back) return;
+  const link = $('p a', view);
+  if (link) { link.href = back; link.textContent = '← Back to your learning card'; }
+  $$('a[href]', view).forEach(a => {
+    if (/^#\/(k|v|g)\//.test(a.getAttribute('href'))) {
+      const parts = a.getAttribute('href').split('?');
+      const params = new URLSearchParams(parts[1] || ''); params.set('deck', query.deck);
+      a.href = parts[0] + '?' + params.toString();
+    }
+  });
 }
 
 /* ---------- Browse ---------- */
@@ -630,8 +670,8 @@ function bindBrowseSearch(inputId, countId, gridId, filterItems, renderCard, kin
       grid.innerHTML = items.length ? items.map(renderCard).join("") :
         "<p class=\"empty\">No results match. Try a different search or filter.</p>";
       if (kind === "kanji") count.textContent = items.length + " / " + DB.levels[level].length + " kanji · " + level;
-      else if (kind === "vocab") count.innerHTML = items.length + " words · <a href=\"#/review?tab=quiz&kind=vocab&lv=" + level + "\">Quiz " + level + "</a>";
-      else count.innerHTML = items.length + " points · <a href=\"#/review?tab=quiz&kind=grammar&lv=" + level + "\">Quiz " + level + "</a>";
+      else if (kind === "vocab") count.innerHTML = items.length + " words · <a href=\"#/learn?section=quiz&tab=quiz&kind=vocab&lv=" + level + "\">Quiz " + level + "</a>";
+      else count.innerHTML = items.length + " points · <a href=\"#/learn?section=quiz&tab=quiz&kind=grammar&lv=" + level + "\">Quiz " + level + "</a>";
       const hash = link({ q: text });
       if (location.hash !== hash) history.replaceState(null, "", hash);
     }, 150);
@@ -689,7 +729,7 @@ function renderDetail(view, ch) {
     "<div class=\"action-row\">" +
     "<button class=\"btn " + (learned ? "good" : "primary") + "\" id=\"dLearn\" aria-pressed=\"" + learned + "\">" + (learned ? "✓ Learned" : "Mark as learned") + "</button>" +
     "<button class=\"btn\" id=\"dFav\" aria-pressed=\"" + fav + "\">" + (fav ? "★ Favorited" : "☆ Favorite") + "</button>" +
-    "<a class=\"btn soft\" href=\"#/review?tab=quiz&lv=" + lv + "\">Quiz " + lv + "</a>" +
+    "<a class=\"btn soft\" href=\"#/learn?section=quiz&tab=quiz&lv=" + lv + "\">Quiz " + lv + "</a>" +
     "</div></div></div>" +
     "<div class=\"card\" id=\"strokeCard\"><h2>Stroke order" + (it.strokes ? " (" + it.strokes + ")" : "") + "</h2>" +
     "<div class=\"stroke-comp\"><div class=\"stroke-col\"><div class=\"stroke-wrap\"><div class=\"stroke-svg\" id=\"strokeBox\" aria-label=\"Stroke order diagram\"><p class=\"explain\">Loading...</p></div>" +
@@ -699,7 +739,7 @@ function renderDetail(view, ch) {
     componentsHTML(it) + "</div></div></div>" +
     "<div class=\"card\"><h2>Mnemonic</h2><p class=\"mnemonic\">" + esc(mn.text) + "</p>" +
     "<p class=\"explain\">" + esc(mn.notice) + " Based on: " + (storyComponents(it).map(c => esc(c.c) + " (" + esc(c.m || "?") + ")").join(" + ") || "—") + ".</p></div>" +
-    "<div class=\"card\"><h2>Vocabulary</h2><ul class=\"vocab-list\">" + vocab + "</ul>" + vocabLinksForKanji(ch) + "</div>" + grammarLinksForKanji(ch) +
+    "<div class=\"card\"><h2>Vocabulary</h2><ul class=\"vocab-list\">" + vocab + "</ul>" + vocabLinksForKanji(ch) + "</div>" +
     "<div class=\"card\"><h2>Example sentences</h2><ul class=\"sent-list\">" + sents + "</ul></div>" +
     "<div class=\"card\"><h2>Similar kanji</h2><p class=\"jp\" lang=\"ja\">" + conf + "</p></div>" +
     "<div class=\"card\"><h2>My note</h2><textarea class=\"note\" id=\"dNote\" aria-label=\"Personal note\">" + esc(store.notes[ch] || "") + "</textarea></div>" +
@@ -858,14 +898,14 @@ function quizReviewHTML(kind, item) {
     const ex = (item.sentences || [])[0];
     return "<section class=\"card quiz-review\"><h3>Quick review <span lang=\"ja\">" + esc(item.word) + "</span></h3>" + "<p><strong>Reading:</strong> <span lang=\"ja\">" + esc(item.reading) + "</span> &nbsp; <strong>Meaning:</strong> " + esc(item.meaning) + "</p>" +
       (item.meanings && item.meanings.length > 1 ? "<p><strong>Also:</strong> " + esc(item.meanings.slice(1, 4).join("; ")) + "</p>" : "") +
-      (ex ? "<p class=\"quiz-review-example jp\" lang=\"ja\">" + esc(ex.jp) + "</p>" + (ex.en ? "<p class=\"explain quiz-review-translation\">" + esc(ex.en) + "</p>" : "") : "") + "</section>";
+      (ex ? "<p class=\"quiz-review-example jp\" lang=\"ja\">" + (ex.furi || esc(ex.jp)) + "</p>" + (ex.en ? "<p class=\"explain quiz-review-translation\">" + esc(ex.en) + "</p>" : "") : "") + "</section>";
   }
   const formation = (item.sections || []).find(s => String(s.label || "").toLowerCase() === "formation");
   const example = (item.examples || [])[0];
   return "<section class=\"card quiz-review\"><h3>Quick review <span lang=\"ja\">" + esc(item.point) + "</span></h3>" +
     "<p><strong>Meaning:</strong> " + esc(item.meaning) + "</p>" +
     (formation ? "<p><strong>Formation:</strong> " + esc(quizClip(stripTags(formation.html), 220)) + "</p>" : "") +
-    (example ? "<p class=\"quiz-review-example jp\" lang=\"ja\">" + esc(example.jp) + "</p>" + (example.en ? "<p class=\"explain quiz-review-translation\">" + esc(example.en) + "</p>" : "") : "") +
+    (example ? "<p class=\"quiz-review-example jp\" lang=\"ja\">" + (example.furi || esc(example.jp)) + "</p>" + (example.en ? "<p class=\"explain quiz-review-translation\">" + esc(example.en) + "</p>" : "") : "") +
     "</section>";
 }
 function showQuizAnswer(body, correct, kind, item, nextButton) {
@@ -873,7 +913,6 @@ function showQuizAnswer(body, correct, kind, item, nextButton) {
   $("#qFb").closest(".card").insertAdjacentHTML("afterend", quizReviewHTML(kind, item));
   body.appendChild(nextButton);
 }
-function renderReview(view, q) { renderPractice(view, Object.assign({ kind: "kanji" }, q)); }
 
 function renderQuiz(body, q) { renderPractice(body, Object.assign({}, q, { kind: "kanji" })); }
 
@@ -1220,7 +1259,7 @@ function renderVocabHome(view) {
   view.innerHTML =
     "<h1>JLPT vocabulary</h1>" +
     "<p class=\"lead\">Learn the words behind the kanji. " + total + " words across N5 to N1, each with reading, meaning and real Tatoeba example sentences — all offline.</p>" +
-    (due > 0 ? "<p><a class=\"btn primary\" href=\"#/practice?mode=due&kind=vocab\">Practice now — " + due + " due</a></p>" : "") +
+    (due > 0 ? "<p><a class=\"btn primary\" href=\"#/learn?section=quiz&mode=due&kind=vocab\">Practice now — " + due + " due</a></p>" : "") +
     "<div class=\"level-grid\">" + cards + "</div>" +
     "<div class=\"card\"><h2>How vocab review works</h2>" +
     "<p class=\"explain\">Browse a level, open a word to see its kanji links and example sentences, mark it learned, then lock it in with quizzes. Words you favorite or annotate sync into the same backup as your kanji progress.</p>" +
@@ -1263,7 +1302,7 @@ function renderVocabBrowse(view, level, q) {
     "<option value=\"reading\"" + (sort === "reading" ? " selected" : "") + ">Reading</option>" +
     "<option value=\"progress\"" + (sort === "progress" ? " selected" : "") + ">Unlearned first</option>" +
     "</select></div>" +
-    "<p class=\"result-count\" id=\"vocabResultCount\">" + recs.length + " words · <a href=\"#/review?tab=quiz&kind=vocab&lv=" + lv + "\">Quiz " + lv + "</a></p>" +
+    "<p class=\"result-count\" id=\"vocabResultCount\">" + recs.length + " words · <a href=\"#/learn?section=quiz&tab=quiz&kind=vocab&lv=" + lv + "\">Quiz " + lv + "</a></p>" +
     "<div class=\"kanji-grid\" id=\"vocabGrid\">" + grid + "</div>";
   $$(".chip", view).forEach(c => c.addEventListener("click", () => go("#/vocab/" + c.dataset.lv + "?" + new URLSearchParams({ q: query, f: filt, s: sort }).toString())));
   bindBrowseSearch("vq", "vocabResultCount", "vocabGrid", function (text) {
@@ -1322,7 +1361,7 @@ function renderVocabDetail(view, id) {
     "<div class=\"action-row\">" +
     "<button class=\"btn " + (learned ? "good\" aria-pressed=\"true" : "primary\" aria-pressed=\"false") + "\" id=\"vLearn\">" + (learned ? "Learned" : "Mark as learned") + "</button>" +
     "<button class=\"btn\" id=\"vFav\" aria-pressed=\"" + fav + "\">" + (fav ? "Favorited" : "Favorite") + "</button>" +
-    "<a class=\"btn soft\" href=\"#/review?tab=quiz&kind=vocab&lv=" + v.jlpt + "\">Quiz " + v.jlpt + "</a>" +
+    "<a class=\"btn soft\" href=\"#/learn?section=quiz&tab=quiz&kind=vocab&lv=" + v.jlpt + "\">Quiz " + v.jlpt + "</a>" +
     "</div></div></div>" +
     "<div class=\"card\"><h2>Meanings</h2><p>" + meanings + "</p>" +
     "<h2>Kanji in this word</h2><p>" + klinks + "</p>" +
@@ -1359,7 +1398,7 @@ function renderVocabDetail(view, id) {
 function renderVReview(view, q) {
   view.innerHTML =
     "<h1>Vocab review</h1>" +
-    "<p class=\"explain\"><a href=\"#/review\">Kanji quiz</a> · Vocabulary quiz &middot; <a href=\"#/review?tab=quiz&kind=grammar\">Grammar quiz</a></p>" +
+    "<p class=\"explain\"><a href=\"#/learn?section=quiz&kind=kanji\">Kanji quiz</a> · Vocabulary quiz &middot; <a href=\"#/learn?section=quiz&tab=quiz&kind=grammar\">Grammar quiz</a></p>" +
     "<div id=\"revBody\"></div>";
   renderVQuiz(document.querySelector("#revBody"), q);
 }
@@ -1473,7 +1512,7 @@ function renderGrammarHome(view) {
   view.innerHTML =
     "<h1>JLPT grammar</h1>" +
     "<p class=\"lead\">Master the patterns behind the sentences. " + total + " grammar points across N5 to N1, each with a plain-English meaning, formation notes and real example sentences with readings &mdash; all offline.</p>" +
-    (due > 0 ? "<p><a class=\"btn primary\" href=\"#/practice?mode=due&kind=grammar\">Practice now &mdash; " + due + " due</a></p>" : "") +
+    (due > 0 ? "<p><a class=\"btn primary\" href=\"#/learn?section=quiz&mode=due&kind=grammar\">Practice now &mdash; " + due + " due</a></p>" : "") +
     "<div class=\"level-grid\">" + cards + "</div>" +
     "<div class=\"card\"><h2>How grammar review works</h2>" +
     "<p class=\"explain\">Browse a level, open a point to see its explanation, formation and examples (tap to reveal translations), mark it learned, then lock it in with quizzes. Points you favorite or annotate sync into the same backup as your kanji and vocabulary progress.</p>" +
@@ -1512,7 +1551,7 @@ function renderGrammarBrowse(view, level, q) {
     "<option value=\"alpha\"" + (sort === "alpha" ? " selected" : "") + ">A-Z</option>" +
     "<option value=\"progress\"" + (sort === "progress" ? " selected" : "") + ">Unlearned first</option>" +
     "</select></div>" +
-    "<p class=\"result-count\" id=\"grammarResultCount\">" + recs.length + " points &middot; <a href=\"#/review?tab=quiz&kind=grammar&lv=" + lv + "\">Quiz " + lv + "</a></p>" +
+    "<p class=\"result-count\" id=\"grammarResultCount\">" + recs.length + " points &middot; <a href=\"#/learn?section=quiz&tab=quiz&kind=grammar&lv=" + lv + "\">Quiz " + lv + "</a></p>" +
     "<div class=\"kanji-grid\" id=\"grammarGrid\">" + grid + "</div>";
   $$(".chip", view).forEach(c => c.addEventListener("click", () => go("#/grammar/" + c.dataset.lv + "?" + new URLSearchParams({ q: query, f: filt, s: sort }).toString())));
   bindBrowseSearch("gq", "grammarResultCount", "grammarGrid", function (text) {
@@ -1544,24 +1583,6 @@ function vocabForExample(jp, limit) {
     }
   }
   return out;
-}
-function grammarLinksForKanji(ch) {
-  try {
-    const rel = [];
-    for (const lv of studyLevels()) {
-      for (const g of (DB.grammar[lv] || [])) {
-        if ((g.point || "").indexOf(ch) >= 0 || (g.examples || []).some(e => (e.jp || "").indexOf(ch) >= 0)) {
-          rel.push(g);
-          if (rel.length >= 8) break;
-        }
-      }
-      if (rel.length >= 8) break;
-    }
-    if (!rel.length) return "";
-    return "<div class=\"card\"><h2>Grammar with this kanji</h2><p>" +
-      rel.map(g => "<a class=\"btn soft\" style=\"margin:.15rem\" href=\"#/g/" + encodeURIComponent(g.id) + "\" lang=\"ja\">" + esc(g.point) + "</a>").join(" ") +
-      "</p><p><a href=\"#/search?q=" + encodeURIComponent(ch) + "\">Search everything with " + esc(ch) + "</a></p></div>";
-  } catch (e) { return ""; }
 }
 function renderGrammarDetail(view, id) {
   if (!inStudyLevel("grammar", id)) { renderGrammarBrowse(view, studyLevel(), {}); return; }
@@ -1601,7 +1622,7 @@ function renderGrammarDetail(view, id) {
     "<div class=\"action-row\">" +
     "<button class=\"btn " + (learned ? "good\" aria-pressed=\"true" : "primary\" aria-pressed=\"false") + "\" id=\"gLearn\">" + (learned ? "Learned" : "Mark as learned") + "</button>" +
     "<button class=\"btn\" id=\"gFav\" aria-pressed=\"" + fav + "\">" + (fav ? "Favorited" : "Favorite") + "</button>" +
-    "<a class=\"btn soft\" href=\"#/review?tab=quiz&kind=grammar&lv=" + g.jlpt + "\">Quiz " + g.jlpt + "</a>" +
+    "<a class=\"btn soft\" href=\"#/learn?section=quiz&tab=quiz&kind=grammar&lv=" + g.jlpt + "\">Quiz " + g.jlpt + "</a>" +
     "</div></div></div>" +
     (secs ? "<div class=\"card\"><h2>Explanation</h2>" + secs + "</div>" : "") +
     "<div class=\"card\"><h2>Examples</h2><ul class=\"sent-list\">" + exHtml + "</ul>" +
@@ -1640,7 +1661,7 @@ function renderGrammarDetail(view, id) {
 function renderGReview(view, q) {
   view.innerHTML =
     "<h1>Grammar review</h1>" +
-    "<p class=\"explain\"><a href=\"#/review\">Kanji quiz</a> &middot; <a href=\"#/review?tab=quiz&kind=vocab\">Vocabulary quiz</a> &middot; Grammar quiz</p>" +
+    "<p class=\"explain\"><a href=\"#/learn?section=quiz&kind=kanji\">Kanji quiz</a> &middot; <a href=\"#/learn?section=quiz&tab=quiz&kind=vocab\">Vocabulary quiz</a> &middot; Grammar quiz</p>" +
     "<div id=\"revBody\"></div>";
   renderGQuiz(document.querySelector("#revBody"), q);
 }
@@ -1912,7 +1933,7 @@ function renderCourseDay(view) {
       (fresh.length ? "<p class=\"explain\">New milestone" + (fresh.length > 1 ? "s" : "") + ": " +
         fresh.map(function (id) { return esc(Course.milestoneLabel(id)); }).join(", ") + "</p>" : "") +
       "<p><a class=\"btn primary\" href=\"#/course/quiz\">Daily quiz</a> " +
-      "<a class=\"btn soft\" href=\"#/review\">Review</a></p></div>" +
+      "<a class=\"btn soft\" href=\"#/learn?section=quiz&kind=kanji\">Check your progress</a></p></div>" +
       "<div class=\"card\"><h2>Milestones</h2>" + courseMilestoneHTML() + "</div>";
     return;
   }

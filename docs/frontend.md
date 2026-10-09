@@ -12,8 +12,8 @@
 
 | Hash route | Behavior | Owner |
 | --- | --- | --- |
-| `#/` | Adventure welcome, level picker or learning trail, actual daily progress | `renderHome`, `renderAdventureHome` |
-| `#/learn?lv=N4` | Kanji/vocab/grammar/review tiles for a level | `renderLearn` |
+| `#/` | Adventure welcome, optional level picker, daily flashcards and progress status | `renderHome`, `renderAdventureHome` |
+| `#/learn?lv=N4` | Three subject tiles, learning-card entry and full quiz controls for a level | `renderLearn` |
 | `#/kanji` or `#/kanji/N5` | Kanji browser; invalid/missing level defaults to N5 | `renderBrowse` |
 | `#/kanji/<character>` | Detail if character exists in global index | Router, `renderDetail` |
 | `#/k/<character>` | Canonical kanji detail link | `renderDetail` |
@@ -23,14 +23,17 @@
 | `#/grammar` | Grammar level overview | `renderGrammarHome` |
 | `#/grammar/N5` | Grammar browser | `renderGrammarBrowse` |
 | `#/g/<id>` | Grammar detail | `renderGrammarDetail` |
-| `#/review?kind=vocab&lv=N4` | Shared practice setup with vocabulary/N4 selected | `renderReview`, `renderPractice` |
-| `#/practice` | Four quick starts including Flashcards, optional custom setup, and daily practice | `renderPractice` |
-| `#/flashcards` | Named deck chooser with kanji/vocabulary/grammar, level and length; preserves saved quizzes | `renderFlashcards` |
-| `#/practice?start=1&mode=explore&kind=kanji&format=recall&size=3&lv=N5` | Guess, flip, explore memory cues, rate, swipe to continue | `renderRecallPlayer` |
-| `#/practice?mode=due&kind=vocab` | Due-only vocabulary across levels | Shared player |
-| `#/practice?mode=mistakes` | Targeted mistake practice | Shared player |
-| `#/practice?start=1&size=3` | Start three-question smart practice; resume if saved | Shared player |
-| `#/practice?resume=1` | Resume valid saved session, or setup if absent | Shared player |
+| `#/learn?section=quiz&kind=vocab&lv=N4` | Full quiz controls in Learn, scrolled to the assessment section | `renderLearn`, `renderPractice` |
+| `#/learn?section=quiz&mode=due` | Due-only quiz setup; chosen plan level or all levels without a plan | `renderPractice` |
+| `#/learn?section=quiz&mode=mistakes` | Targeted quiz mistakes | `renderPractice` |
+| `#/learn?section=quiz&start=1&size=3` | Start/resume a quiz, preserving any learning deck | Shared quiz player |
+| `#/learn?section=quiz&resume=1` | Resume the saved quiz | Shared quiz player |
+| `#/flashcards` or `#/flashcards?daily=1` | Start/resume daily learning immediately, preserving a saved quiz | `renderFlashcards` |
+| `#/flashcards?choose=1` | Optional content/level/length chooser and saved-session controls after pausing | `renderFlashcards` |
+| `#/today?kind=kanji` | Today’s distinct studied/practiced items, optionally filtered by subject | `renderTodayItems` |
+| `#/flashcards?start=1&mode=explore&kind=kanji&size=3&lv=N5` | Reveal meaning/examples, advance directly with Got it, or use Next/swipe after Still learning | `renderRecallPlayer` |
+| `#/k/<character>?deck=<saved-id>` (also `v` / `g`) | Details with return to the original learning card, including related details | `bindLearningCardReturn` |
+| `#/review` or `#/practice` (with legacy parameters) | Replace current history entry with Learn quiz setup, or learning route for `format=recall` | Router |
 | `#/search?q=tree` | Combined reference search | `renderSearch` |
 | `#/progress?level=N4&period=month` | Progress, selected hero level and rolling period | `renderProgress` |
 | `#/settings` | Theme, autoplay, backup, erase, plan, about/intro | `renderSettings` |
@@ -40,9 +43,9 @@
 | `#/course/day` | Current batch, backlog, due links, quiz entry | `renderCourseDay` |
 | `#/course/quiz` | Mixed quiz over unlocked question items | `renderCourseQuiz` |
 | `#/course/reset` | Confirm ending the plan, then Home | `renderCourse` |
-| `#/study?kind=grammar` | Legacy redirect into ordinary Review quiz | Router |
+| `#/study?kind=grammar` | Legacy redirect into Learn quiz controls | Router |
 
-Course day/quiz requires a plan; without one it redirects to setup. Unknown course subroutes redirect Home. Review defaults to kanji and the active target or N5; Learn defaults to the active plan target or N5. Progress derives a default hero level from plan/progress when no valid `level` is provided.
+Course day/quiz requires a plan; without one it redirects to setup. Unknown course subroutes redirect Home. Quiz content defaults to mixed; Learn defaults to the active plan target or N5. Progress derives a default hero level from plan/progress when no valid `level` is provided.
 
 ### Browse parameters
 
@@ -54,7 +57,7 @@ All three browser views support `q` (query), `f` (filter), and `s` (sort). Defau
 | Vocabulary | `all`, `learned`, `unlearned`, `fav`, `nosent` | `default`, `freq`, `alpha`, `reading`, `progress` |
 | Grammar | `all`, `learned`, `unlearned`, `fav` | `default`, `freq`, `alpha`, `progress` |
 
-`tab=quiz` still appears in some links but is ignored by current Review dispatch; recall cards and due/mistake modes are selected in practice setup. Additional practice parameters are `mode=smart|due|mistakes|plan|explore`, `kind=mixed|kanji|vocab|grammar`, `size=3|5|10`, and `format=quiz|recall`. `explore` (Level sampler) draws from the chosen level, so daily challenges remain possible even with a one-item plan; `plan` and plan-aware `smart` retain unlocked-material behavior. Progress uses `level`, while Learn/Review use `lv`.
+`tab=quiz` still appears in some links but is ignored. Learning and quiz routes are separate; due/mistake modes are chosen in Learn quiz setup. Additional practice parameters are `mode=smart|due|mistakes|plan|explore`, `kind=mixed|kanji|vocab|grammar`, `size=3|5|10`, and `format=quiz|recall`. `explore` (Level sampler) draws from the chosen level; `plan` and plan-aware `smart` retain unlocked-material behavior. Progress uses `level`, while Learn/cards use `lv`.
 
 ## Search and details
 
@@ -93,7 +96,7 @@ Reduced motion displays completed strokes/numbers immediately. Missing art disab
 
 The main navigation switch is at 860/861 px. Other rules handle narrow content, tablets/desktops, and short landscape screens. Safe-area insets protect mobile edges. Japanese fonts are system fallbacks; no web-font download is defined. Later rules override earlier sections, so inspect the cascade before appending duplicate selectors.
 
-The adventure section supplies warm/teal theme overrides, matching dark colors, raised controls, and brief finite animations. Home and Review use the same real-progress card. Review keeps custom fields in a details disclosure (open for specific type/level or plan links); quick starts cannot replace a saved session. See [design and reminders](design-and-reminders.md) for the generated asset and notification behavior.
+The adventure section supplies warm/teal theme overrides, matching dark colors, raised controls, and brief finite animations. Home and Learn use the same real-progress card. Learn keeps custom quiz fields in a details disclosure (open for specific type/level or plan links); quick quiz starts cannot replace a saved quiz. The learning entry stays available with a saved quiz. Subject title/count rows wrap inside responsive cards. See [design and reminders](design-and-reminders.md) for the generated asset and notification behavior.
 
 ## Accessibility and lifecycle
 
@@ -113,4 +116,6 @@ Progress uses shared theme tokens for its page/card backgrounds, text, chart and
 
 ## Flashcard access fix — 2026-10-09
 
-Home offers **Open flashcards** immediately below the hero. Learn has a named Flashcards link; Review’s Flashcards quick start remains enabled with an unfinished quiz. `#/flashcards` opens a deck chooser, then a tap-to-flip player. Explicit format start links restore that format; generic starts continue the active session. Switching quiz/cards stores the other format in `practice.pausedSession`; Review and the flashcard hub expose resume controls. No answers or SRS progress are discarded.
+Home and Learn offer **Today’s flashcards / Start learning**. The entry opens daily learning directly and resumes a saved deck before selecting more items. New decks use remaining current-batch items with a plan, or remaining daily-goal items without one, with at most ten cards. Once that target is met, Keep learning opens another deck of unstudied items, avoiding items already practiced today. Pause opens the optional `choose=1` hub. Switching quiz/cards preserves the other format in `practice.pausedSession`. The compact player uses flat overlapping faces for reliable Android rendering, an explicit meaning, Japanese 音読み/訓読み labels, and available example furigana. Got it advances immediately; Still learning retains feedback and manual advance. Daily challenges are status only; the daily subject tiles link to `#/today`.
+
+Learning-card detail links carry a validated session ID rather than an arbitrary return URL. The back link returns to the same cursor and revealed face; related details propagate this context. Before leaving the deck, its browser-history entry becomes the resumable card route so native/browser Back also returns correctly. Ordinary detail pages retain their browser links.

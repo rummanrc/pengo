@@ -7,9 +7,9 @@ Implemented and verified on **2026-10-07 (Asia/Tokyo)**. These changes build on 
 | Feature | Learner experience | Implementation |
 | --- | --- | --- |
 | Adventure Home | A welcoming mascot, a clear three-question start, resume after interruption, and encouraging goal-complete copy | `design.js`, Home renderers |
-| Learning trail | Actionable due review, mixed practice, and the current plan batch; completion comes from real state | `adventurePathHTML` |
+| Daily learning | Start/resume flashcards directly; remaining plan or daily-goal items determine the deck | `renderFlashcards`, `dailyFlashcardConfig` |
 | Daily progress | A goal ring, seven days of actual practice, streak, achievements, and learning milestones | `dailyPracticeCardHTML`, existing Practice/Course rules |
-| Quick practice | One tap for a mix, due reviews, mistakes, or recall; detailed choices remain under “Build your own session” | `practice-ui.js`, `practiceQuickChoicesHTML` |
+| Quick practice | Learn offers a mix, due reviews or mistakes as quizzes, with details under “Build your own quiz”. Learning cards have their own entry. | `practice-ui.js`, `practiceQuickChoicesHTML` |
 | Expressive Pengo | A new waving illustration, rotating study tips, supportive answer feedback, and a brief completion celebration | Mascot assets, `bindPengoUI`, player/result helpers |
 | Consistent styling | Warm backgrounds, teal controls, pastel cards, raised buttons, clear navigation, and matching dark mode | Adventure section in `styles.css`, native system bars |
 | Respectful motion | Short entrance/feedback animations and finite celebrations; reduced motion disables decorative animation | CSS motion rules |
@@ -29,7 +29,7 @@ Final generation prompt:
 
 Reminders default to **off**, with a suggested time of 19:00. Settings requests notification permission only after the learner presses Enable. Denial leaves reminders off and provides settings/calendar guidance. Changing a reminder time does not clear the daily duplicate guard.
 
-Pengo delivers at most one daily reminder, within the first hour after the chosen local time, when the daily practice goal is still unmet. It skips stale delivery instead of producing a late nag. Test notifications are explicit actions and do not consume the daily reminder. Notification taps open `#/practice?start=1&size=3`, which resumes an existing session when present.
+Pengo delivers at most one daily reminder, within the first hour after the chosen local time, when the daily practice goal is still unmet. It skips stale delivery instead of producing a late nag. Test notifications are explicit actions and do not consume the daily reminder. Web notification taps open `#/learn?section=quiz&start=1&size=3`. Native notifications retain the compatible `#/practice?start=1&size=3` alias. Both start/resume a quiz and preserve the separate learning deck.
 
 ### Native Android
 

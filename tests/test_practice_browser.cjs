@@ -19,8 +19,8 @@ function check(condition, message) { assert.ok(condition, message); checks++; }
     async function start({mode='smart',kind='mixed',lv='N5',size='3',format='quiz'}={}) {
       await route('#/practice');
       await page.locator('.practice-custom').evaluate(el=>el.open=true);
-      for(const [name,value] of Object.entries({mode,kind,lv,size,format})) await page.locator('[name='+name+']').selectOption(value);
-      await page.getByRole('button',{name:'Start session',exact:true}).click();
+      for(const [name,value] of Object.entries({mode,kind,lv,size})) await page.locator('[name='+name+']').selectOption(value);
+      await page.getByRole('button',{name:'Start quiz',exact:true}).click();
     }
     async function answer(ok=true) {
       const s=await state(), q=s.practice.session.questions[s.practice.session.cursor];
@@ -58,11 +58,11 @@ function check(condition, message) { assert.ok(condition, message); checks++; }
     check(Object.keys(s.study.days[today].practiced).length===3,'goal counts unique items');
     check(s.practice.badges.includes('first-goal'),'goal achievement awarded');
     check((await page.locator('#view').textContent()).includes('good place to stop'),'summary offers stopping point');
-    await start({mode:'mistakes',format:'recall'}); s=await state();
+    await start({mode:'mistakes'}); s=await state();
     check(s.practice.session.questions.length===1 && s.practice.session.questions[0].id===first.id,'mistakes isolates failed item');
-    check(await page.locator('#recallDetails').isHidden(),'recall answer explanation hidden');
-    await page.locator('#practiceReveal').click(); await page.locator('#practiceRemembered').click();
-    check(!(await state()).practice.mistakes[first.type+':'+first.id],'successful recall clears mistake');
+    check(await page.locator('.quiz-review').count()===0,'quiz explanation hidden before answering');
+    await answer(true);
+    check(!(await state()).practice.mistakes[first.type+':'+first.id],'successful quiz answer clears mistake');
     check(Object.keys((await state()).study.days[today].practiced).length===3,'retry does not inflate daily goal');
     await page.locator('#practiceNext').click();
     await page.evaluate(()=>{
@@ -82,14 +82,14 @@ function check(condition, message) { assert.ok(condition, message); checks++; }
     await route('#/review?kind=grammar&lv=N4');
     check(await page.locator('[name=kind]').inputValue()==='grammar','legacy Review retains content choice');
     check(await page.locator('[name=lv]').inputValue()==='N4','legacy Review retains level choice');
-    await page.locator('[name=size]').selectOption('3'); await page.locator('[name=format]').selectOption('recall');
-    await page.getByRole('button',{name:'Start session',exact:true}).click();
+    await page.locator('[name=size]').selectOption('3');
+    await page.getByRole('button',{name:'Start quiz',exact:true}).click();
     check(await page.evaluate(()=>store.practice.session.questions.every(q=>courseUnlocked().all.some(u=>u.type===q.type&&u.id===q.id))),'smart plan does not introduce locked material');
-    await page.locator('#practiceReveal').click(); await page.locator('#practiceAgain').click();
+    await answer(false);
     check((await state()).course.studyDays.includes(today),'ordinary Review now records course activity');
     await page.evaluate(()=>{store.practice.session=null;save();});
     await route('#/course/quiz'); await page.locator('[name=size]').selectOption('3');
-    await page.getByRole('button',{name:'Start session',exact:true}).click();
+    await page.getByRole('button',{name:'Start quiz',exact:true}).click();
     check(await page.evaluate(()=>store.practice.session.questions.every(q=>courseUnlocked().all.some(u=>u.type===q.type&&u.id===q.id))),'plan quiz respects unlocking');
     check((await state()).course.quizzes===0,'plan completion counter does not advance on start');
     for(let i=0;i<3;i++){await answer(true);await page.locator('#practiceNext').click();}
