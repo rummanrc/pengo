@@ -25,6 +25,8 @@ Serve only for local development. For public hosting, stage the runtime inventor
 | Core content scripts | Python standard library | Missing inputs may prevent some rebuilds |
 | Sudachi furigana | SudachiPy and SudachiDict Core | Optional; see [pipeline](data-pipeline.md) |
 | Native APK | Python 3, JDK 17, SDK 34/build tools, Gradle | [Deployment](deployment.md) |
+| Native iOS debug app | macOS, Python 3, full Xcode/iOS SDK; Apple Account for device signing | [iOS debug builds](ios.md) |
+| iOS logic/bridge checks | macOS command-line tools/Swift, Python 3, Node | `npm run test:ios`; does not compile UIKit/WebKit |
 | Docker APK | Python 3, Docker daemon/CLI | `scripts/build_apk_docker.py` |
 | Capacitor experiments | Node/npm and optional package dev dependencies | Separate integration work required |
 

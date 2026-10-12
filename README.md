@@ -1,6 +1,6 @@
 # Pengo
 
-Pengo is a Japanese study app for JLPT N5–N1: kanji, vocabulary, grammar, quizzes, progress, and daily study plans. The web runtime is static HTML, CSS, JavaScript, and prebuilt data. Android wraps those same files in an offline WebView.
+Pengo is a Japanese study app for JLPT N5–N1: kanji, vocabulary, grammar, quizzes, progress, and daily study plans. The web runtime is static HTML, CSS, JavaScript, and prebuilt data. Android and iOS wrap those same files in an offline WebView. The new iOS shell still needs full Xcode compilation and device acceptance; see [iOS setup](docs/ios.md).
 
 ## Run the web app
 
@@ -41,17 +41,18 @@ Start with the [documentation index](docs/README.md). The engineering docs use M
 
 ## Current features
 
-- Browse and search all three content types by level, reading, and meaning; filter learned items and favorites.
+- Search vocabulary across every JLPT level by Japanese word, reading or English meaning; Learn browsers search the chosen level. Explore related items outside the plan in read-only detail pages; use Back buttons to return.
 - Kanji readings, components, memory aids, examples, notes, similar characters, and animated KanjiVG stroke diagrams.
-- Tap-to-flip discovery cards with meanings, readings, memory stories and nested components. Choose “Got it” or “Still learning”, then swipe or tap to advance. Return from full details to the same card.
+- Animated tap-to-flip discovery cards with meanings, readings, memory stories and nested components. Choose “Got it” or “Still learning”, then swipe or tap to advance. Return from full details to the same card.
 - Text-only learning: pronunciation clips, voice controls and native TTS have been removed to reduce app size.
 - Vocabulary and grammar examples with available furigana and links to related content.
 - Learn combines three compact subject cards and learning cards with four one-tap quiz choices (up to five questions), due/mistake shortcuts and visual history of the latest ten quizzes. Existing explicit 3/5/10-question links remain supported. Quiz answers update SRS; learning confidence does not change quiz accuracy.
-- Saved sessions, daily practice goals, weekly activity and learning milestones in Progress, supportive achievements, and session summaries with a clear stopping point.
-- An adventure dashboard with distinct kanji/vocabulary/grammar totals for today, targeted daily challenges, a connected list of today’s subject totals, a page of today’s studied items, a daily word, a hero learning button, dismissible Pengo tips, and dark/reduced-motion support.
+- Saved sessions, daily practice goals, weekly activity and learning milestones in Progress, supportive achievements, and score-dependent quiz feedback and mascots, and session summaries with a clear stopping point.
+- An adventure dashboard with distinct kanji/vocabulary/grammar totals for today, targeted daily challenges, a connected list of today’s subject totals, a page of today’s studied items, a Pengo invitation that reveals today’s word and meaning, a hero learning button with a static greeting mascot, and dark/reduced-motion support.
 - Opt-in daily Android reminders while closed; open-page browser alerts and a calendar download, with goal/duplicate suppression for Pengo alerts.
 - Friendly study-plan setup with a JLPT destination, a suggested 5-item daily pace, custom batch sizes, and level-focused browsing/practice. Change the plan in Settings; batches wait until you are ready. Explicit batch unlocking, unfinished-material backlog, study days, and milestones remain available.
 - Progress with learned counts and rolling seven-/thirty-day activity; themes, backups, confirmed erasure, and intro replay.
+- An interactive first-launch tutorial with guided taps through cards, today’s word, daily items/challenges, quizzes and Progress; replay it from Settings. Tutorial previews preserve your real study state.
 - Offline native Android assets, system document pickers for backups, and no `INTERNET` manifest permission.
 
 There are no accounts, cloud sync, analytics, or backend. See [daily learning improvements](docs/learning-improvements.md) for the delivered feature list and next content track.
@@ -72,13 +73,15 @@ design.js           Adventure Home, daily progress, mascot, quick choices
 reminders.js        Opt-in device reminder settings and browser delivery
 reminder-worker.js  Browser notification taps; no caching or scheduling
 platform.js         Browser/native adapter
-onboarding.js       Intro and first-launch state
+onboarding.js       Welcome and first-launch state
+tutorial.js         Guided taps and isolated practice previews
 assets/             Branding and mascot images
 data/               Generated JSON and script-loading fallback bundle
 resources/          Tracked source material, SVGs, and credits
 scripts/            Python data and packaging tools
 tests/test_course.py Existing course assertions
 android/            Java WebView shell and Gradle configuration
+ios/                Swift WKWebView shell and Xcode project
 docker/Dockerfile   Android build environment
 docs/               Engineering documentation
 ```
@@ -133,6 +136,17 @@ python3 scripts/build_apk_docker.py
 ```
 
 These build a debug APK. Release signing and store distribution are not configured. See [deployment](docs/deployment.md) for toolchain details and optional Capacitor limitations.
+
+## iOS debug app
+
+On a Mac with full Xcode, stage assets and open the project:
+
+```sh
+python3 scripts/build_ios.py --assets-only
+open ios/Pengo.xcodeproj
+```
+
+Select your signing team and connected iPhone, then press Run. A free Apple Account supports personal-device debug installation with seven-day signing; simulator builds need no signing account. `npm run build:ios` builds a simulator app; `npm run test:ios` checks the native date/path logic and JavaScript bridge using macOS command-line tools. See [iOS debug builds](docs/ios.md) for signing, reminders, and the remaining device checks.
 
 ## Content and attribution
 

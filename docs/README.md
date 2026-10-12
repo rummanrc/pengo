@@ -9,6 +9,7 @@ For a new engineer, read [product](product.md), [architecture](architecture.md),
 | [Product](product.md) | Scope, journeys, capability requirements | `app.js`, `index.html` |
 | [Daily learning improvements](learning-improvements.md) | Implemented feature priorities, rationale, next content track | Practice scripts and tests |
 | [Design and reminders](design-and-reminders.md) | Adventure UI, mascot generation, opt-in reminders and platform limits | Design/reminder scripts, native reminder classes |
+| [Exploration refresh](exploration-refresh.md) | All-level read-only discovery, Back buttons, animated cards, daily word and complete mascot prompts | App, recall/design UI and exploration tests |
 | [Discovery cards](discovery-cards.md) | Flip-card interaction, source research, layered components and verification | Recall UI, component extractor and browser tests |
 | [Architecture](architecture.md) | Components, startup, packaging flows | Root scripts, `MainActivity.java` |
 | [Development](development.md) | Setup and change workflows | `package.json`, scripts, tests |
@@ -19,6 +20,7 @@ For a new engineer, read [product](product.md), [architecture](architecture.md),
 | [Interfaces](interfaces.md) | JavaScript API and native bridge | Course, Platform, Java activity |
 | [Testing](testing.md) | Automated checks and manual acceptance matrix | Existing test drivers and runtime |
 | [Deployment](deployment.md) | Web staging, APK builds, release/rollback | Packaging, Gradle, Docker |
+| [iOS debug builds](ios.md) | iPhone/simulator setup, signing, native behavior and acceptance | Swift WKWebView shell, Xcode, iOS builder |
 | [Security](security.md) | Privacy and trust boundaries | Rendering, storage, native bridge |
 | [Maintenance](maintenance.md) | Troubleshooting and confirmed gaps | All implementation |
 | [Decisions](decisions.md) | Observed design and tradeoffs | All implementation |

@@ -4,9 +4,15 @@ const Platform = {
   version: APP_VERSION,
   isNative: typeof window !== "undefined" && !!window.KnowKanjiNative,
   isCapacitor: typeof window !== "undefined" && !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()),
-  get isAndroidApp() { return this.isNative || this.isCapacitor; },
+  get nativePlatform() {
+    if (this.isNative) return typeof window.KnowKanjiNative.getPlatform === "function" ? window.KnowKanjiNative.getPlatform() : "android";
+    return this.isCapacitor && window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : "web";
+  },
+  get isNativeApp() { return this.isNative || this.isCapacitor; },
+  get isAndroidApp() { return this.nativePlatform === "android"; },
+  get isIOSApp() { return this.nativePlatform === "ios"; },
   backingStoreNote() {
-    return this.isAndroidApp
+    return this.isNativeApp
       ? "Progress is stored privately on this device (WebView localStorage). Export a backup before uninstalling."
       : "Progress is stored privately in this browser (localStorage). Export a backup before switching devices.";
   },

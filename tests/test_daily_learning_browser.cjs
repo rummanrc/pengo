@@ -20,7 +20,9 @@ function check(value,label){assert.ok(value,label);checks++;}
   check(!(await page.locator('.ob-root').textContent()).includes('Small steps. Big Japanese'),'old tagline removed');
   await page.locator('.ob-cta').click();check(await page.locator('.ob-feat').count()===5,'second page shows features');
   await page.locator('.ob-back').click();check(await page.locator('.ob-brand').count()===1,'intro back returns to combined page');
-  await page.locator('.ob-cta').click();await page.locator('.ob-cta').click();check(await page.locator('.ob-root').count()===0,'intro finishes after two pages');
+  await page.locator('.ob-cta').click();await page.locator('.ob-cta').click();await page.waitForSelector('.tour-panel');
+  check(await page.locator('.ob-root').count()===0,'welcome opens guided tutorial after two pages');
+  await page.locator('.tour-skip').click();await page.waitForSelector('.adventure-home');
   await route('#/');
   check(await page.locator('.daily-challenges a').count()===3,'unfinished challenges open learning');
   check(!(await page.locator('.daily-challenges').textContent()).includes('Pick what'),'challenge instruction removed');
@@ -62,7 +64,7 @@ function check(value,label){assert.ok(value,label);checks++;}
   for(const type of ['kanji','vocab','grammar']){
    await page.evaluate(type=>{store.course=null;store.practice.session=null;store.practice.pausedSession=null;const list=type==='kanji'?DB.levels.N5:type==='vocab'?DB.vocab.N5:DB.grammar.N5;const item=list.find(r=>(r.sentences||r.examples||[]).some(s=>/<ruby[\s>]/.test(s.furi||'')&&/[A-Za-z]/.test(s.en||'')));const id=type==='kanji'?item.k:item.id;const s={version:1,id:'fit-'+type,config:Practice.config({kind:type,lv:'N5',size:3,format:'recall'}),questions:[{type,id,lv:'N5',variant:0,options:[]}],cursor:0,answers:[]};store.practice.session=s;save();go('#/flashcards?resume=1');},type);
    await page.waitForSelector('#practiceReveal');await page.locator('#practiceReveal').click();
-   check(await page.locator('.recall-meaning h2').textContent().then(s=>s.trim().length>0),type+' answer displays meaning');
+   check(await page.locator('.recall-meaning > strong').textContent().then(s=>s.trim().length>0),type+' answer displays meaning');
    check(await page.locator('#recallDetails ruby rt').count()>0,type+' example displays furigana');
    if(type==='kanji')check(await page.locator('.recall-readings').textContent().then(s=>s.includes('音読み（おんよみ）')&&s.includes('訓読み（くんよみ）')),'readings use Japanese onyomi/kunyomi labels');
    for(const [width,height] of [[320,568],[360,640],[390,844],[768,900],[1280,900]]){

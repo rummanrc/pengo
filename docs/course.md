@@ -37,9 +37,9 @@ Creating a plan at one of the preset paces also seeds `settings.dailyGoal` with 
 
 ## Level focus
 
-While a valid plan is active, Home, Learn, browse, search, Progress, and every practice mode use the target level. Old URLs requesting a different level cannot override it. Due reviews/mistakes from other levels stay stored and are available again after changing or ending the plan. An unfinished session from another level is discarded without undoing already graded answers. Plan/smart practice retains unlocked-material behavior; explore can sample any item within the target level.
+While a valid plan is active, Home learning, Learn browsers, Progress, and every practice mode use the target level. Old URLs requesting a different level cannot override it. Due reviews/mistakes from other levels stay stored and are available again after changing or ending the plan. An unfinished session from another level is discarded without undoing already graded answers. Plan/smart practice retains unlocked-material behavior; explore can sample any item within the target level.
 
-Detail links and related study links follow the target too. A bookmarked out-of-level detail returns to the chosen level’s browser. Overlapping kanji details resolve the target list’s record rather than the global last-indexed record. Explanations/examples remain intact.
+Global Search scans all levels, and detail/component/similar/example/related links can open any existing record. Items outside the target are read-only: learned/favorite/note/quiz controls are absent, and visiting never enrolls them in cards, quizzes or reviews. A bookmarked out-of-level detail opens normally. Overlapping kanji details resolve the target list’s record rather than the global last-indexed record. Explanations/examples remain intact.
 
 Home prominently offers setup when no plan exists. Finishing/skipping the first-launch intro opens setup when there is no plan. Settings places the plan card first and offers changing or ending it. Home’s flashcards begin with the remaining current-batch items, in decks of up to ten. The learning trail has been removed.
 

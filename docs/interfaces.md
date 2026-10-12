@@ -97,7 +97,9 @@ Constants are mutable objects/arrays; there is no freeze or supported live confi
 | `Platform.version` | App version string |
 | `Platform.isNative` | Presence of `KnowKanjiNative` at initialization |
 | `Platform.isCapacitor` | Capacitor native-platform detection at initialization |
-| `Platform.isAndroidApp` | Getter combining those flags |
+| `Platform.nativePlatform` | `ios` from the iOS bridge, `android` for the legacy Java bridge, Capacitor's platform, or `web` |
+| `Platform.isNativeApp` | Getter combining native/Capacitor flags; controls native first-launch onboarding |
+| `Platform.isAndroidApp` / `Platform.isIOSApp` | Platform-specific getters |
 | `Platform.backingStoreNote()` | Device/browser storage explanation |
 | `Platform.exportJson(filename, text)` | Async: native bridge, then share if supported, otherwise Blob download; returns true when dispatched |
 | `Platform.receiveImport(text)` | Calls `window.importBackupText` if available; does not itself parse JSON |
@@ -132,6 +134,12 @@ Request codes are 4101 for export and 4102 for import. Canceling clears pending 
 
 Notification permission uses request code 4103. Results invoke `window.PengoReminderResult` with a quoted message. Denial does not enable a new reminder; turning off while a permission request is pending prevents a later grant from scheduling it. Alarm and restore receivers operate without the WebView. A notification launches short practice on cold startup or calls `go()` on the existing activity.
 
+## Native iOS bridge
+
+`ios/Pengo/bridge.js` is injected before page scripts in the main frame. It supplies the same `KnowKanjiNative` method names plus `getPlatform()` returning `ios`. Calls post structured messages to `WebViewController`; only the bundled `pengo://app` main frame can invoke native methods. Import/export uses Files pickers, `showMessage` uses an alert, and theme changes update the status bar/background. The shell implements JavaScript alert/confirm dialogs.
+
+`getReminderSettings()` synchronously serializes a cache with `enabled`, `time`, `lastDate`, and `permission`. Native permission refresh/configuration publishes that cache through `PengoIOSUpdateReminders`, then invokes the existing `PengoReminderResult` callback. iOS notifications use a rolling 60-day plan refreshed on activation, with today's known goal omitted. See [iOS setup and acceptance](ios.md) for limitations and device checks.
+
 ## Mnemonic extension
 
 `KanjiMnemonic.generate({ kanji, meaning, parts, on, kun })` returns `{ text, notice }` using deterministic templates. `generateSmart(input, fallback)` can invoke an assigned async `generateViaModel(input)` and fall back if it throws. `mnemonicFor(item)` currently prefers prebuilt text and otherwise invokes the local generator; normal detail rendering does not call `generateSmart`.
@@ -145,3 +153,7 @@ The hook is unconnected scaffolding. A model feature would require explicit wiri
 ## Daily challenge learning
 
 `Dashboard.challenges(days, today, goal, level)` exposes `kind`, `remaining` and a challenge route for each daily target. `Dashboard.challengeItems(pool, quest, day)` deduplicates item references, applies the subject filter, and excludes keys already counted in `practiced` (daily/focus) or `recalled` (kanji flips). `startChallengePractice` recomputes the target from current state, samples at most ten random remaining items, and preserves normal learning in `practice.returnSession` while keeping any quiz in its existing format slot. Completed and expired challenges restore the validated parked session. `recallDetailsHTML` delegates to the shared `quizReviewHTML` recap for every subject. `Reminders.nudgeDismissed()` and `dismissNudge()` manage the device-local Home prompt preference without changing notification settings.
+
+## Guided introduction
+
+`showOnboarding(onDone)` calls `onDone(true)` to begin the interactive tutorial, or `onDone(false)` after welcome skip. `OnboardingTour.start({replay})` begins a guided tour against loaded data; replay remembers and restores the Settings route. `OnboardingTour.refresh()` updates the current highlight after rendering, scrolling, or viewport changes. `showPreview(view, cfg)` and `isPreview(session)` connect the existing players to ephemeral preview sessions. Preview answers/ratings bypass persistence and grading; `finishPractice` rejects preview completion. `OBBack` exits the tour safely before ordinary native Back handling. `introTour=1` marks temporary navigation and is dropped on reload when no tour is active. These helpers are UI integration APIs; the tour flag and preview sessions are not part of backups.

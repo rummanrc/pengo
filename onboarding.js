@@ -1,14 +1,14 @@
 ﻿"use strict";
-/* First-launch onboarding (Android app only).
+/* First-launch onboarding (native apps).
    Startup sequence:
    0. Native splash (android res/drawable/splash.xml) covers the cold start.
    1. Slide 0 "Welcome": pengo brand, JLPT prep pitch and mascot.
-   2. Slide 1 "Features": JLPT success cards + Start learning.
+   2. Slide 1 "Features": JLPT success cards + guided, interactive tour.
    Shown once (localStorage ONBOARD_KEY). The web build never shows it,
    except with ?onboarding=1 for preview. Replay via Settings. */
 var ONBOARD_KEY = "pengo:onboarded:v1";
-function isAndroidApp() {
-  try { return !!(window.Platform && window.Platform.isAndroidApp); }
+function isNativeApp() {
+  try { return !!(window.Platform && window.Platform.isNativeApp); }
   catch (e) { return false; }
 }
 function onboardingPreview() {
@@ -17,7 +17,7 @@ function onboardingPreview() {
 }
 function shouldShowOnboarding() {
   if (onboardingPreview()) return true;
-  if (!isAndroidApp()) return false;
+  if (!isNativeApp()) return false;
   try { return !localStorage.getItem(ONBOARD_KEY); }
   catch (e) { return true; }
 }
@@ -63,7 +63,7 @@ function showOnboarding(onDone) {
   }
   function ctaLabel() {
     if (idx === 0) return "See how it works &#x2192;";
-    return "Start learning &#x2192;";
+    return "Try the guided tour &#x2192;";
   }
   function draw() {
     var last = idx === total - 1;
@@ -77,20 +77,21 @@ function showOnboarding(onDone) {
       (idx === 0 ? "" : "<button class=\"ob-back\" type=\"button\">&#x2190; Back</button>") +
       "<div class=\"ob-dots\" aria-hidden=\"true\">" + dots + "</div></div>";
     root.querySelector(".ob-cta").addEventListener("click", function () {
-      if (last) { finish(); return; }
+      if (last) { finish(true); return; }
       idx++; draw();
     });
     var back = root.querySelector(".ob-back");
     if (back) back.addEventListener("click", function () { if (idx > 0) { idx--; draw(); } });
-    root.querySelector(".ob-skip").addEventListener("click", finish);
+    root.querySelector(".ob-skip").addEventListener("click", function () { finish(false); });
   }
-  function finish() {
-    markOnboarded();
+  function finish(tour) {
+    if (!tour) markOnboarded();
+    if (typeof studyTimeTick !== 'undefined') studyTimeTick = Date.now();
     window.OBBack = null;
     root.remove();
     document.body.classList.remove("ob-open");
     try { document.documentElement.classList.remove("ob-boot"); } catch (e) {}
-    if (typeof onDone === "function") onDone();
+    if (typeof onDone === "function") onDone(!!tour);
   }
   var touchX = null;
   root.addEventListener("touchstart", function (e) { touchX = e.touches[0].clientX; }, { passive: true });
@@ -104,7 +105,7 @@ function showOnboarding(onDone) {
   window.OBBack = function () {
     if (!document.body.contains(root)) return false;
     if (idx > 0) { idx--; draw(); return true; }
-    return false;
+    finish(false); return true;
   };
   document.body.appendChild(root);
   draw();

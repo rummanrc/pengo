@@ -6,6 +6,10 @@
 
 Daily practice adds 37 pure-logic checks and an optional browser persistence/SRS integration suite. Design/reminder checks add 17 reminder rules, 7 worker checks, 40 browser checks, and 26 native JUnit/Robolectric tests. Content-pipeline tests, physical-device Android instrumentation, CI, a formatter, and a linter are still absent. Manual procedures below fill those gaps; they are not claims that every procedure has been run.
 
+## iOS checks and acceptance
+
+Run `npm run test:ios` on macOS with Swift command-line tools, Python 3, and Node. It compiles/runs 31 Foundation checks for reminder dates, DST, goal suppression, local paths, traversal, and symlink rejection, plus JavaScript checks for bridge payloads, cached permission reads, Android/iOS detection, and native/browser onboarding. It does not build UIKit/WebKit. Full Xcode compilation, simulator execution, and physical iPhone acceptance remain outstanding; follow the [iOS checklist](ios.md#verification-and-remaining-acceptance).
+
 ## Existing harness
 
 ```sh
@@ -199,7 +203,7 @@ Using the same server and temporary Playwright environment:
 NODE_PATH=/tmp/pengo-qa/node_modules PENGO_CHROME_CHANNEL=chrome node tests/test_design_reminders_browser.cjs
 ```
 
-This suite contains 40 checks: mascot loading, real learning trail, quick practice, response feedback/results, reduced motion, finite celebrations, reminder-section navigation, no unsolicited permission request, explicit permission denial, real service-worker notification display/retrieval in an isolated Chrome context, calendar download, goal/duplicate guards, time-change duplicate protection, backup/device-setting separation, erasure, unsupported-browser fallback, and main-route overflow at 320/390/768/1024/1440px. `PENGO_TEST_ARTIFACTS` also writes Home desktop, Review mobile, and dark Home screenshots.
+This suite contains 39 checks: mascot loading, removed Home tips, quick practice, response feedback/results, reduced motion, finite celebrations, reminder-section navigation, no unsolicited permission request, explicit permission denial, real service-worker notification display/retrieval in an isolated Chrome context, calendar download, goal/duplicate guards, time-change duplicate protection, backup/device-setting separation, erasure, unsupported-browser fallback, and main-route overflow at 320/390/768/1024/1440px. `PENGO_TEST_ARTIFACTS` also writes Home desktop, Review mobile, and dark Home screenshots.
 
 Browser notifications are tested inside a temporary browser context, never by changing the user's own browser profile. API display evidence does not prove an OS banner appeared or a suspended/closed browser delivered a scheduled reminder. Calendar import/alerts depend on the chosen external calendar.
 
@@ -257,3 +261,21 @@ Run `NODE_PATH=/path/to/playwright/node_modules node tests/test_home_refinement_
 ## Learn simplification and quiz history — 2026-10-09
 
 Run `NODE_PATH=/path/to/playwright/node_modules node tests/test_quiz_redesign_browser.cjs` against the local static server. It covers removal of introductory/daily-practice/setup sections, the four direct subject choices and five-question default, selected-level and unlocked-plan pools, saved quiz reload/resume and optional replacement without regrading, completed history metadata and backup persistence, due/mistake shortcuts, old summaries without subject metadata, percentage normalization for different quiz lengths, last-ten ordering and recall exclusion, and containment at 320/390/768/1024/1440px in both themes. History is protected even after many learning decks. Screenshots default to `/tmp/pengo-quiz-redesign-qa`. Physical Android validation remains separate.
+
+## All-level exploration and rotating cards
+
+With the local server and isolated Playwright environment, run:
+
+```sh
+NODE_PATH=/tmp/pengo-qa/node_modules PENGO_CHROME_CHANNEL=chrome node tests/test_exploration_browser.cjs
+```
+
+This verifies all-level global results and read-only details while Learn/practice remain scoped, contextual Back through search/related details/reload, 120-result kanji deduplication, actual intermediate card rotation and keyboard tap-back, reduced motion, finite daily-word motion, no reveal-based learning, compact topbar placeholders, complete assets and both themes at 320/390/768/1280px. It saves review screenshots to `/tmp/pengo-exploration-qa` by default. Native WebView behavior still requires device acceptance.
+
+## Dictionary, details and score feedback
+
+With the same temporary Playwright setup and static server, run `NODE_PATH=/tmp/pengo-qa/node_modules PENGO_CHROME_CHANNEL=chrome node tests/test_dictionary_details_browser.cjs`. It checks dictionary-only matching (including kana folding, alternate meanings, example/metadata exclusions), topbar navigation and focus, structural/story separation and expandable parts, removed header badges, static Home mascot, actual quiz completion at 0/2/3/4/5 out of five, and mobile/desktop layouts in both themes. Screenshot artifacts default to `/tmp/pengo-dictionary-details-qa`. Existing exploration, discovery, Home refinement, quiz redesign and design/reminder suites also cover affected flows.
+
+## Interactive tutorial
+
+Run `NODE_PATH=/tmp/pengo-qa/node_modules PENGO_TEST_URL=http://127.0.0.1:8000/ node tests/test_tutorial_browser.cjs` with the same Playwright/Chrome setup. It taps actual highlighted controls through the full tour, verifies target/panel placement in portrait, landscape, tablet and desktop layouts, covers both themes/reduced motion, and compares study state across replay with saved quiz/card sessions. It also checks simulated Android first-launch/Back, intro completion, keyboard trapping/Escape, completed-challenge fallback, reload isolation, normal learning after exit, and offline `file://` bundle replay. Screenshots go to `/tmp/pengo-tutorial-qa`. Native-device touch/WebView acceptance still requires an installed APK.

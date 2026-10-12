@@ -10,7 +10,7 @@ Implemented and verified on **2026-10-07 (Asia/Tokyo)**. These changes build on 
 | Daily learning | The Home hero starts/resumes flashcards; remaining plan or daily-goal items determine the deck | `renderFlashcards`, `dailyFlashcardConfig` |
 | Daily progress | Home has connected subject totals; Progress has a goal ring, weekly practice, achievements and learning milestones | `dailyPracticeCardHTML`, existing Practice/Course rules |
 | Quiz choices and history | Learn starts up to five questions with one tap on All subjects, Kanji, Vocabulary or Grammar. Due/mistake shortcuts appear for real work. A saved quiz can continue or reveal replacement choices. Recent quizzes shows the last ten results as score rings with subject, level and date. Learning cards have their own entry. | `renderPractice`, `recentQuizzesHTML` |
-| Expressive Pengo | A new waving illustration, rotating study tips, supportive answer feedback, and a brief completion celebration | Mascot assets, `bindPengoUI`, player/result helpers |
+| Expressive Pengo | A static waving Home illustration, supportive answer feedback, and score-dependent quiz completion messages/mascots (book-holding Pengo below 50%; celebrations from 80%) | Mascot assets, `bindPengoUI`, player/result helpers |
 | Consistent styling | Warm backgrounds, teal controls, pastel cards, raised buttons, clear navigation, and matching dark mode | Adventure section in `styles.css`, native system bars |
 | Respectful motion | Short entrance/feedback animations and finite celebrations; reduced motion disables decorative animation | CSS motion rules |
 | Optional return reminders | A chosen local time, explicit opt-in, test notification, and clear platform limitations | `reminders.js`, native reminder classes, worker |
@@ -19,7 +19,7 @@ Home offers a stopping point after the daily goal. Quick starts preserve a saved
 
 ## Mascot asset and generation record
 
-The new transparent illustration is [assets/pengo-adventure.png](../assets/pengo-adventure.png). It was generated using the **built-in image generation tool**, with [assets/pengo-mascot.png](../assets/pengo-mascot.png) as the character identity reference. The original remains available. The generated image was copied without raster edits; existing study/happy illustrations supply answer feedback. Small interface icons remain inline SVG.
+The new transparent illustration is [assets/pengo-adventure.png](../assets/pengo-adventure.png). It was generated using the **built-in image generation tool**, with [assets/pengo-mascot.png](../assets/pengo-mascot.png) as the character identity reference. The original remains available. The generated image was copied without raster edits; new complete discovery/celebration illustrations supply answer feedback; see [the current asset prompts](exploration-refresh.md). Small interface icons remain inline SVG.
 
 Final generation prompt:
 

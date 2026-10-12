@@ -10,4 +10,10 @@ android/local.properties
 android/app/src/main/assets/www/
 # node (only needed for the optional Capacitor flow)
 node_modules/
+# generated iOS assets and local Xcode state
+ios/Pengo/www/
+ios/Pengo/Assets.xcassets/AppIcon.appiconset/icon-1024.png
+ios/build/
+ios/**/xcuserdata/
+*.xcuserstate
 .DS_Store

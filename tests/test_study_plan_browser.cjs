@@ -32,14 +32,14 @@ function check(ok,label){assert.ok(ok,label);checks++;}
   const detailIds=await page.evaluate(()=>({kanji:DB.levels.N1.find(r=>!inStudyLevel('kanji',r.k)).k,vocab:DB.vocab.N1[0].id,grammar:DB.grammar.N1[0].id}));
   for(const [kind,routeName] of [['kanji','k'],['vocab','v'],['grammar','g']]){
    await route('#/'+routeName+'/'+encodeURIComponent(detailIds[kind]));
-   check(await page.locator('[data-lv]').count()===1,'old '+kind+' detail bookmarks return to the focused list');
+   check(await page.locator('.detail-head').count()===1&&await page.locator('.browse-only').count()===1&&await page.locator('.action-row,.note').count()===0,'outside '+kind+' detail opens read-only');
   }
   const overlap=await page.evaluate(()=>DB.levels.N4.find(r=>DB.byChar[r.k].level!=='N4').k);
   await route('#/k/'+encodeURIComponent(overlap));
   check((await page.locator('.detail-title .badge').first().textContent()).includes('N4'),'overlapping kanji details retain chosen level');
   await route('#/search?q=water');
   const searchLevels=await page.locator('#sRes .kcard .badge').allTextContents();
-  check(searchLevels.length>0&&searchLevels.every(l=>l==='N4'),'global search follows plan');
+  check(searchLevels.length>0&&searchLevels.some(l=>l!=='N4'),'global search includes other levels');
   await page.evaluate(()=>{
    store.vSrs[DB.vocab.N4[0].id]={box:1,due:Date.now()-100};
    store.vSrs[DB.vocab.N2[0].id]={box:1,due:Date.now()-200};

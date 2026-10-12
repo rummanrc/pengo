@@ -27,6 +27,7 @@ function resumePausedPractice(view) {
   save(); renderPracticePlayer(view, paused);
 }
 function openPracticeFormat(view, cfg) {
+  if (window.OnboardingTour && OnboardingTour.active) { OnboardingTour.showPreview(view, cfg); return; }
   var current = practiceSession(), paused = practiceSession('pausedSession');
   if (current && current.config.format === cfg.format) { renderPracticePlayer(view, current); return; }
   if (paused && paused.config.format === cfg.format) { resumePausedPractice(view); return; }
@@ -39,6 +40,14 @@ function openPracticeFormat(view, cfg) {
   startPractice(view, cfg);
 }
 function renderFlashcards(view, query) {
+  if (window.OnboardingTour && OnboardingTour.active) {
+    var tourKind = query.kind;
+    if (query.challenge) {
+      var tourChallenge = Dashboard.challenges(store.study.days, Course.todayStr(), store.settings.dailyGoal, studyLevel(query.lv)).find(function (q) { return q.id === query.challenge; });
+      if (tourChallenge) tourKind = tourChallenge.kind;
+    }
+    OnboardingTour.showPreview(view, { format: 'recall', kind: tourKind, lv: studyLevel(query.lv), source: query.challenge ? 'challenge-' + query.challenge : 'cards' }); return;
+  }
   if (query.challenge) { startChallengePractice(view, query.challenge, studyLevel(query.lv)); return; }
   var current = practiceSession(), paused = practiceSession('pausedSession');
   var deck = current && current.config.format === 'recall' ? current : paused && paused.config.format === 'recall' ? paused : null;
@@ -204,7 +213,8 @@ function renderPractice(view, query, playerView) {
   playerView = playerView || view;
   var cfg = Practice.config(Object.assign({ mode: 'smart', size: 5 }, query, { format: 'quiz' }), (store.course || {}).target || 'N5');
   cfg.lv = studyLevel(cfg.lv);
-  var current = practiceSession(), paused = practiceSession('pausedSession');
+  var touring = window.OnboardingTour && OnboardingTour.active;
+  var current = touring ? null : practiceSession(), paused = touring ? null : practiceSession('pausedSession');
   var saved = current && current.config.format === 'quiz' ? current : paused && paused.config.format === 'quiz' ? paused : null;
   if (query.start === '1' || query.resume === '1') { openPracticeFormat(playerView, cfg); return; }
   function available(mode, kind) {
@@ -299,8 +309,9 @@ function renderPracticePlayer(view, s) {
   var body = $('#practiceBody', view);
   $('#practicePause', view).addEventListener('click', function (e) { e.preventDefault(); save(); go('#/learn?section=quiz'); });
   function grade(ok, selected) {
-    if (s.cursor !== cursor || s.answers[s.cursor] || store.practice.session !== s) return;
+    if (s.cursor !== cursor || s.answers[s.cursor] || (store.practice.session !== s && !(window.OnboardingTour && OnboardingTour.isPreview(s)))) return;
     s.answers[s.cursor] = { ok: ok, selected: selected };
+    if (s.tutorial) { feedback(s.answers[s.cursor]); $('#qFb', body).textContent = 'A practice preview. Your quiz results are unchanged.'; return; }
     courseGrade(q.type, q.id, ok);
     save(); feedback(s.answers[s.cursor]);
     renderNav('learn');
@@ -320,7 +331,7 @@ function renderPracticePlayer(view, s) {
     });
     showQuizAnswer(body, a.ok, q.type, q.head, next);
     body.insertBefore(next, $(".quiz-review", body));
-    $('#practiceCoachImage',view).src = a.ok ? 'assets/pengo-happy.png' : 'assets/pengo-study.png';
+    $('#practiceCoachImage',view).src = a.ok ? 'assets/pengo-celebrate.png' : 'assets/pengo-discover.png';
     $('#practiceCoachText',view).textContent = a.ok ? 'Nice work! That’s one more little win.' : 'We’re learning. Let’s give this one another look.';
     body.classList.add(a.ok ? 'answer-win' : 'answer-learn');
     $('#qFb', body).textContent = a.ok ? 'Correct! Your review schedule is updated.' : 'Not quite. Here is the answer and a quick explanation.';
@@ -331,7 +342,15 @@ function renderPracticePlayer(view, s) {
     b.addEventListener('click', function () { grade(b.dataset.answer === q.id, b.dataset.answer); });
   });
 }
+function quizResultMessage(score, total) {
+  var ratio = total ? score / total : 0;
+  if (total && score === total) return { title: 'Every answer right. Amazing work!', text: 'You remembered them all. Enjoy this little win!', mood: 'good', mascot: 'celebrate', alt: 'Pengo celebrating a perfect quiz' };
+  if (ratio >= .8) return { title: 'Look at that progress!', text: 'You remembered most of these. A little review will help the rest stick.', mood: 'good', mascot: 'celebrate', alt: 'Pengo celebrating your progress' };
+  if (ratio >= .5) return { title: 'You’re getting there!', text: 'You’ve got a good start. Revisit the tricky ones and build on it.', mood: 'study', mascot: 'happy', alt: 'Pengo cheering you on' };
+  return { title: 'Every try helps you learn.', text: 'These words and ideas take practice. Try a few missed items at your own pace. Pengo is with you!', mood: 'encouragement', mascot: 'discover', alt: 'Pengo holding a book, ready to keep learning with you' };
+}
 function finishPractice(view, s) {
+  if (s.tutorial) return;
   var score = s.answers.filter(function (a) { return a.ok; }).length;
   var missed = s.questions.filter(function (q, i) { return !s.answers[i].ok; });
   var fresh = store.practice.badges.filter(function (b) { return !(s.startingBadges || []).includes(b); });
@@ -372,8 +391,9 @@ function finishPractice(view, s) {
   var bestMap = s.config.kind === 'kanji' ? store.quizBest : s.config.kind === 'vocab' ? store.vQuizBest : store.gQuizBest;
   var bestText = s.config.format === 'quiz' && s.config.kind !== 'mixed' && s.questions.length === 10 && s.questions.every(function (q) { return q.lv === s.config.lv; })
     ? '<p class="explain">Best on ' + esc(s.config.lv) + ': ' + bestMap[s.config.lv] + ' / 10</p>' : '';
-  view.innerHTML = '<h1>Session complete</h1><section class="card quiz-result good">' + pengoCelebrationHTML() + '<img class="quiz-result-img" src="assets/pengo-happy.png" alt="Pengo celebrating your practice">' +
-    '<h2>You showed up. That counts.</h2><div class="result-stats"><div><strong>' + s.questions.length + '</strong><span>attempts made</span></div><div><strong>' + score + ' / ' + s.questions.length + '</strong><span>correct</span></div><div><strong>' + stats.streak + '</strong><span>day streak</span></div></div><p class="explain">' +
+  var result = quizResultMessage(score, s.questions.length);
+  view.innerHTML = '<h1>Session complete</h1><section class="card quiz-result ' + result.mood + '">' + (result.mood === 'good' ? pengoCelebrationHTML() : '') + '<img class="quiz-result-img" src="assets/pengo-' + result.mascot + '.png" alt="' + esc(result.alt) + '">' +
+    '<h2>' + esc(result.title) + '</h2><p>' + esc(result.text) + '</p><div class="result-stats"><div><strong>' + s.questions.length + '</strong><span>attempts made</span></div><div><strong>' + score + ' / ' + s.questions.length + '</strong><span>correct</span></div><div><strong>' + stats.streak + '</strong><span>day streak</span></div></div><p class="explain">' +
     score + ' correct' +
     ', ' + missed.length + ' to keep practicing.</p>' + bestText + '<p>' + stats.done + ' / ' + stats.goal + ' items practiced today.</p>' +
     '<p class="explain">' + (stats.goalMet ? 'Daily goal complete. This is a good place to stop.' : 'A small session is still progress. Come back when it fits your day.') + '</p>' +

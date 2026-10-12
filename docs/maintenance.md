@@ -53,8 +53,9 @@ This register retains original IDs and now identifies fixes from the daily pract
 | K-10 | No hosted-web offline caching; notification-only worker now exists | Hosted offline reload is not guaranteed | Keep claims precise; add caching only if product scope requires it |
 | K-11 | Capacitor scaffolding is not equivalent to native shell | Straight add/sync commands can conflict or miss native behavior | Isolate and implement a deliberate Capacitor integration |
 | K-12 | Partly fixed: Node, practice/design browser, and native reminder tests now exist | Physical-device, other native bridge, and pipeline coverage remain incomplete | Run relevant suites; add remaining coverage when changing those areas |
-| K-13 | No native URL allowlist with bridge installed | Future external navigation changes need careful boundary design | Define navigation policy before adding remote pages/permission |
-| K-14 | Combined kanji search threshold breaks inner loop only | Kanji result count can exceed intended 120 limit | Stop outer iteration too if enforcing a shared bound |
+| K-13 | Android has no native URL allowlist with bridge installed; iOS restricts native navigation/messages to the bundled origin | Future Android external navigation changes need careful boundary design | Define navigation policy before adding remote pages/permission |
+| K-14 | New iOS shell has not been compiled/run with full Xcode | Foundation/bridge checks do not establish WKWebView or device behavior | Complete [iOS native acceptance](ios.md#verification-and-remaining-acceptance) before claiming device support |
+| K-14 | Fixed 2026-10-09: combined kanji search stops both loops and deduplicates characters | Each type is capped at 120 results | Covered by exploration browser suite |
 | K-15 | No central cancellation for asynchronous view work | Rapid navigation may leave timers/responses targeting stale views | Add lifecycle checks if reproducing stale updates |
 | K-16 | Fixed: intro now describes short quizzes and recall cards | Mock exams remain a separately scoped content project | Copy matches shipped practice |
 | K-17 | Pace recommendation has caps and dates are generated estimates | Suggested pace may miss a close exam; venue dates unverified | Show limits; agree planning/calendar behavior |

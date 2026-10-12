@@ -35,24 +35,27 @@ function check(ok,label){assert.ok(ok,label);checks++;}
    await page.locator('#practiceReveal').click();
    const before=await state(),deck=before.practice.session;
    await page.getByRole('link',{name:'Explore full details',exact:true}).click();
-   await page.getByRole('link',{name:'← Back to your learning card',exact:true}).waitFor();
+   await page.locator('.page-back').waitFor();
    check((await page.evaluate(()=>location.hash)).includes('deck='+deck.id),kind+' details include deck context');
-   await page.reload();await page.getByRole('link',{name:'← Back to your learning card',exact:true}).waitFor();
+   await page.reload();await page.locator('.page-back').waitFor();
    check((await state()).practice.session.id===deck.id,kind+' details survive reload');
-   // Following another item keeps the original card as the return destination.
+   // Related details keep the deck context; Back first restores their origin.
    const href=await page.locator('#view a[href]').evaluateAll(a=>a.find(x=>/^#\/(k|v|g)\//.test(x.getAttribute('href')))?.getAttribute('href'));
+   const originHash=await page.evaluate(()=>location.hash);
    if(href){
     await page.locator('#view a[href]').evaluateAll((a,h)=>a.find(x=>x.getAttribute('href')===h).click(),href);
-    await page.getByRole('link',{name:'← Back to your learning card',exact:true}).waitFor();
+    await page.locator('.page-back').waitFor();
     check((await page.evaluate(()=>location.hash)).includes('deck='+deck.id),kind+' related detail keeps original deck context');
+    await page.locator('.page-back').click();await page.waitForFunction(h=>location.hash===h,originHash);
+    check(await page.locator('.detail-head').isVisible(),kind+' related Back restores originating detail');
    }
-   await page.getByRole('link',{name:'← Back to your learning card',exact:true}).click();await page.waitForSelector('#recallDetails:not([hidden])');
+   await page.locator('.page-back').click();await page.waitForSelector('#recallDetails:not([hidden])');
    check((await state()).practice.session.id===deck.id&&(await state()).practice.session.cursor===deck.cursor,kind+' returns to exact saved card');
    check(await page.locator('#practiceRatings').isVisible(),kind+' unrated reveal restores controls');
    assert.deepEqual((await state()).practice.session.answers,deck.answers);checks++;
    check(((await state()).study.days[today]||{}).attempts===((before.study.days[today]||{}).attempts),'detail navigation never grades '+kind);
    // Browser/native history back from details also returns to the card, not the hub.
-   await page.getByRole('link',{name:'Explore full details',exact:true}).click();await page.getByRole('link',{name:'← Back to your learning card',exact:true}).waitFor();
+   await page.getByRole('link',{name:'Explore full details',exact:true}).click();await page.locator('.page-back').waitFor();
    await page.evaluate(()=>Platform.handleBackPress());await page.waitForSelector('#recallDetails:not([hidden])');
    check((await state()).practice.session.id===deck.id,kind+' native Back restores the card');
   }
@@ -73,8 +76,8 @@ function check(ok,label){assert.ok(ok,label);checks++;}
   check(learned.study.days[today].recalled[first.type+':'+first.id]&&learned.study.days[today].practiced[first.type+':'+first.id],'learning advances challenge and daily goal');
   check(learned.practice.session.cursor===1,'Got it advances directly to the next card');
   await page.locator('#practiceReveal').click();await page.locator('#practiceAgain').click();
-  await page.getByRole('link',{name:'Explore full details',exact:true}).click();await page.getByRole('link',{name:'← Back to your learning card',exact:true}).waitFor();
-  await page.getByRole('link',{name:'← Back to your learning card',exact:true}).click();await page.waitForSelector('#practiceNext:not([hidden])');
+  await page.getByRole('link',{name:'Explore full details',exact:true}).click();await page.locator('.page-back').waitFor();
+  await page.locator('.page-back').click();await page.waitForSelector('#practiceNext:not([hidden])');
   check(await page.locator('#practiceRatings').isHidden(),'Still learning returns with feedback and next action');
   check(Object.keys((await state()).practice.mistakes).length===1,'Still learning does not add quiz mistakes');
   await page.locator('#practiceNext').click();await page.locator('#practiceReveal').click();await page.locator('#practiceRemembered').click();
@@ -90,18 +93,18 @@ function check(ok,label){assert.ok(ok,label);checks++;}
   await page.getByRole('link',{name:'Start learning'}).click();await page.waitForSelector('#practiceReveal');
   await page.locator('#practiceReveal').click();
   const deck=(await state()).practice.session;
-  await page.getByRole('link',{name:'Explore full details',exact:true}).click();await page.getByRole('link',{name:'← Back to your learning card',exact:true}).waitFor();
+  await page.getByRole('link',{name:'Explore full details',exact:true}).click();await page.locator('.page-back').waitFor();
   const detailHash=await page.evaluate(()=>location.hash);
   await route('#/learn?section=quiz');await page.locator('#practiceResume').click();await page.waitForSelector('[data-answer]');
   check((await state()).practice.session.id===quiz.id,'merged Learn resumes the quiz with its answers');
-  await route(detailHash);await page.getByRole('link',{name:'← Back to your learning card',exact:true}).click();await page.waitForSelector('#recallDetails:not([hidden])');
+  await page.goto(base+'?bookmark=1'+detailHash);await page.waitForSelector('.page-back');await page.locator('.page-back').click();await page.waitForSelector('#recallDetails:not([hidden])');
   check((await state()).practice.session.id===deck.id&&(await state()).practice.pausedSession.id===quiz.id,'detail back restores even a paused learning deck and retains quiz');
   await route('#/learn?section=quiz');page.on('dialog',d=>d.accept());
   await page.locator('#practiceReplace').click();await page.locator('.quiz-choice[data-quiz-kind=kanji]').click();await page.waitForSelector('[data-answer]');
   check((await state()).practice.session.id!==quiz.id,'replacing a paused quiz creates a new quiz');
   check((await state()).practice.pausedSession.id===deck.id,'replacing a paused quiz retains the learning deck');
   await route('#/k/日?deck=missing');
-  check(await page.getByRole('link',{name:'← Back to your learning card',exact:true}).count()===0,'stale deck links safely use normal browse navigation');
+  check(await page.locator('.page-back[data-back-fallback^="#/flashcards"]').count()===0,'stale deck links safely use normal browse navigation');
   // A plan learning deck must never award quiz-completion or perfect-quiz flags.
   await page.evaluate(()=>{store.practice.session=null;store.practice.pausedSession=null;store.course=Course.defaultCourse('N5');save();});
   await route('#/flashcards?start=1&mode=plan&kind=mixed&size=3');await page.waitForSelector('#practiceReveal');

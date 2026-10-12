@@ -30,9 +30,7 @@ function pengoHeroHTML(hasPlan) {
     (session ? 'Continue learning' : stats.goalMet ? 'Learn more' : 'Start learning') + pengoIcon('arrow') + '</a>' +
     '<span class="hero-footnote">' + (session ? 'Pick up right where you left off' : stats.goalMet ? 'Another small discovery awaits' : 'Your daily cards, ready when you are') + '</span></div>' +
     '<div class="hero-art"><span class="hero-orbit orbit-one" aria-hidden="true">あ</span><span class="hero-orbit orbit-two" aria-hidden="true">' + pengoIcon('spark') + '</span>' +
-    '<img class="hero-pengo" src="assets/pengo-adventure.png" width="250" height="270" alt="Pengo waving, ready for your next learning adventure">' +
-    '<button class="pengo-tip" data-pengo-tip aria-label="Ask Pengo for a study tip" aria-expanded="false" aria-controls="pengoTipBubble">Pengo’s tip ' + pengoIcon('spark') + '</button>' +
-    '<div class="pengo-bubble" id="pengoTipBubble" data-pengo-bubble hidden><p data-pengo-tip-text role="status" aria-live="polite"></p><button class="dismiss-button" data-pengo-tip-close aria-label="Close study tip">&times;</button></div></div></section>';
+    '<img class="hero-pengo" src="assets/pengo-adventure.png" width="250" height="270" alt="Pengo waving, ready for your next learning adventure"></div></section>';
 }
 function dailyPracticeCardHTML() {
   var stats = practiceStats(), pct = Math.min(100, Math.round(stats.done / stats.goal * 100));
@@ -62,9 +60,9 @@ function renderAdventureHome(view, hasPlan) {
   var status = '<div class="adventure-top"><span class="eyebrow">YOUR JAPANESE JOURNEY</span><div class="journey-pills"><span class="journey-pill streak-pill">' + pengoIcon('fire') + stats.streak + '<span>day streak</span></span><span class="journey-pill">' + pengoIcon('flag') + esc(lv) + '</span></div></div>';
   var pickLevels = '<section class="card choose-level"><span class="eyebrow">PICK YOUR STARTING POINT</span><h2>Where will we go?</h2><p class="explain">Choose the level you’re preparing for. You can change your plan anytime.</p><div class="adventure-levels">' +
     LEVELS.map(function (l, i) { return '<a class="adventure-level level-' + i + '" href="#/course/setup?target=' + l + '"><span class="level-mark">' + pengoIcon(['spark', 'book', 'flag', 'mountain', 'trophy'][i]) + '</span><span><strong>' + l + '</strong><small>' + esc(Course.LEVEL_NAMES[l]) + '</small></span>' + pengoIcon('arrow') + '</a>'; }).join('') + '</div></section>';
-  view.innerHTML = '<div class="adventure-home">' + status + pengoHeroHTML(hasPlan) + '<div class="adventure-columns"><div class="adventure-main">' +
+  view.innerHTML = '<div class="adventure-home">' + status + pengoHeroHTML(hasPlan) + dailyWordHTML(lv) + '<div class="adventure-columns"><div class="adventure-main">' +
     (hasPlan ? '' : pickLevels) + dailyOverviewHTML(lv) + dailyChallengesHTML(lv) + '</div><aside class="adventure-aside" aria-label="Daily discoveries">' +
-    dailyWordHTML(lv) + reminderNudgeHTML() + '</aside></div></div>';
+    reminderNudgeHTML() + '</aside></div></div>';
 }
 function dailyOverviewHTML(lv) {
   var s = Dashboard.summary(store.study.days, Course.todayStr());
@@ -91,8 +89,12 @@ function dailyChallengesHTML(lv) {
 function dailyWordHTML(lv) {
   var words = DB.vocab[lv] || [], v = words[Dashboard.dailyIndex(Course.todayStr(), words.length)];
   if (!v) return '';
-  return '<section class="card daily-word"><span class="eyebrow">TODAY’S WORD TO TAKE WITH YOU</span><h2 lang="ja">' + esc(v.word) + '</h2><p lang="ja">' + esc(v.reading) +
-    '</p><p>' + esc(v.meaning) + '</p><div class="practice-actions">' + '<a class="btn soft" href="#/v/' + encodeURIComponent(v.id) + '">Explore word</a></div></section>';
+  return '<section class="card daily-word" aria-labelledby="dailyWordTitle"><button type="button" class="daily-word-invite" id="dailyWordReveal" aria-expanded="false" aria-controls="dailyWordContent">' +
+    '<img class="daily-word-pengo" src="assets/pengo-discover.png" width="112" height="112" alt="Pengo has a new word for you">' +
+    '<span class="daily-word-prompt"><span class="eyebrow">A LITTLE DISCOVERY</span><strong id="dailyWordTitle">Today’s word</strong><span>Pengo found something for you!</span><span class="daily-word-peek">Tap to take a peek ' + pengoIcon('spark') + '</span></span></button>' +
+    '<div id="dailyWordContent" class="daily-word-content" hidden><span class="badge ' + levelClass(lv) + '">' + esc(lv) + '</span><h2 lang="ja">' + esc(v.word) + '</h2><p lang="ja">' + esc(v.reading) +
+    '</p><p>' + esc(v.meaning) + '</p><a class="btn soft" href="#/v/' + encodeURIComponent(v.id) + '">Explore word ' + pengoIcon('arrow') + '</a></div></section>';
+
 }
 function reminderNudgeHTML() {
   var r = Reminders.read();
@@ -101,26 +103,21 @@ function reminderNudgeHTML() {
     '</a></div><button class="dismiss-button" data-dismiss-reminder aria-label="Dismiss reminder suggestion">&times;</button></section>';
 }
 function bindPengoUI(view) {
-  var tips = ['Say the answer out loud before you reveal it. Your brain likes a challenge.', 'A sentence is a little home for a new word. Read one example today.', 'Three questions count. You don’t have to do everything at once.', 'Mistakes are clues. They show us what to practice next.'];
-  var tip = $('[data-pengo-tip]', view), bubble = $('[data-pengo-bubble]', view);
-  if (tip && bubble) {
-    var index = 0;
-    function closeTip(focus) { bubble.hidden = true; tip.setAttribute('aria-expanded', 'false'); if (focus) tip.focus({ preventScroll: true }); }
-    tip.addEventListener('click', function () {
-      if (!bubble.hidden) { closeTip(false); return; }
-      $('[data-pengo-tip-text]', bubble).textContent = tips[index++ % tips.length];
-      bubble.hidden = false; tip.setAttribute('aria-expanded', 'true');
-    });
-    $('[data-pengo-tip-close]', bubble).addEventListener('click', function () { closeTip(true); });
-    tip.closest('.adventure-hero').addEventListener('keydown', function (event) { if (event.key === 'Escape' && !bubble.hidden) closeTip(true); });
-  }
+  var wordReveal = $('#dailyWordReveal', view), wordContent = $('#dailyWordContent', view);
+  if (wordReveal && wordContent) wordReveal.addEventListener('click', function () {
+    var show = wordContent.hidden;
+    wordContent.hidden = !show; wordReveal.setAttribute('aria-expanded', String(show));
+    wordReveal.closest('.daily-word').classList.toggle('is-open', show);
+    $('.daily-word-peek', wordReveal).innerHTML = show ? 'Tap to tuck it away' : 'Tap to take a peek ' + pengoIcon('spark');
+    if (show) wordReveal.closest('.daily-word').scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  });
   var dismiss = $('[data-dismiss-reminder]', view);
   if (dismiss) dismiss.addEventListener('click', function () {
     Reminders.dismissNudge(); dismiss.closest('.reminder-nudge').remove(); $('.hero-start', view).focus({ preventScroll: true });
   });
 }
 function pengoPracticeCoachHTML(recall) {
-  return '<div class="practice-coach"><img src="assets/pengo-study.png" width="52" height="52" alt="" id="practiceCoachImage"><p id="practiceCoachText" role="status">' +
+  return '<div class="practice-coach"><img src="assets/pengo-discover.png" width="52" height="52" alt="" id="practiceCoachImage"><p id="practiceCoachText" role="status">' +
     (recall ? 'Take a breath. Think of the answer, then peek.' : 'You’ve got this. One question at a time.') + '</p></div>';
 }
 function pengoCelebrationHTML() {

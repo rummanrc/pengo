@@ -22,7 +22,7 @@ The inactive face is inert and hidden from assistive technology. Rating/advance 
 
 The new component source replaces flat KRADFILE as the primary structural view. KanjiVG is visual stroke structure; it is not a claim about historical etymology or a pedagogically validated mnemonic system. Groups that omit ungrouped strokes are labeled as partial explanations. Nonconsecutive portions merge; repeated independent components remain visible.
 
-`build_components.py` extracts 2,211/2,211 trees and 1,809 sets of references from matching existing mnemonic stories. For **語**, the structural view starts at **言 + 吾**, with **吾 → 五 + 口** available below. The existing “Ego speaking words” story names **吾 (ego) + 言 (words)**; these stay together in “Parts in your memory story,” while **五 + 口** remains an optional deeper view. Original KRADFILE arrays and content IDs are unchanged, and the smallest-part comparison remains available. Stories lacking explicit references retain their original component basis rather than being relabeled as a different breakdown.
+`build_components.py` extracts 2,211/2,211 trees and 1,809 sets of references from matching existing mnemonic stories. For **語**, the structural view starts at **言 + 吾**, with **吾 → 五 + 口** available below. The existing “Ego speaking words” story names **吾 (ego) + 言 (words)**; these stay together as compact cues in the Mnemonic section, while **五 + 口** remains an optional deeper view. Original KRADFILE arrays and content IDs are unchanged, and the smallest-part comparison remains available. Stories lacking explicit references retain their original component basis rather than being relabeled as a different breakdown.
 
 ## Build and verification
 
@@ -75,8 +75,12 @@ Verified: the full npm rules suite passed, along with 410 browser checks (98 dai
 
 ### Home focus and uniform recaps — 2026-10-09
 
-The hero now starts/continues flashcards and invites more learning after the daily goal. Removed Home’s separate flashcard, playground and daily-practice cards; learning milestones now appear in Progress. Today’s subject totals use a connected vertical list linking to the daily item page. Pengo tips toggle closed, provide an explicit close button and honor Escape. The reminder suggestion hides when enabled and can be dismissed independently of notification permission, with device-local persistence.
+The hero now starts/continues flashcards and invites more learning after the daily goal. Removed Home’s separate flashcard, playground and daily-practice cards; learning milestones now appear in Progress. Today’s subject totals use a connected vertical list linking to the daily item page. Pengo tips are removed and the Home greeting mascot stays still. The reminder suggestion hides when enabled and can be dismissed independently of notification permission, with device-local persistence.
 
 All flashcard subjects share one Quick recap card. Kanji keeps meaning, Japanese reading labels, up to four larger shapes, its mnemonic, two example words and a furigana sentence; detailed component trees remain on item details. Incomplete challenges now open random cards for the remaining target, excluding items already counted today. A 1/3 grammar challenge starts two grammar cards. Larger daily challenges continue in decks of at most ten. A parked normal learning deck and a saved quiz survive challenge use, reload and backup import; completion or expiration restores normal learning.
 
 Verified: npm rules and 473 browser checks passed (62 Home-refinement, 98 daily-learning, 72 Learn, 34 flashcard-access, 49 discovery, 41 design/reminder, 46 practice, 71 plan/settings). Home screenshots and list bounds pass at 320/390/768/1280px in both themes; the compact recap screenshots were reviewed. Syntax/diff checks and Docker APK assembly passed; 16 packaged source/data/credits files match the current bytes, and local staging was refreshed. APK: 19,669,041 bytes; SHA-256 `38fd94daa0a302ae7cb55d095284cd79e84db0766ad71d28f95b08116fa3d4d8`. Physical Android-device interaction remains untested.
+
+### All-level exploration and restored flip — 2026-10-09
+
+See [exploration refresh](exploration-refresh.md) for the current all-level read-only browsing contract, global/scoped searches, contextual Back buttons, rotating tap-to-flip cards, daily word invitation, and complete mascot assets. This supersedes the earlier flat-face player and level-restricted discovery behavior.

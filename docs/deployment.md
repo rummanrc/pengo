@@ -16,7 +16,7 @@ The default output is ignored `www/`. Upload its contents to a static host, reta
 
 | Inventory | Paths |
 | --- | --- |
-| Root files | `index.html`, `app.js`, `onboarding.js`, `course.js`, `practice.js`, `practice-ui.js`, `components.js`, `recall-ui.js`, `dashboard.js`, `reminders.js`, `reminder-worker.js`, `design.js`, `platform.js`, `styles.css`, `manifest.webmanifest` |
+| Root files | `index.html`, `app.js`, `onboarding.js`, `tutorial.js`, `course.js`, `practice.js`, `practice-ui.js`, `components.js`, `recall-ui.js`, `dashboard.js`, `reminders.js`, `reminder-worker.js`, `design.js`, `platform.js`, `styles.css`, `manifest.webmanifest` |
 | Full directories | `assets/`, `data/` |
 | Resource subset | `resources/stroke-order/`, `resources/CREDITS.md` |
 
@@ -98,6 +98,10 @@ adb install -r dist/pengo-debug.apk
 Test cold startup and stroke diagrams in airplane mode, intro skip/replay/swipe, orientation changes, Back navigation, dark system bars, document picker export/import/cancel, and reload persistence. See T-15 in [testing](testing.md). Same application ID/signing identity is required for a normal update install; export a backup before uninstalling or changing identity.
 
 For reminders, use T-16: explicit opt-in/denial, local-time delivery with the app closed, notification tap/resume, goal suppression, turn-off, reboot/timezone restoration, and battery restrictions. Inexact alarms can be delayed and are not guaranteed appointments. Native automated checks run with `npm run test:android` after staging assets; JUnit 4.13.2 and Robolectric 4.16.1 are test-only Gradle dependencies, not shipped notification services. See [testing](testing.md#native-reminder-tests).
+
+## Native iOS debug builds
+
+The standalone `ios/Pengo.xcodeproj` uses Swift/UIKit/WKWebView and shares the staged runtime with Android. See [iOS debug builds](ios.md) for simulator builds, free Personal Team installation on an iPhone, signing limitations, and the native acceptance checklist. Run `python3 scripts/build_ios.py --assets-only` before opening the project; full Xcode is required for compilation. iOS compilation and device acceptance have not yet been verified in the initial implementation environment.
 
 ## Optional Capacitor configuration
 

@@ -31,7 +31,7 @@ function check(value,label){assert.ok(value,label);checks++;}
   check((await state()).practice.session.answers.length===0,'flip alone does not grade');
   check(await page.locator('#recallBack').getAttribute('aria-hidden')==='false','answer face becomes accessible');
   check(await page.locator('#practiceReveal').evaluate(el=>el.inert),'hidden front cannot receive focus');
-  await page.locator('#recallHide').click();
+  await page.locator('#recallBack').click();
   check(await page.locator('#practiceRatings').isHidden(),'turning back hides recall ratings');
   await page.locator('#practiceReveal').click();await page.locator('#practiceAgain').click();
   let s=await state(),today=await page.evaluate(()=>Course.todayStr());

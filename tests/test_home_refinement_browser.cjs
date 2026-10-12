@@ -19,12 +19,11 @@ let checks=0;function check(v,label){assert.ok(v,label);checks++;}
   check(await page.locator('.today-subject-row').first().evaluate(el=>getComputedStyle(el,'::after').content!=='none'),'subject icons have a connecting line');
   await page.locator('.today-subject.mint').click();await page.waitForSelector('[data-today-subject=vocab]');
   check(await page.locator('.today-items').count()===1,'list row opens filtered studied items');
-  await route('#/');await page.locator('[data-pengo-tip]').click();
-  check(await page.locator('[data-pengo-bubble]').isVisible(),'tip opens');
-  await page.locator('[data-pengo-tip]').click();check(await page.locator('[data-pengo-bubble]').isHidden(),'tip toggles closed');
-  await page.locator('[data-pengo-tip]').click();await page.locator('[data-pengo-tip-close]').click();
-  check(await page.locator('[data-pengo-bubble]').isHidden()&&await page.locator('[data-pengo-tip]').getAttribute('aria-expanded')==='false','tip has an explicit close button');
-  await page.locator('[data-pengo-tip]').click();await page.keyboard.press('Escape');check(await page.locator('[data-pengo-bubble]').isHidden(),'Escape closes tip');
+  await route('#/');
+  check(await page.locator('[data-pengo-tip],[data-pengo-bubble]').count()===0,'Home removes Pengo tips completely');
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  check(await page.locator('.hero-pengo').evaluate(el=>getComputedStyle(el).animationName)==='none','hero mascot stays still with normal motion');
+  await page.emulateMedia({reducedMotion:'reduce'});
   const reminderBefore=await page.evaluate(()=>Reminders.read());
   await page.evaluate(()=>{window.requests=0;Notification.requestPermission=async()=>{requests++;return 'denied';};});
   await page.locator('[data-dismiss-reminder]').click();check(await page.locator('.reminder-nudge').count()===0,'reminder suggestion closes');

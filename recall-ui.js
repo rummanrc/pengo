@@ -6,20 +6,20 @@ function renderRecallPlayer(view, s) {
   var cursor = s.cursor, ref = s.questions[cursor], q = practiceHydrate(ref), item = q.head;
   var face = q.type === 'kanji' ? item.k : q.type === 'vocab' ? item.word : item.point;
   var readings = q.type === 'kanji' ?
-    (item.on.length ? '<p><span class="lab" lang="ja">音読み（おんよみ） </span><span lang="ja">' + esc(item.on.join('、 ')) + '</span></p>' : '') +
-    (item.kun.length ? '<p><span class="lab" lang="ja">訓読み（くんよみ） </span><span lang="ja">' + esc(item.kun.join('、 ')) + '</span></p>' : '') :
-    (item.reading ? '<p lang="ja">' + esc(item.reading) + '</p>' : '');
+    (item.on.length ? '<span class="recall-reading-line"><span class="lab" lang="ja">音読み（おんよみ） </span><span lang="ja">' + esc(item.on.join('、 ')) + '</span></span>' : '') +
+    (item.kun.length ? '<span class="recall-reading-line"><span class="lab" lang="ja">訓読み（くんよみ） </span><span lang="ja">' + esc(item.kun.join('、 ')) + '</span></span>' : '') :
+    (item.reading ? '<span class="recall-reading-line" lang="ja">' + esc(item.reading) + '</span>' : '');
   var answer = s.answers[cursor], revealed = false;
   view.innerHTML = '<div class="recall-deck" aria-label="Learning cards"><div class="recall-counter"><span>' + (cursor + 1) + ' / ' + s.questions.length + ' cards</span>' +
-    '<a id="practicePause" href="#/flashcards?choose=1">Pause &amp; save</a></div>' +
+    '<a class="btn soft" id="practicePause" href="#/flashcards?choose=1">Pause &amp; save</a></div>' +
     progressBar(Math.round(s.answers.length / s.questions.length * 100), 'Card deck completion') +
     '<div class="recall-stage" id="recallStage"><div class="recall-flipper" id="recallFlipper">' +
     '<button class="recall-face recall-front" id="practiceReveal" aria-label="Reveal answer" aria-expanded="false" aria-controls="recallBack recallDetails practiceRatings">' +
     '<span class="badge ' + levelClass(ref.lv) + '">' + esc(ref.lv) + ' · ' + courseTypeName(q.type) + '</span><span class="recall-glyph' + (q.type === 'kanji' ? ' recall-glyph-kanji' : '') + '" lang="ja">' + esc(face) + '</span>' +
     '<span class="recall-tap">' + pengoIcon('refresh') + ' Tap to reveal</span></button>' +
-    '<div class="recall-face recall-back" id="recallBack" aria-hidden="true" inert>' +
-    '<span class="recall-back-glyph" lang="ja">' + esc(face) + '</span><div class="recall-meaning"><span class="eyebrow">Meaning</span><h2>' + esc(item.meaning) + '</h2></div><div class="recall-readings">' + readings + '</div>' +
-    '<button class="btn soft" id="recallHide">Show the front again</button></div></div></div>' +
+    '<button type="button" class="recall-face recall-back" id="recallBack" aria-label="Flip back to front" aria-hidden="true" inert>' +
+    '<span class="recall-back-glyph" lang="ja">' + esc(face) + '</span><span class="recall-meaning"><span class="eyebrow">Meaning</span><strong>' + esc(item.meaning) + '</strong></span><span class="recall-readings">' + readings + '</span>' +
+    '<span class="recall-tap">' + pengoIcon('refresh') + ' Tap to flip back</span></button></div></div>' +
     '<div class="recall-dock"><div id="practiceRatings" hidden><p>How does it feel now?</p><div class="practice-actions">' +
     '<button class="btn soft" id="practiceAgain">Still learning</button><button class="btn primary" id="practiceRemembered">Got it</button></div></div>' +
     '<p id="qFb" class="explain" role="status" aria-live="polite"></p><button class="btn primary" id="practiceNext" hidden>' +
@@ -27,10 +27,10 @@ function renderRecallPlayer(view, s) {
     '<div id="recallDetails" hidden>' + recallDetailsHTML(q) + '<p><a class="btn soft" href="' + courseItemLink(q.type, q.id) + '">Explore full details</a></p></div></div>';
   var stage = $('#recallStage', view), front = $('#practiceReveal', view), back = $('#recallBack', view);
   var next = $('#practiceNext', view), ratings = $('#practiceRatings', view);
-  function current() { return store.practice.session === s && s.cursor === cursor && view.contains(stage); }
+  function current() { return (store.practice.session === s || window.OnboardingTour && OnboardingTour.isPreview(s)) && s.cursor === cursor && view.contains(stage); }
   function flip(show, focus) {
     if (!current()) return;
-    revealed = show; s.revealedCursor = show ? cursor : null; save();
+    revealed = show; s.revealedCursor = show ? cursor : null; if (!s.tutorial) save();
     $('#recallFlipper', view).classList.toggle('is-flipped', show);
     front.setAttribute('aria-expanded', show);
     front.setAttribute('aria-hidden', show); front.inert = show;
@@ -48,6 +48,11 @@ function renderRecallPlayer(view, s) {
   function grade(ok, selected) {
     if (!current() || !revealed || s.answers[cursor]) return;
     answer = { ok: ok, selected: selected }; s.answers[cursor] = answer;
+    if (s.tutorial) {
+      ratings.hidden = true;
+      $('#qFb', view).textContent = 'Nice! In your own deck, this moves you to the next card.';
+      return;
+    }
     if (ok) courseMarkStudied(q.type, q.id);
     var day = studyDay(Course.todayStr());
     day.recalled = day.recalled || {}; day.recalled[Practice.key(ref)] = true;
@@ -63,7 +68,7 @@ function renderRecallPlayer(view, s) {
     view.focus({ preventScroll: true }); window.scrollTo(0, 0);
   }
   front.addEventListener('click', function () { flip(true, true); });
-  $('#recallHide', view).addEventListener('click', function () { flip(false, true); });
+  back.addEventListener('click', function () { flip(false, true); });
   $('#practiceAgain', view).addEventListener('click', function () { grade(false, 'again'); });
   $('#practiceRemembered', view).addEventListener('click', function () { grade(true, 'remembered'); });
   next.addEventListener('click', advance);
@@ -86,7 +91,7 @@ function renderRecallPlayer(view, s) {
     if (!/^#\/(k|v|g)\//.test(link.getAttribute('href'))) return;
     link.href += '?deck=' + encodeURIComponent(s.id);
     link.addEventListener('click', function () {
-      history.replaceState(null, '', '#/flashcards?resume=1&deck=' + encodeURIComponent(s.id));
+      history.replaceState(history.state, '', '#/flashcards?resume=1&deck=' + encodeURIComponent(s.id));
     });
   });
   if (answer || s.revealedCursor === cursor) flip(true, false);

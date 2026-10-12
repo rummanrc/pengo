@@ -24,6 +24,8 @@ flowchart TD
     App --> Platform["platform.js"]
     Platform --> Browser["Browser file/share APIs"]
     Platform --> Bridge["KnowKanjiNative Java bridge"]
+    Platform --> IOSBridge["KnowKanjiNative iOS message bridge"]
+    IOSBridge --> IOS["WKWebView, Files pickers, local notifications"]
     Bridge --> Android["Android document picker and system bars"]
     Bridge --> Alarm["StudyReminders: OS alarm and channel"]
     Alarm --> Receiver["ReminderReceiver: deliver and reschedule"]
@@ -44,11 +46,12 @@ flowchart TD
 | `dashboard.js` | Pure daily subject totals, rotating challenges and date-based discovery | Course, Practice, activity ledger |
 | `JapaneseSpeech.java` | Lazy offline Japanese engine, request lifecycle and queue replacement | Android TextToSpeech |
 | `practice-ui.js` | Shared quiz/recall player, session summaries, daily dashboard | App globals, Practice, Course |
-| `design.js` | Adventure Home, progress cards, tips, quick starts | App globals, Practice, Course, Reminders |
+| `design.js` | Adventure Home, progress cards, daily word reveal, quick starts | App globals, Practice, Course, Reminders |
 | `reminders.js` | Device opt-in, native goal sync, browser alerts, calendar file | Browser APIs, optional native bridge |
 | `reminder-worker.js` | Notification tap navigation | Service-worker clients API; no caching |
 | `platform.js` | Detection, export, import callback, theme, Back | Browser APIs, optional native globals |
-| `onboarding.js` | Intro slides, touch navigation, first-launch decision | DOM, Platform, localStorage |
+| `onboarding.js` | Welcome slides, touch navigation, first-launch decision | DOM, Platform, localStorage |
+| `tutorial.js` | Interactive control highlights, guided navigation, isolated practice previews | DOM, app/player globals |
 | `styles.css` | Themes, shell, feature styles, responsive/motion rules | Shell and renderer classes |
 | `MainActivity.java` | WebView, bridge, document results, Back/lifecycle | Android framework, packaged files |
 | Native reminder classes | Local-time alarms, permission/channel checks, delivery, boot/clock restoration | Android framework, SharedPreferences |
@@ -56,7 +59,7 @@ flowchart TD
 
 ## Startup
 
-Script order is `platform.js` → `onboarding.js` → `course.js` → `practice.js` → `data/components.js` → `components.js` → `recall-ui.js` → `practice-ui.js` → `reminders.js` → `dashboard.js` → `design.js` → `app.js`. These are classic scripts, not ES modules. UI/reminder functions access app globals only after initialization. Top-level `const`/`let` such as `DB` and `store` are global lexical bindings, not necessarily properties on `window`. Course uses `var`; Platform and APP_VERSION are explicitly exported on `window`.
+Script order is `platform.js` → `onboarding.js` → `tutorial.js` → `course.js` → `practice.js` → `data/components.js` → `components.js` → `recall-ui.js` → `practice-ui.js` → `reminders.js` → `dashboard.js` → `design.js` → `app.js`. These are classic scripts, not ES modules. UI/reminder functions access app globals only after initialization. Top-level `const`/`let` such as `DB` and `store` are global lexical bindings, not necessarily properties on `window`. Course uses `var`; Platform and APP_VERSION are explicitly exported on `window`.
 
 ```mermaid
 sequenceDiagram
@@ -70,7 +73,7 @@ sequenceDiagram
     A->>L: Start JSON requests in parallel
     alt First native launch or web preview
         A->>O: Show intro while data loads
-        O-->>A: Finish or skip, save intro flag
+        O-->>A: Skip welcome or enter guided tour
     else Intro not needed
         A->>A: Wait for data
     end
@@ -84,7 +87,7 @@ sequenceDiagram
     A->>V: Initialize chrome, clear gate, render
 ```
 
-Data and intro run concurrently. Rendering waits for both. The failure handler clears the visibility gate and shows the data-load error. Kanji level files and `meta.json` are required by the fetch path; radicals/vocabulary/grammar catch individual failures, so absent optional data may not trigger bundle fallback.
+Data and welcome slides run concurrently. Rendering waits for data and the welcome decision; the interactive tour starts against the loaded app. The intro flag is saved on welcome skip or tour exit. The failure handler clears the visibility gate and shows the data-load error. Kanji level files and `meta.json` are required by the fetch path; radicals/vocabulary/grammar catch individual failures, so absent optional data may not trigger bundle fallback.
 
 ## State and rendering
 
@@ -92,7 +95,7 @@ Content lives in `DB.levels`, `DB.vocab`, and `DB.grammar`, with `byChar`, `vByI
 
 Handlers mutate the store and call `save()`, which serializes the whole object into `knowkanji:v1`. There is no transaction log, cross-tab coordination, or server acknowledgement; storage errors show a persistent export-backup notice. The saved practice session is validated against loaded content before use, and answered questions resume as feedback without regrading. Curriculum is derived on demand, so changed data/pace may change numbered batches.
 
-`parseHash()` decodes route segments/query pairs. `render()` selects a view, updates navigation, binds mascot tips, focuses `#view`, and scrolls to the top (or the requested reminder section). Most renderers replace `innerHTML` then bind handlers. Browse search changes only results and replaces history state to preserve focus. Hash routing requires no server route rewriting.
+`parseHash()` decodes route segments/query pairs. `render()` selects a view, updates navigation, binds Home reveal/dismiss controls, focuses `#view`, and scrolls to the top (or the requested reminder section). Most renderers replace `innerHTML` then bind handlers. Browse search changes only results and replaces history state to preserve focus. Hash routing requires no server route rewriting.
 
 ## Native packaging
 
@@ -113,6 +116,8 @@ Android Back evaluates `KKBack()`: intro gets first opportunity, then Platform n
 Native reminders use SharedPreferences outside progress backups and an OS-owned inexact alarm. Receivers deliver and restore opted-in schedules independently of the WebView; notification entry opens short practice. Browser reminders need an open page and use a notification-only service worker. See [design and reminders](design-and-reminders.md) for lifecycle, permission, timezone, and calendar behavior.
 
 ## Boundaries and constraints
+
+The iOS shell serves the shared bundle through `WKURLSchemeHandler` at the stable `pengo://app` origin. `bridge.js` runs at document start; a trusted-main-frame message handler adapts backups, theme, and reminders to Swift/UIKit. Persistent WKWebView storage preserves the web keys. Unlike Android's OS receiver, iOS uses local notification requests scheduled for a rolling 60-day window and renewed on activation. See [iOS debug builds](ios.md) for setup, limits, and the remaining native acceptance gate.
 
 Native assets work offline and the manifest has no internet permission. Hosted web visits still depend on the host for uncached files; the manifest alone supplies no caching. Build-time downloads are separate from runtime access.
 
