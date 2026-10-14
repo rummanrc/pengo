@@ -804,45 +804,74 @@ function renderDetail(view, ch) {
 /* ---------- Stroke order (KanjiVG) ---------- */
 let strokeTimers = [];
 function stopStrokeTimers() { strokeTimers.forEach(clearTimeout); strokeTimers = []; }
+const strokeChunkLoads = {};
+function loadStrokeFallback(cp) {
+  if (!/^[0-9a-f]{5,6}$/.test(cp)) return Promise.reject(new Error("invalid code point"));
+  if (window.KK_STROKES && window.KK_STROKES[cp]) return Promise.resolve(window.KK_STROKES[cp]);
+  const chunk = cp.slice(0, -2);
+  if (!strokeChunkLoads[chunk]) {
+    strokeChunkLoads[chunk] = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "data/strokes/" + chunk + ".js";
+      script.onload = () => { script.remove(); resolve(); };
+      script.onerror = () => { script.remove(); reject(new Error("stroke bundle unavailable")); };
+      document.head.appendChild(script);
+    }).catch(e => { delete strokeChunkLoads[chunk]; throw e; });
+  }
+  return strokeChunkLoads[chunk].then(() => (window.KK_STROKES || {})[cp] || "");
+}
 async function initStrokeOrder(it) {
   const box = $("#strokeBox");
   if (!box) return;
+  const playButton = $("#strokePlay"), numbersToggle = $("#strokeNums");
+  if (playButton) playButton.disabled = true;
+  if (numbersToggle) numbersToggle.disabled = true;
   if (!it.hasStroke) {
     box.innerHTML = "<p class=\"explain\">No stroke-order diagram in the data for this kanji.</p>";
-    const p = $("#strokePlay"); if (p) p.disabled = true;
     return;
   }
   const svgUrl = STROKE_BASE + it.cp + ".svg";
   let svgText = "";
   let diag = "";
-  try {
-    const res = await fetch(svgUrl);
-    diag += "fetch:s" + res.status + ";";
-    if (!res.ok && res.status !== 0) throw new Error("http" + res.status);
-    svgText = await res.text();
-  } catch (e) {
-    diag += "fetchErr:" + (e && e.name ? e.name : "err") + ";";
+  // Browsers commonly reject fetch and XHR for file URLs; classic scripts work.
+  if (location.protocol !== "file:") {
     try {
-      svgText = await new Promise((resolve, reject) => {
-        const x = new XMLHttpRequest();
-        x.open("GET", svgUrl, true);
-        x.onload = () => { diag += "xhr:s" + x.status + ";"; resolve(x.responseText || ""); };
-        x.onerror = () => { diag += "xhrErr;"; reject(new Error("xhr")); };
-        x.send();
-      });
-    } catch (e2) { svgText = ""; }
+      const res = await fetch(svgUrl);
+      diag += "fetch:s" + res.status + ";";
+      if (!res.ok && res.status !== 0) throw new Error("http" + res.status);
+      svgText = await res.text();
+    } catch (e) {
+      diag += "fetchErr:" + (e && e.name ? e.name : "err") + ";";
+      try {
+        svgText = await new Promise((resolve, reject) => {
+          const x = new XMLHttpRequest();
+          x.open("GET", svgUrl, true);
+          x.onload = () => {
+            diag += "xhr:s" + x.status + ";";
+            if ((x.status >= 200 && x.status < 300) || x.status === 0) resolve(x.responseText || "");
+            else reject(new Error("http" + x.status));
+          };
+          x.onerror = () => { diag += "xhrErr;"; reject(new Error("xhr")); };
+          x.send();
+        });
+      } catch (e2) { svgText = ""; }
+    }
+  }
+  if (!svgText || svgText.indexOf("<svg") < 0) {
+    try { svgText = await loadStrokeFallback(it.cp); diag += "script;"; }
+    catch (e) { diag += "scriptErr;"; }
   }
   // A learner may leave the detail page while the diagram is loading.
   if (!box.isConnected || $("#strokeBox") !== box) return;
   window.KKDiag = window.KKDiag || {};
   window.KKDiag.stroke = diag + "len" + svgText.length;
   if (!svgText || svgText.indexOf("<svg") < 0) {
-    box.innerHTML = "<p class=\"explain\">Could not load the stroke-order diagram. (" + esc(diag + "len" + svgText.length) + ")</p>";
+    box.innerHTML = "<p class=\"explain\">Could not load the stroke-order diagram. Try reopening this kanji.</p>";
     return;
   }
   const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
   const svg = doc.querySelector("svg");
-  if (!svg) { box.innerHTML = "<p class=\"explain\">Could not parse the diagram.</p>"; return; }
+  if (!svg || doc.querySelector("parsererror")) { box.innerHTML = "<p class=\"explain\">Could not parse the diagram.</p>"; return; }
   svg.removeAttribute("width"); svg.removeAttribute("height");
   const strokes = Array.from(svg.querySelectorAll("path")).filter(p => (p.getAttribute("id") || "").indexOf("-s") >= 0);
   strokes.forEach(p => p.classList.add("kvg-stroke"));
@@ -875,8 +904,10 @@ async function initStrokeOrder(it) {
     });
     strokeTimers.push(setTimeout(() => strokes.forEach(p => p.classList.add("done")), strokes.length * (per + 120)));
   }
-  $("#strokePlay").addEventListener("click", play);
-  $("#strokeNums").addEventListener("change", e => {
+  playButton.disabled = false;
+  numbersToggle.disabled = false;
+  playButton.addEventListener("click", play);
+  numbersToggle.addEventListener("change", e => {
     nums.forEach(t => { t.style.display = e.target.checked ? "" : "none"; });
   });
   if (store.settings.autoplay) play();
@@ -1110,10 +1141,12 @@ function renderSettings(view) {
     '<section class="card"><div class="settings-card-title"><span class="settings-icon mint">' + pengoIcon('book') + '</span><div><h2>Keep your discoveries</h2><p>Your progress deserves a safe place.</p></div></div><p class="explain">Save a backup to take your learning with you. Importing a backup replaces your current progress.</p><div class="settings-row">' +
     '<button class="btn soft" id="sExport">Export my data</button><button class="btn soft" id="sImportButton" type="button">Import backup</button><input type="file" id="sImport" accept="application/json" hidden></div><p class="explain">' + storeNote() + '</p></section>' +
     '<section class="card settings-reset"><div class="settings-card-title"><span class="settings-icon coral">' + pengoIcon('refresh') + '</span><div><h2>A clean slate</h2><p>Only when you want a fresh start.</p></div></div><p class="explain">This removes your progress, notes, plan and settings. Save a backup first if you’d like to keep them.</p><button class="btn soft danger" id="sWipe">Erase everything</button></section>' +
-    "<details class=\"card settings-about\"><summary>Behind the discoveries</summary>" +
+    "<details class=\"card settings-about\" id=\"credits\"><summary>Credits &amp; data sources</summary>" +
+    '<p><a href="https://kanjivg.tagaini.net/">KanjiVG</a> · © Ulrich Apel · <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>.</p>' +
+    '<p class="explain">KanjiVG supplies stroke-order diagrams and component shapes. Component data is adapted from its SVG hierarchy with grouped parts and partial-breakdown labels; it retains the same license.</p>' +
     "<p class=\"explain\">Kanji facts: KANJIDIC2 + curated JLPT files. Components: KanjiVG hierarchy; EDRDG KRADFILE fallback. " +
     "Stroke art: KanjiVG (" + (DB.meta ? LEVELS.map(l => DB.meta.levels[l].stroke + "/" + DB.meta.levels[l].count + " " + l).join(" · ") : "") + "). " +
-    "Sentences: Tanaka Corpus + CSV set. Accents: Kanjium. Loader: " + (DB.source || "?") + ". Vocab: JLPT lists (" + (DB.vocabMeta ? DB.vocabMeta.total : vAll().length) + " words) + Tatoeba sentences (" + (DB.vocabMeta ? DB.vocabMeta.withSentences : 0) + " with matches). Grammar: Anki deck ‘Japanese Core Grammar JLPT N5-N1’ (" + (DB.grammarMeta ? DB.grammarMeta.total : gAll().length) + " points, text only, no audio used, no licence stated). Full credits in resources/CREDITS.md.</p></details>" +
+    "Sentences: Tanaka Corpus + CSV set. Accents: Kanjium. Loader: " + (DB.source || "?") + ". Vocab: JLPT lists (" + (DB.vocabMeta ? DB.vocabMeta.total : vAll().length) + " words) + Tatoeba sentences (" + (DB.vocabMeta ? DB.vocabMeta.withSentences : 0) + " with matches). Grammar: Anki deck ‘Japanese Core Grammar JLPT N5-N1’ (" + (DB.grammarMeta ? DB.grammarMeta.total : gAll().length) + " points, text only, no audio used, no licence stated). <a href=\"resources/CREDITS.md\">Full credits and licenses</a>.</p></details>" +
     "<div class=\"card\"><h2>About this app</h2>" +
     "<p><button class=\"btn soft\" id=\"sIntro\">Replay intro</button></p>" + 
     "<p class=\"explain\">Pengo " + (window.APP_VERSION || "1.0.0") + " runs fully offline: all kanji, vocabulary and grammar data (incl. example sentences) plus stroke diagrams are bundled, with no account or network needed. Sources: KANJIDIC2, KRADFILE (EDRDG), KanjiVG, Tanaka Corpus, Kanjium. See resources/CREDITS.md for full attribution.</p></div></div></div></div>";
@@ -1253,8 +1286,8 @@ function matchVQuery(v, q) {
   if (v.word === t) return true;
   const f = foldEnglish(t);
   if (f) {
-    if (foldEnglish(v.meaning).indexOf(f) >= 0) return true;
-    if ((v.meanings || []).some(m => foldEnglish(m).indexOf(f) >= 0)) return true;
+    if (matchEnglishPhrase(v.meaning, f)) return true;
+    if ((v.meanings || []).some(m => matchEnglishPhrase(m, f))) return true;
   }
   const rq = foldReading(t);
   if (rq) {
@@ -1262,6 +1295,13 @@ function matchVQuery(v, q) {
     if (foldReading(v.word).indexOf(rq) >= 0) return true;
   }
   return false;
+}
+function matchEnglishPhrase(meaning, query) {
+  const phrase = foldEnglish(query).replace(/\s+/g, " ");
+  if (!phrase) return false;
+  const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp("(^|[^\\p{L}\\p{N}])" + escaped + "(?=$|[^\\p{L}\\p{N}])", "u")
+    .test(foldEnglish(meaning).replace(/\s+/g, " "));
 }
 function vocabCard(v) {
   const fav = isVFav(v.id) ? "<span class=\"fav-star\" aria-label=\"Favorite\">*</span>" : "";

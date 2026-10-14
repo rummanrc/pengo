@@ -108,7 +108,7 @@ Constants are mutable objects/arrays; there is no freeze or supported live confi
 | `window.KKBack()` | Tries `OBBack` then Platform Back; native entry point |
 | `window.OBBack()` | Intro Back handler while overlay exists; null after finish |
 | `importBackupText(text)` | Global function: basic validation, replacement, normalize/save/theme/render; Boolean result |
-| `window.KKDiag.stroke` | Last stroke loader fetch/XHR/length diagnostic |
+| `window.KKDiag.stroke` | Last stroke loader fetch/XHR/script/length diagnostic |
 
 Native bridge detection occurs during script initialization; late bridge injection would need reevaluation. Native export resolves dispatch, not successful document writing. Web share errors fall through to download.
 

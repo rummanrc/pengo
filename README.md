@@ -12,7 +12,7 @@ python3 -m http.server 8000
 
 Open <http://localhost:8000/>. No npm install, backend, or frontend compilation is required. Stop with Ctrl+C.
 
-Opening `index.html` directly can load study data through `data/bundle.js`, but browser file restrictions may block stroke diagrams. HTTP is the supported development path. The web manifest is present; the optional notification worker does not cache files, so hosted offline reload is not guaranteed.
+Opening `index.html` directly loads study data through `data/bundle.js` and stroke diagrams through lazy `data/strokes/*.js` fallback scripts. HTTP is the supported development path. The web manifest is present; the optional notification worker does not cache files, so hosted offline reload is not guaranteed.
 
 ## Documentation
 
@@ -41,7 +41,7 @@ Start with the [documentation index](docs/README.md). The engineering docs use M
 
 ## Current features
 
-- Search vocabulary across every JLPT level by Japanese word, reading or English meaning; Learn browsers search the chosen level. Explore related items outside the plan in read-only detail pages; use Back buttons to return.
+- Search vocabulary across every JLPT level by Japanese word, reading or whole English words/phrases; Learn browsers search the chosen level. Explore related items outside the plan in read-only detail pages; use Back buttons to return.
 - Kanji readings, components, memory aids, examples, notes, similar characters, and animated KanjiVG stroke diagrams.
 - Animated tap-to-flip discovery cards with meanings, readings, memory stories and nested components. Choose “Got it” or “Still learning”, then swipe or tap to advance. Return from full details to the same card.
 - Text-only learning: pronunciation clips, voice controls and native TTS have been removed to reduce app size.

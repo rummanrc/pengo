@@ -54,6 +54,7 @@ Kanji/vocab builders opportunistically use the furigana lookup from existing gen
 | `furigana.py` | Dictionary from existing vocab, embedded compounds, grammar ruby | Rewrites kanji/vocab sentences and grammar example furigana; `--check` reports without writing |
 | `sudachi_furigana.py` | Tokenizer supplements uncovered vocabulary readings | Rewrites only vocab JSON; `--check` simulates/report only |
 | `build_bundle.py` | Read generated JSON | Overwrites `data/bundle.js`; top-level script executes on import |
+| `build_strokes.py` | Read bundled KanjiVG SVGs unchanged | Writes lazy `data/strokes/*.js` chunks with original notices; rerun after SVG updates; also invoked by staging |
 | `sync_kanji_data.py` | Fetch upstream metadata and compare | Default reports only; `--write` replaces vendored metadata |
 | `wk_radicals.py` | Map WaniKani mnemonic part labels | Helper module, not a standalone rebuild pipeline; current kanji builder does not import it |
 | `sync_www.py` | Copy runtime inventory | Stage `www/` or directory supplied through `--out` |
@@ -112,7 +113,7 @@ The annotator builds a surface→reading lookup from generated vocabulary, embed
 
 ## Runtime loading contract
 
-`loadDataFetch()` requests 19 files in parallel. Five kanji arrays plus `meta.json` are required; radicals and each vocabulary/grammar request individually catch errors to empty data/null metadata. A required fetch/parse failure causes `loadData()` to load `bundle.js` as a classic script. Successful loading builds indexes and sets `DB.source`/`DB.loaded`.
+`loadDataFetch()` requests 19 files in parallel. Five kanji arrays plus `meta.json` are required; radicals and each vocabulary/grammar request individually catch errors to empty data/null metadata. A required fetch/parse failure causes `loadData()` to load `bundle.js` as a classic script. Successful loading builds indexes and sets `DB.source`/`DB.loaded`. Stroke diagrams load separately: fetch/XHR first over HTTP/native schemes, then lazy `data/strokes/*.js` classic-script fallback; `file://` uses the fallback directly. Each fallback chunk spans at most 256 code points and preserves the source SVG strings verbatim. Run `python3 scripts/build_strokes.py` after SVG updates for direct source-folder use; staging runs it automatically.
 
 Optional-file failures may leave empty sections while reporting source `fetch`; the bundle is not consulted to fill each missing optional file. Fetch JSON calls do not first check HTTP status. A parseable but wrong-shaped response can fail later during indexing. Package completeness matters even when startup succeeds.
 

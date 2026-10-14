@@ -3,7 +3,7 @@
 Copies only runtime files into www/ (no build step, no npm needed):
   index.html, app.js, platform.js, styles.css,
   manifest.webmanifest, assets/,
-  data/*.json (levels + radicals + meta) and data/bundle.js (file:// fallback),
+  data/*.json, data/bundle.js and data/strokes/*.js (file:// fallbacks),
   resources/stroke-order/ (KanjiVG SVGs), resources/CREDITS.md (linked from footer).
 
 Run:  python scripts/sync_www.py [--out www]
@@ -11,6 +11,7 @@ Run:  python scripts/sync_www.py [--out www]
 import shutil
 import sys
 from pathlib import Path
+from build_strokes import main as build_strokes
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / (sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv else "www")
@@ -23,6 +24,7 @@ EXTRA = [
 ]
 
 def main():
+    build_strokes()
     OUT.mkdir(parents=True, exist_ok=True)
     # Purge retired runtime content from an existing staging directory.
     shutil.rmtree(OUT / "assets" / "audio", ignore_errors=True)

@@ -279,3 +279,18 @@ With the same temporary Playwright setup and static server, run `NODE_PATH=/tmp/
 ## Interactive tutorial
 
 Run `NODE_PATH=/tmp/pengo-qa/node_modules PENGO_TEST_URL=http://127.0.0.1:8000/ node tests/test_tutorial_browser.cjs` with the same Playwright/Chrome setup. It taps actual highlighted controls through the full tour, verifies target/panel placement in portrait, landscape, tablet and desktop layouts, covers both themes/reduced motion, and compares study state across replay with saved quiz/card sessions. It also checks simulated Android first-launch/Back, intro completion, keyboard trapping/Escape, completed-challenge fallback, reload isolation, normal learning after exit, and offline `file://` bundle replay. Screenshots go to `/tmp/pengo-tutorial-qa`. Native-device touch/WebView acceptance still requires an installed APK.
+
+## Search precision, detail alignment and stroke recovery — 2026-10-14
+
+Stage with `python3 scripts/sync_www.py`, then run `NODE_PATH=/tmp/pengo-qa/node_modules node tests/test_search_strokes_browser.cjs` against the local server. The suite checks real `car` results (12, excluding 強力), whole English words/phrases and literal punctuation, alternate meanings, kana folding, scoped vocabulary browsing, actual text centering at 700/768/1024/1440px in both themes, Settings attribution, and byte equality between all 2,383 fallback diagrams and their original SVGs.
+
+It deliberately blocks both SVG fetch and XHR to reproduce the reported error, verifies recovery/replay/number controls, failed-load retry, non-SVG responses, and direct `file://` loading of source and staged apps. Screenshots default to `/tmp/pengo-search-strokes-qa`. These are isolated Chrome browser checks; physical Android/iOS WebView acceptance remains separate.
+
+Verified on 2026-10-14: 72 search/stroke, 82 dictionary/detail, 117 exploration and 49 discovery browser checks passed (320 total), plus `npm test`, five component unit tests, runtime/test syntax and diff checks. Desktop vocab, mobile fallback and Settings credit screenshots were inspected. Web, Android and iOS staging succeeded; 87 changed runtime/credit/fallback files match source across all three staged packages. Native binaries and physical-device behavior were not tested in this change.
+
+
+## Home mascot alignment and APK — 2026-10-14
+
+The Home hero artwork now centers vertically beside its text instead of sitting at the bottom of the column. The saved-deck Continue learning state was checked at 320/390/480/700/768/1024/1440px in both themes: all 14 layouts keep the mascot within the card and within 1px of the text’s vertical center. Desktop/light and phone/dark screenshots were inspected. The existing Home suite passed 60 checks; `npm test` and diff checks passed.
+
+Docker debug APK assembly succeeded. All 2,514 staged web files match the APK bytes, including all 83 stroke fallback chunks and the final search/detail/credit/mascot changes. Android and iOS assets were refreshed. APK: `dist/pengo-debug.apk`, 23,690,946 bytes (22.59 MiB); SHA-256 `0720d837abd95816a8521c669c8a0e862baf497d852cff7de1fe90a5c6b23c67`. Physical Android-device interaction was not tested.

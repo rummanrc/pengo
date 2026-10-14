@@ -17,7 +17,7 @@ flowchart TD
     Reminders --> Worker["reminder-worker.js: browser notification taps"]
     Reminders --> Bridge
     App --> Content["data JSON or bundle.js"]
-    App --> SVG["resources/stroke-order: SVGs"]
+    App --> SVG["resources/stroke-order: SVGs or data/strokes scripts"]
     App --> Storage["localStorage: knowkanji:v1"]
     Shell --> Intro["onboarding.js"]
     Intro --> Flag["localStorage: pengo:onboarded:v1"]
@@ -125,4 +125,4 @@ Kanji indexes keep the last encountered record across overlapping levels while p
 
 Optional Capacitor declarations are scaffolding, not the implementation of the checked-in Java activity. See [deployment](deployment.md) and [decision records](decisions.md) for related tradeoffs.
 
-Voice pronunciation and native TTS were removed on 2026-10-09. Discovery cards use the existing practice session and SRS; revealing earns no progress, ratings do. Component data loads through a classic script in both HTTP and file:// modes. See [discovery cards](discovery-cards.md).
+Voice pronunciation and native TTS were removed on 2026-10-09. Discovery cards use the existing practice session and SRS; revealing earns no progress, ratings do. Component data loads through a classic script in both HTTP and file:// modes. Stroke art has lazy classic-script fallback chunks generated from unchanged SVG files by `scripts/build_strokes.py`; `sync_www.py` regenerates these before packaging. See [discovery cards](discovery-cards.md).

@@ -1,6 +1,6 @@
 # Deployment and releases
 
-Voice/audio assets are retired. Run `python3 scripts/build_components.py` after updating KanjiVG SVGs or mnemonics. Ship `data/components.js` with the runtime; `sync_www.py` removes legacy audio and pronunciation files from an existing staging directory. No synthesis/model dependencies are required.
+Voice/audio assets are retired. Run `python3 scripts/build_components.py` after updating KanjiVG SVGs or mnemonics. Ship `data/components.js` and `data/strokes/*.js` with the runtime; staging regenerates the stroke fallback chunks before copying assets; `sync_www.py` removes legacy audio and pronunciation files from an existing staging directory. No synthesis/model dependencies are required.
 
 ## Static web staging
 

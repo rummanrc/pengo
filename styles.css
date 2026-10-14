@@ -335,7 +335,7 @@ h2 small a { font-weight: 600; }
 .gram-hero { font-size: 2.4rem; line-height: 1.2; text-align: center; overflow-wrap: anywhere; height: auto; min-height: 7rem; padding: .8rem; }
 .vocab-hero, .gram-hero { display: none; }
 @media (min-width: 700px) {
-  .vocab-hero, .gram-hero { display: flex; }
+  .vocab-hero, .gram-hero { display: grid; }
 }
 .gram-big { font-size: clamp(2rem, 8vw, 3.2rem); }
 .gsec { font-size: 1rem; margin: 1rem 0 .3rem; color: var(--accent-ink); }
@@ -721,7 +721,7 @@ h2 { font-weight: 800; }
 .hero-copy > p { max-width: 33ch; color: var(--accent-ink); font-size: .95rem; line-height: 1.65; margin: 0 0 1.2rem; }
 .hero-start { padding: .9rem 1.25rem; }
 .hero-footnote { display: block; font-size: .75rem; margin-top: .65rem; color: var(--accent-ink); }
-.hero-art { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; position: relative; min-width: 0; }
+.hero-art { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; min-width: 0; }
 .hero-pengo { max-width: 100%; width: 238px; height: 238px; object-fit: contain; filter: drop-shadow(0 10px 0 rgb(25 84 60 / 7%)); animation: none; transform-origin: bottom center; }
 .hero-orbit { position: absolute; display: grid; place-items: center; border-radius: 14px; transform: rotate(-12deg); background: var(--card); color: var(--accent); width: 38px; height: 38px; font-weight: 850; box-shadow: 0 3px 0 rgb(20 70 50 / 9%); }
 .orbit-one { top: 22px; left: 5px; font-family: var(--jp-font); }

@@ -9,7 +9,7 @@ Preserve an exported backup before investigating user-state problems. Use a disp
 | Data-load error on startup | Required JSON failed and bundle could not load | Serve via HTTP; check paths, JSON validity, and `data/bundle.js` |
 | Empty vocab/grammar but kanji works | Optional requests failed to empty arrays | Inspect Network requests; restore full staged `data/` |
 | HTTP and file/native show different content | JSON changed without matching fallback bundle | Rebuild bundle after final JSON changes, then restage/rebuild |
-| Missing stroke art | Absent SVG, blocked file fetch/XHR, stale `hasStroke`, parse failure | Check `<cp>.svg`, `window.KKDiag.stroke`, HTTP/native behavior |
+| Missing stroke art | Absent SVG/fallback chunk, stale `hasStroke`, parse failure | Check `<cp>.svg`, `data/strokes/`, `window.KKDiag.stroke`; regenerate with `build_strokes.py` and restage. Blocked fetch/XHR now recovers via classic scripts. |
 | Blank/hidden app during intro | Boot gate or failed script/data load | Check console, script order, `ob-boot` handling, load failure path |
 | Progress seems missing | Origin/profile changed, storage cleared, native identity changed | Return to original origin/profile or import an exported backup |
 | Progress disappears after restart | Full/blocked localStorage or malformed stored data | Test storage in disposable profile; preserve/export current state; diagnose permissions/quota |

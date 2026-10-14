@@ -42,8 +42,7 @@ function componentsHTML(item) {
       tree.children.map(function (node) { return componentTreeHTML(node, 0); }).join('') + '</div>' +
       (tree.complete ? '' : '<p class="explain">Partial breakdown.</p>') :
       '<div class="comp-list">' + (item.components || []).map(compRow).join('') + '</div>') +
-    '<p class="explain component-attribution">' + (tree ? '<a href="https://kanjivg.tagaini.net/">KanjiVG</a> · © Ulrich Apel · CC BY-SA 3.0' : 'EDRDG KRADFILE fallback') +
-    '.</p></div>' +
+    '</div>' +
     (structural ? '<details class="component-inside"><summary>Compare finer parts</summary><div class="comp-list">' +
       (item.components || []).map(compRow).join('') + '</div></details>' : '') + '</div>';
 }
