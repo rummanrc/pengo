@@ -59,6 +59,9 @@ F-Droid build-server run or acceptance.
 
 The proposed recipe is `fdroid/metadata/io.github.rummanrc.pengo.yml`, and
 `fdroid/submission.md` contains the inclusion-request text for `v1.0.0`.
+The [F-Droid inclusion request #4582](https://gitlab.com/fdroid/rfp/-/work_items/4582) was
+submitted on 2026-10-16 for the public
+[Pengo 1.0.0 source release](https://github.com/rummanrc/pengo/releases/tag/v1.0.0).
 F-Droid inclusion is pending. Its maintainers control review, acceptance,
 building, signing and listing; the public GitHub source release is not an
 installable F-Droid release.

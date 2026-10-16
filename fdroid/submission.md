@@ -1,5 +1,6 @@
 # F-Droid inclusion request
 
+Submitted on 2026-10-16: [F-Droid request #4582](https://gitlab.com/fdroid/rfp/-/work_items/4582).
 Publication status and historical-source cleanup are recorded in `docs/fdroid.md`.
 
 - Name: Pengo
