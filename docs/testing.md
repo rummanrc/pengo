@@ -20,8 +20,8 @@ Lint reported 12 existing launcher-icon/unused-resource warnings and no errors.
 The Docker unsigned release build succeeded. Store screenshots depict the shared
 runtime rendered in Chrome at 390×844 CSS pixels (2× output); they are not physical
 Android-device captures. Physical-device acceptance, a two-version signed native
-upgrade, official `fdroidserver` build/scanner validation and store publication
-remain unverified. See [F-Droid preparation](fdroid.md) for publication status.
+upgrade and official store publication remain unverified. Local `fdroidserver`
+validation is recorded below. See [F-Droid preparation](fdroid.md) for publication status.
 
 ## Licensed content replacement — 2026-10-16
 
@@ -42,13 +42,15 @@ release contains 2,520 runtime/notice files verified against current source byte
 Docker validation toolchain, using official F-Droid category names. The local source-recipe build also succeeded. Verification uses a temporary Git
 snapshot and the installed Gradle 8.7,
 rather than public GitHub source. This is not acceptance by F-Droid maintainers.
-Repository visibility and historical content sanitization remain pending.
+Historical content sanitization is complete, preserving all 44 commits and their
+parent relationships. Only the approved bundled-content paths changed; the release
+tree remained identical. The sanitized source is now public.
 
 ## Coverage today
 
 `tests/test_course.py` evaluates the actual `course.js` plus two JavaScript drivers in dukpy. This snapshot executes **97 assertions**, covering dates/exam generation, pace, daily splits, curriculum coverage, unlocking, streaks, sampling, progress, milestones, defaults, ordering, schedule states, and greetings.
 
-Daily practice adds 37 pure-logic checks and an optional browser persistence/SRS integration suite. Design/reminder checks add 17 reminder rules, 7 worker checks, 40 browser checks, and 26 native JUnit/Robolectric tests. Content-pipeline tests, physical-device Android instrumentation, CI, a formatter, and a linter are still absent. Manual procedures below fill those gaps; they are not claims that every procedure has been run.
+Daily practice adds 37 pure-logic checks and an optional browser persistence/SRS integration suite. Design/reminder checks add 17 reminder rules, 7 worker checks, 40 browser checks, and 26 native JUnit/Robolectric tests. Physical-device Android instrumentation, CI, and a formatter are still absent. Manual procedures below fill those gaps; they are not claims that every procedure has been run.
 
 ## iOS checks and acceptance
 

@@ -46,26 +46,22 @@ The raw metadata no longer contains WaniKani enrichment and the refresh tool fil
 those fields. Kanji alive radical names now have a pinned, attributed source.
 See [credits](../resources/CREDITS.md) for licenses and transformations.
 
-**Historical publication is still pending.** Older commits contain the retired
-unlicensed text and enrichment. Deleting current files does not remove those old
-copies. Permission to sanitize the affected Git history has been requested;
-repository visibility must remain private until that issue is resolved. No public
-release tag or F-Droid submission is claimed by this preparation record.
+The affected bundled-content paths have been sanitized throughout all 44
+historical commits while preserving the commit graph and code history. Original
+history is retained in a private, read-only archive and local recovery bundles.
+The sanitized source is public at https://github.com/rummanrc/pengo. The original
+repository was retained privately and replaced at the public URL so its retired
+Git objects are not available through the public repository.
 
 The recipe passed `fdroidserver` 2.4.5 parsing, lint, source scanning and a local
 source-snapshot build with Gradle 8.7. This is local validation, not an official
 F-Droid build-server run or acceptance.
 
 The proposed recipe is `fdroid/metadata/io.github.rummanrc.pengo.yml`, and
-`fdroid/submission.md` is the prepared request body. Final publication requires:
-
-1. Resolve historical content publication while preserving a private recovery copy.
-2. Finish source/build validation, commit the reviewed tree, publish public source
-   and the matching `v1.0.0` tag.
-3. Submit a metadata merge request to F-Droid's `fdroiddata` repository or an
-   inclusion request to its submission queue. F-Droid reviews, builds and signs
-   the official release; acceptance and listing are controlled by its maintainers.
-4. Record the actual submission URL and, later, the F-Droid listing URL.
+`fdroid/submission.md` contains the inclusion-request text for `v1.0.0`.
+F-Droid inclusion is pending. Its maintainers control review, acceptance,
+building, signing and listing; the public GitHub source release is not an
+installable F-Droid release.
 
 Physical Android acceptance and a two-version signed native upgrade remain
 separate verification. Browser/Robolectric tests do not prove device behavior.
