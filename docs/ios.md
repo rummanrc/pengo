@@ -7,7 +7,7 @@ Pengo has a standalone Swift/UIKit project at `ios/Pengo.xcodeproj`, targeting i
 1. Install full Xcode on a Mac. Launch it once to complete setup and install an iOS platform/runtime compatible with your phone. Command-line tools alone are insufficient. Select the full Xcode installation under **Xcode Settings → Locations → Command Line Tools**.
 2. From the repository root, run `python3 scripts/build_ios.py --assets-only`.
 3. Open `ios/Pengo.xcodeproj`. Select the **Pengo** target, then **Signing & Capabilities**. Leave **Automatically manage signing** enabled.
-4. Sign into your Apple Account in Xcode Settings and select your **Personal Team**, or your paid development team. If `com.knowkanji.app` cannot be registered by your team, use a unique identifier such as `com.yourname.pengo.debug`. Keep it stable between updates to preserve the installation's data.
+4. Sign into your Apple Account in Xcode Settings and select your **Personal Team**, or your paid development team. If `io.github.rummanrc.pengo` cannot be registered by your team, use a unique identifier such as `com.yourname.pengo.debug`. Keep it stable between updates to preserve the installation's data.
 5. Connect and unlock your iPhone, trust the Mac, and select the phone as the run destination. Enable **Settings → Privacy & Security → Developer Mode** when prompted, restart, and confirm. If iOS asks you to trust the developer, follow its prompt in **Settings → General → VPN & Device Management**.
 6. Press **Run** (⌘R). Xcode signs and installs the debug app. Later updates can use paired wireless debugging.
 
@@ -27,7 +27,7 @@ Output: `dist/pengo-ios-simulator/Pengo.app`. After booting a simulator:
 
 ```sh
 xcrun simctl install booted dist/pengo-ios-simulator/Pengo.app
-xcrun simctl launch booted com.knowkanji.app
+xcrun simctl launch booted io.github.rummanrc.pengo
 ```
 
 For a signed device build, first establish signing in Xcode, then:

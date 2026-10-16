@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const run = (name, context) => vm.runInContext(fs.readFileSync(path.join(root, name), 'utf8'), context);
 function environment(bridge) {
   const values = new Map();
-  return vm.createContext({ window: { KnowKanjiNative: bridge }, URLSearchParams, location: { search: '' },
+  return vm.createContext({ window: { PengoNative: bridge }, URLSearchParams, location: { search: '' },
     localStorage: { getItem: key => values.get(key) || null, setItem: (key, value) => values.set(key, value) } });
 }
 const messages = [];
@@ -22,7 +22,7 @@ assert.ok(ios.window.Platform.backingStoreNote().includes('on this device'));
 assert.equal(ios.shouldShowOnboarding(), true);
 ios.markOnboarded();
 assert.equal(ios.shouldShowOnboarding(), false);
-const native = ios.window.KnowKanjiNative;
+const native = ios.window.PengoNative;
 const backup = '{"notes":{"字":"quotes \\\" and newline\n"}}';
 native.exportJson('pengo-backup.json', backup);
 assert.equal(messages.at(-1).method, 'exportJson');

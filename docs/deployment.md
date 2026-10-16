@@ -30,8 +30,9 @@ Hosted web offline reloads are not guaranteed: explicit browser reminder opt-in 
 
 | Field | Current source value |
 | --- | --- |
-| Activity | `android/app/src/main/java/com/knowkanji/app/MainActivity.java` |
-| Application ID/namespace | `com.knowkanji.app` |
+| Activity | `android/app/src/main/java/io/github/rummanrc/pengo/MainActivity.java` |
+| Application ID/namespace | `io.github.rummanrc.pengo` |
+| Debug application ID | `io.github.rummanrc.pengo.debug` |
 | Display name | Pengo |
 | compile/target SDK | 34 |
 | Minimum SDK | 24 |
@@ -41,7 +42,6 @@ Hosted web offline reloads are not guaranteed: explicit browser reminder opt-in 
 | versionCode/versionName | 1 / `1.0.0` |
 | Native start URL | `file:///android_asset/www/index.html` |
 | Internet permission | Not declared |
-| Speech service visibility | `TTS_SERVICE` intent query; no additional permission; installed offline Japanese voice required |
 | Reminder permissions | `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`; no exact-alarm permission |
 | Platform backup | `android:allowBackup="true"` |
 
@@ -57,7 +57,7 @@ python3 scripts/build_apk.py
 
 The script:
 
-1. Runs `sync_www.py` into `www/`.
+1. Runs `sync_www.py` into a fresh temporary runtime directory.
 2. Removes/replaces `android/app/src/main/assets/www/` with that staged tree.
 3. Uses the wrapper only if `gradle-wrapper.jar` exists, otherwise searches PATH for Gradle.
 4. Runs `:app:assembleDebug` in `android/`.
@@ -71,7 +71,7 @@ For staging without Java/SDK/Gradle:
 python3 scripts/build_apk.py --assets-only
 ```
 
-The script does not rebuild content or `bundle.js`. Its native-asset replacement is generated work; edit the root source before staging. The upstream web staging merge can retain obsolete files that are then recopied to native assets.
+The script does not rebuild content or `bundle.js`. Its native-asset replacement is generated work; edit the root source before staging. Native staging uses a fresh temporary directory so obsolete files in a previous `www/` cannot enter the APK. The temporary directory is removed automatically.
 
 ### Docker debug build
 
@@ -81,11 +81,11 @@ With the Docker CLI/daemon available, run from the repository root:
 python3 scripts/build_apk_docker.py
 ```
 
-The script builds `docker/Dockerfile` for `linux/amd64`, creates a container, copies the APK out, and removes the extraction container. Defaults are image tag `knowkanji-builder` and container name `kk-apk-extract`. It accepts `--tag NAME` and `--no-cache`.
+The script builds `docker/Dockerfile` for `linux/amd64`, creates a container, copies the APK out, and removes the extraction container. The default debug image tag is `pengo-builder:debug`; extraction containers use unique `pengo-apk-extract-*` names. It accepts `--tag NAME`, `--no-cache`, and `--release`. It resolves the build context and output against the repository root, so it can also be invoked from another directory.
 
 The image starts from `gradle:8.7-jdk17`, installs Python/curl/unzip and Android command-line tools, accepts SDK licenses, installs platform/build tools 34, copies the repository, and runs the same debug builder. First builds need network for images/toolchain/dependencies and substantial disk space. ARM hosts use the selected amd64 platform; elapsed build time varies.
 
-The fixed extraction container name is removed before creation, so concurrent builds can collide. `.dockerignore` excludes generated folders, node_modules, Git metadata, and local Android SDK config. No signing secrets should be added to the build context.
+`.dockerignore` excludes generated folders, node_modules, Git metadata, local Android SDK config and signing keystores. Never add signing secrets to the build context. Debug keys generated inside fresh Docker images are not a stable public release identity; use the separately signed official F-Droid release for public updates.
 
 ### Installation and native checks
 
@@ -107,11 +107,11 @@ The standalone `ios/Pengo.xcodeproj` uses Swift/UIKit/WKWebView and shares the s
 
 `package.json` declares CLI/Core/Android `^6.0.0`; `capacitor.config.json` identifies Pengo, `www`, and an HTTPS Android scheme. It is optional scaffolding. The checked-in `android/` is already a standalone native project, so `npx cap add android` cannot simply add the same platform directory; `cap sync` is not the native builder's staging step.
 
-A genuine Capacitor path needs an isolated project/directory and explicit native integration. The runtime has conditional Capacitor detection/Back handling, but `@capacitor/app` is not declared and no complete App-plugin bootstrap is shipped. Native document-picker methods are supplied by `KnowKanjiNative`, not a built-in Capacitor implementation here. Do not assume equivalent behavior from installing the optional packages.
+A genuine Capacitor path needs an isolated project/directory and explicit native integration. The runtime has conditional Capacitor detection/Back handling, but `@capacitor/app` is not declared and no complete App-plugin bootstrap is shipped. Native document-picker methods are supplied by `PengoNative`, not a built-in Capacitor implementation here. Do not assume equivalent behavior from installing the optional packages.
 
 ## Release preparation
 
-The repository currently automates **debug APKs**. A release build type exists with minification off, but there is no release signing configuration, key management, store metadata, or automated release pipeline. Prepare those explicitly before production distribution.
+The repository automates **debug APKs and unsigned release APKs**. Build the latter with `python3 scripts/build_apk.py --release` or `python3 scripts/build_apk_docker.py --release`; output is `dist/pengo-release-unsigned.apk`. The release variant is not debuggable and contains no developer signing configuration. Official F-Droid builds and signs from public source. Store metadata and a draft build recipe are included; licensing and publication requirements are recorded in [F-Droid release](fdroid.md).
 
 For a concrete release candidate:
 
@@ -122,7 +122,7 @@ For a concrete release candidate:
 5. Include resource credits and resolve source/application distribution permissions as applicable.
 6. If production Android distribution is intended, add signing/distribution configuration and evaluate current target platform requirements for that release.
 
-This is a release procedure, not evidence that a production release is ready. Avoid changing legacy `knowkanji` storage/package/application IDs merely to align branding.
+This is a release procedure, not evidence that a store release is published. The pre-release Pengo rename changes native identity and requires old native testers to export/import progress once. Browser progress migrates on the same origin. Keep the Pengo storage key, released app ID and signing lineage stable for all subsequent updates.
 
 ## Rollback and recovery
 

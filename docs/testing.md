@@ -1,5 +1,49 @@
 # Testing and acceptance
 
+## Pengo rename and F-Droid preparation — 2026-10-16
+
+`npm test` now also exercises real startup storage migration and the renamed
+native JavaScript bridge. Ten migration checks cover preserved progress/settings,
+new-key precedence, retry after persistence failure, malformed input, unavailable
+storage and subsequent saves/reloads. Run the browser tutorial suite to verify
+first-launch detection using `PengoNative` and real learning after the tour.
+
+Verified during preparation: the npm suite passed (97 Course, 39 Practice, 17
+Reminders, 7 worker checks, Dashboard, 10 migration checks and native bridge
+checks); the tutorial browser suite passed 361 checks. Seven additional actual
+browser checks verified migration, dark-theme preservation, reload persistence
+and confirmed erasure without resurrecting legacy progress. All 26 renamed
+Android JUnit/Robolectric tests passed; `assembleDebug` and `lintRelease` passed.
+Lint reported 12 existing launcher-icon/unused-resource warnings and no errors.
+`npm run test:ios` passed bridge checks and 31 Foundation checks after staging.
+
+The Docker unsigned release build succeeded. Store screenshots depict the shared
+runtime rendered in Chrome at 390×844 CSS pixels (2× output); they are not physical
+Android-device captures. Physical-device acceptance, a two-version signed native
+upgrade, official `fdroidserver` build/scanner validation and store publication
+remain unverified. See [F-Droid preparation](fdroid.md) for publication status.
+
+## Licensed content replacement — 2026-10-16
+
+The unlicensed mnemonic CSV and Anki-deck text are retired. Runtime grammar now
+contains 595 source-pinned, CC BY-SA 4.0 notes with 1,787 examples from Japanese
+Language Data. Source notes retain their draft review status. Dictionary metadata
+excludes WaniKani enrichment, and the refresh tool filters it. Current mnemonics
+come from original Pengo templates; KanjiVG structure is preserved.
+
+`npm run test:content` passes four provenance/removal/bundle tests and five
+component extraction tests. The full npm suite passes. Browser checks pass for
+practice (46), study plan/settings (71), discovery (49), dictionary/details (82),
+and tutorial (361): 609 checks total. The 26 native tests, debug assembly and
+release lint were repeated after content replacement and pass. The final unsigned
+release contains 2,520 runtime/notice files verified against current source bytes.
+
+`fdroidserver` 2.4.5 metadata parsing/lint and source scanning have passed in the
+Docker validation toolchain, using official F-Droid category names. The local source-recipe build also succeeded. Verification uses a temporary Git
+snapshot and the installed Gradle 8.7,
+rather than public GitHub source. This is not acceptance by F-Droid maintainers.
+Repository visibility and historical content sanitization remain pending.
+
 ## Coverage today
 
 `tests/test_course.py` evaluates the actual `course.js` plus two JavaScript drivers in dukpy. This snapshot executes **97 assertions**, covering dates/exam generation, pace, daily splits, curriculum coverage, unlocking, streaks, sampling, progress, milestones, defaults, ordering, schedule states, and greetings.

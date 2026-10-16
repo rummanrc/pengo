@@ -18,13 +18,13 @@ flowchart TD
     Reminders --> Bridge
     App --> Content["data JSON or bundle.js"]
     App --> SVG["resources/stroke-order: SVGs or data/strokes scripts"]
-    App --> Storage["localStorage: knowkanji:v1"]
+    App --> Storage["localStorage: pengo:v1"]
     Shell --> Intro["onboarding.js"]
     Intro --> Flag["localStorage: pengo:onboarded:v1"]
     App --> Platform["platform.js"]
     Platform --> Browser["Browser file/share APIs"]
-    Platform --> Bridge["KnowKanjiNative Java bridge"]
-    Platform --> IOSBridge["KnowKanjiNative iOS message bridge"]
+    Platform --> Bridge["PengoNative Java bridge"]
+    Platform --> IOSBridge["PengoNative iOS message bridge"]
     IOSBridge --> IOS["WKWebView, Files pickers, local notifications"]
     Bridge --> Android["Android document picker and system bars"]
     Bridge --> Alarm["StudyReminders: OS alarm and channel"]
@@ -93,7 +93,7 @@ Data and welcome slides run concurrently. Rendering waits for data and the welco
 
 Content lives in `DB.levels`, `DB.vocab`, and `DB.grammar`, with `byChar`, `vById`, and `gById` indexes. The mutable `store` holds learned state, favorites, notes, SRS, settings, plan configuration, activity, and practice session/history/achievements. Content itself is excluded from backups.
 
-Handlers mutate the store and call `save()`, which serializes the whole object into `knowkanji:v1`. There is no transaction log, cross-tab coordination, or server acknowledgement; storage errors show a persistent export-backup notice. The saved practice session is validated against loaded content before use, and answered questions resume as feedback without regrading. Curriculum is derived on demand, so changed data/pace may change numbered batches.
+Handlers mutate the store and call `save()`, which serializes the whole object into `pengo:v1`. There is no transaction log, cross-tab coordination, or server acknowledgement; storage errors show a persistent export-backup notice. The saved practice session is validated against loaded content before use, and answered questions resume as feedback without regrading. Curriculum is derived on demand, so changed data/pace may change numbered batches.
 
 `parseHash()` decodes route segments/query pairs. `render()` selects a view, updates navigation, binds Home reveal/dismiss controls, focuses `#view`, and scrolls to the top (or the requested reminder section). Most renderers replace `innerHTML` then bind handlers. Browse search changes only results and replaces history state to preserve focus. Hash routing requires no server route rewriting.
 
@@ -109,7 +109,7 @@ flowchart LR
     APK --> View["MainActivity: local WebView"]
 ```
 
-The bridge is installed as `window.KnowKanjiNative` before loading `file:///android_asset/www/index.html`. Export opens `ACTION_CREATE_DOCUMENT`; import opens `ACTION_OPEN_DOCUMENT`, reads UTF-8, quotes the text with `JSONObject.quote`, then invokes `Platform.receiveImport`.
+The bridge is installed as `window.PengoNative` before loading `file:///android_asset/www/index.html`. Export opens `ACTION_CREATE_DOCUMENT`; import opens `ACTION_OPEN_DOCUMENT`, reads UTF-8, quotes the text with `JSONObject.quote`, then invokes `Platform.receiveImport`.
 
 Android Back evaluates `KKBack()`: intro gets first opportunity, then Platform navigates browser history off Home. Java falls back to activity Back when JavaScript returns false. Activity recreation saves/restores WebView state; localStorage remains the durable progress store.
 

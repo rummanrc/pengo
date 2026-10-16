@@ -7,7 +7,7 @@ var Reminders = {
     return { enabled: v.enabled === true, time: /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(v.time || '') ? v.time : '19:00',
       lastDate: /^\d{4}-\d{2}-\d{2}$/.test(v.lastDate || '') ? v.lastDate : '' };
   },
-  native() { return typeof window !== 'undefined' && window.KnowKanjiNative && typeof window.KnowKanjiNative.getReminderSettings === 'function' ? window.KnowKanjiNative : null; },
+  native() { return typeof window !== 'undefined' && window.PengoNative && typeof window.PengoNative.getReminderSettings === 'function' ? window.PengoNative : null; },
   read() {
     try {
       var bridge = this.native();

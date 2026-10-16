@@ -10,7 +10,7 @@ From the repository root:
 python3 -m http.server 8000
 ```
 
-Open <http://localhost:8000/>. No npm install, backend, or frontend compilation is required. Stop with Ctrl+C.
+Open <http://localhost:8000/>. No npm install, backend, or frontend compilation is required. Optional Capacitor development dependencies have a lockfile for source scanning; Android does not use them. Stop with Ctrl+C.
 
 Opening `index.html` directly loads study data through `data/bundle.js` and stroke diagrams through lazy `data/strokes/*.js` fallback scripts. HTTP is the supported development path. The web manifest is present; the optional notification worker does not cache files, so hosted offline reload is not guaranteed.
 
@@ -32,6 +32,7 @@ Start with the [documentation index](docs/README.md). The engineering docs use M
 | Use JavaScript and native interfaces | [Interfaces](docs/interfaces.md) |
 | Validate changes | [Testing](docs/testing.md) |
 | Package the web app or APK | [Deployment](docs/deployment.md) |
+| Prepare an F-Droid release and updates | [F-Droid release](docs/fdroid.md) |
 | Review trust boundaries and privacy | [Security](docs/security.md) |
 | Diagnose failures and known gaps | [Maintenance](docs/maintenance.md) |
 | Understand architecture tradeoffs | [Decisions](docs/decisions.md) |
@@ -90,16 +91,16 @@ docs/               Engineering documentation
 
 ## Content snapshot
 
-Checked against the JSON on 2026-10-07:
+Checked against the JSON on 2026-10-16:
 
 | Level | Kanji rows | Vocabulary | Grammar |
 | --- | ---: | ---: | ---: |
-| N5 | 103 | 684 | 79 |
-| N4 | 181 | 640 | 95 |
-| N3 | 361 | 1,730 | 100 |
-| N2 | 739 | 1,812 | 61 |
-| N1 | 1,232 | 3,427 | 64 |
-| Total | 2,616 | 8,293 | 399 |
+| N5 | 103 | 684 | 77 |
+| N4 | 181 | 640 | 89 |
+| N3 | 361 | 1,730 | 130 |
+| N2 | 739 | 1,812 | 149 |
+| N1 | 1,232 | 3,427 | 150 |
+| Total | 2,616 | 8,293 | 595 |
 
 The kanji lists overlap: 2,616 rows represent 2,211 distinct characters. Progress is shared by character. These are dated counts, not UI constants.
 
@@ -113,7 +114,7 @@ python3 -m venv .venv
 .venv/bin/python tests/test_course.py
 ```
 
-Do not commit `.venv/`. Missing dukpy produces `SKIP` and a successful exit, which is not a test pass. Run `npm test` for the Node alternative: 97 course assertions, 37 practice checks, 17 reminder checks, and 7 notification-worker checks, with no npm install required. Browser integration and native reminder tests are described in [testing](docs/testing.md).
+Do not commit `.venv/`. Missing dukpy produces `SKIP` and a successful exit, which is not a test pass. Run `npm test` for the Node alternative: course, practice, reminder, notification-worker and dashboard rules, legacy-progress migration, and native JavaScript bridge checks, with no npm install required. Browser integration and native reminder tests are described in [testing](docs/testing.md).
 
 ## Android debug APK
 
@@ -135,7 +136,13 @@ With Docker running:
 python3 scripts/build_apk_docker.py
 ```
 
-These build a debug APK. Release signing and store distribution are not configured. See [deployment](docs/deployment.md) for toolchain details and optional Capacitor limitations.
+These build a debug APK with application ID `io.github.rummanrc.pengo.debug`.
+For the unsigned release that F-Droid can build and sign, run
+`python3 scripts/build_apk_docker.py --release` (or `npm run build:fdroid`
+with a local Android toolchain). Output: `dist/pengo-release-unsigned.apk`.
+This unsigned file is not directly installable. See [F-Droid preparation](docs/fdroid.md)
+for licensing, public-source and submission requirements, and
+[deployment](docs/deployment.md) for toolchain details and optional Capacitor limitations.
 
 ## iOS debug app
 
@@ -150,6 +157,6 @@ Select your signing team and connected iPhone, then press Run. A free Apple Acco
 
 ## Content and attribution
 
-Normal development uses existing `data/`. Vocabulary CSVs, the Tatoeba TSV, and the grammar Anki package needed for full regeneration are absent from this checkout. Read [the pipeline guide](docs/data-pipeline.md) before rebuilding.
+Normal development uses existing `data/`. Vocabulary CSVs and the Tatoeba TSV needed for full vocabulary regeneration are absent from this checkout. Grammar rebuilds use the checked-in, pinned Japanese Language Data snapshot. Read [the pipeline guide](docs/data-pipeline.md) before rebuilding.
 
-Keep [resource credits](resources/CREDITS.md) with distributed data. They identify source-specific terms and unresolved source permissions. No root application `LICENSE` exists; these docs do not assign one.
+Keep [resource credits](resources/CREDITS.md) with distributed data. They identify source-specific terms and unresolved source permissions. Pengo’s original code is licensed under Apache-2.0; bundled data retains the separate licenses listed in the credits.

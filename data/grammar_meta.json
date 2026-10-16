@@ -1,1 +1,43 @@
-{"levels":{"N5":{"count":0,"withExamples":0,"examples":0},"N4":{"count":0,"withExamples":0,"examples":0},"N3":{"count":0,"withExamples":0,"examples":0},"N2":{"count":0,"withExamples":0,"examples":0},"N1":{"count":0,"withExamples":0,"examples":0}},"total":0,"withExamples":0,"examples":0,"source":{"notice":"Retired content removed during owner-authorized history cleanup; use the licensed release tag."}}
+{
+  "levels": {
+    "N5": {
+      "count": 77,
+      "withExamples": 77,
+      "examples": 233
+    },
+    "N4": {
+      "count": 89,
+      "withExamples": 89,
+      "examples": 267
+    },
+    "N3": {
+      "count": 130,
+      "withExamples": 130,
+      "examples": 390
+    },
+    "N2": {
+      "count": 149,
+      "withExamples": 149,
+      "examples": 447
+    },
+    "N1": {
+      "count": 150,
+      "withExamples": 150,
+      "examples": 450
+    }
+  },
+  "total": 595,
+  "withExamples": 595,
+  "examples": 1787,
+  "frequencies": {},
+  "unclassified": 0,
+  "source": {
+    "project": "Japanese Language Data",
+    "author": "Justin Kindrix and contributors",
+    "url": "https://github.com/jkindrix/japanese-language-data",
+    "commit": "04014e06019fc9d4af76e6dbb64ec709fe863c4d",
+    "license": "CC-BY-SA-4.0",
+    "reviewStatus": "draft",
+    "modifications": "Schema conversion, stable IDs, escaped HTML and dictionary-based furigana"
+  }
+}

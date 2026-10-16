@@ -21,6 +21,7 @@ DIRS = ["assets", "data"]
 EXTRA = [
     ("resources/stroke-order", "resources/stroke-order"),
     ("resources/CREDITS.md", "resources/CREDITS.md"),
+    ("resources/licenses", "resources/licenses"),
 ]
 
 def main():
@@ -46,6 +47,10 @@ def main():
             shutil.copytree(src, dst, dirs_exist_ok=True)
         else:
             shutil.copy2(src, dst)
+    # Include the application license once selected, alongside data attribution.
+    for name in ["LICENSE", "NOTICE"]:
+        if (ROOT / name).is_file():
+            shutil.copy2(ROOT / name, OUT / name)
     total = sum(f.stat().st_size for f in OUT.rglob("*") if f.is_file())
     n = sum(1 for f in OUT.rglob("*") if f.is_file())
     print("www bundle: %d files, %.1f MB -> %s" % (n, total / 1048576.0, OUT))

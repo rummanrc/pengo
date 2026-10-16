@@ -88,7 +88,7 @@ The browser suite and Playwright dependency used a separate temporary directory,
 | Chrome design/reminder integration | 40 checks passed | Original mascot, quick starts, learning trail, feedback/results, finite/reduced motion, explicit permission/denial, real worker notifications, goal/duplicate suppression, calendar download, device preferences/import/erase, unsupported-browser fallback |
 | Responsive layout and visuals | Passed | Main routes at 320/390/768/1024/1440px; inspected desktop Home, mobile Review, dark Home, and actual phone viewports including reminder settings and page bottom |
 | Native JUnit/Robolectric | 26 tests passed; no failures/skips | 5 local-time tests, 15 alarm/receiver/notification tests, 6 full-activity permission/reset/entry tests; simulated SDK 33 |
-| Android compilation | Debug APK built successfully | Gradle 8.7/JDK 17/SDK 34 through cached `knowkanji-builder` Docker image on amd64; `testDebugUnitTest` and `assembleDebug` |
+| Android compilation | Debug APK built successfully | Gradle 8.7/JDK 17/SDK 34 through the cached Android builder Docker image on amd64; `testDebugUnitTest` and `assembleDebug` |
 | Static/APK asset parity | Passed | 2,424 runtime files / 42,325,084 bytes; every fresh staged file equals source bytes and the APK asset entry; all eight classic scripts and notification worker present |
 | Packaged Android permissions | Passed | `aapt dump permissions`: only notification and boot permissions; no internet or exact-alarm permission |
 | JavaScript/Python syntax | Passed | Root JS, Node test files, Python scripts/tests |

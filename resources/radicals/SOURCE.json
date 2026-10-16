@@ -1,0 +1,7 @@
+{
+  "source": "https://raw.githubusercontent.com/kanjialive/kanji-data-media/e1e24d39fc43e839948a8c7e99743b0994dedad5/language-data/japanese-radicals.csv",
+  "license": "CC-BY-4.0",
+  "author": "Kanji alive",
+  "modifications": "Column selection and compatibility header names",
+  "upstreamSha256": "7c24ce865b286576d4239d5d9d3811c21c4f022afd764472cdde7894bb0df8b0"
+}

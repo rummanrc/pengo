@@ -1,13 +1,11 @@
 """Extract nested Japanese learning components from the bundled KanjiVG SVGs.
 
 Derived structural data: CC BY-SA 3.0, © Ulrich Apel / KanjiVG.
-Story references are extracted from the existing mnemonic CSV, without replacing stories.
-Run after updating source SVGs or mnemonics: python3 scripts/build_components.py
+Memory stories use Pengo's original templates and the component facts.
+Run after updating source SVGs: python3 scripts/build_components.py
 No network or third-party Python dependencies required.
 """
-import csv
 import json
-import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 import build_data as facts
@@ -90,24 +88,6 @@ def build():
             collect(child)
     for tree in trees.values():
         collect(tree)
-    with (ROOT / 'resources' / 'mnemonics.csv').open(encoding='utf-8-sig') as f:
-        rows = list(csv.DictReader(f))
-    refs = {row['NUMBER']: row for row in rows}
-    for row in rows:
-        char = row.get('CHARACTER', '').strip()
-        if char not in dataset or facts.strip_mnemonic_html(row.get('MNEMONIC')) != dataset[char].get('mnemonic'):
-            continue
-        parts = []
-        for ref, label in re.findall(r"<u\s+[^>]*data-id=['\"]([^'\"]+)['\"][^>]*>(.*?)</u>", row.get('MNEMONIC', '')):
-            source = refs.get(ref, {})
-            c = source.get('CHARACTER', '').strip()
-            if len(c) != 1 or c == char or any(p['c'] == c for p in parts):
-                continue
-            info = facts.component_info(c, dataset, metadata, radicals)
-            info['m'] = facts.strip_mnemonic_html(label)
-            parts.append(info)
-        if parts:
-            stories[char] = parts
     payload = {'source': 'KanjiVG', 'license': 'CC BY-SA 3.0', 'trees': trees, 'names': names, 'stories': stories}
     out = ROOT / 'data' / 'components.js'
     out.write_text('/* KanjiVG-derived hierarchy © Ulrich Apel, CC BY-SA 3.0. https://kanjivg.tagaini.net/ */\nwindow.KK_COMPONENTS = ' + json.dumps(payload, ensure_ascii=False, separators=(',', ':')) + ';\n')

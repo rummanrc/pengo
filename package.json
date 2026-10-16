@@ -1,7 +1,8 @@
 {
-  "name": "knowkanji",
+  "name": "pengo",
   "version": "1.0.0",
   "private": true,
+  "license": "Apache-2.0",
   "description": "Offline JLPT study app (static web app + Android and iOS wrappers)",
   "scripts": {
     "sync": "python scripts/sync_www.py",
@@ -9,11 +10,14 @@
     "cap:sync": "npx cap sync android",
     "build:apk": "python scripts/build_apk.py",
     "build:apk:docker": "python scripts/build_apk_docker.py",
+    "build:fdroid": "python3 scripts/build_apk.py --release",
+    "build:fdroid:docker": "python3 scripts/build_apk_docker.py --release",
     "sync:ios-assets": "python3 scripts/build_ios.py --assets-only",
     "build:ios": "python3 scripts/build_ios.py",
     "test:ios": "python3 scripts/test_ios.py",
-    "test": "node tests/test_course.cjs && node tests/test_practice.cjs && node tests/test_reminders.cjs && node tests/test_reminder_worker.cjs && node tests/test_dashboard.cjs",
-    "test:android": "gradle -p android :app:testDebugUnitTest --console=plain"
+    "test": "node tests/test_course.cjs && node tests/test_practice.cjs && node tests/test_reminders.cjs && node tests/test_reminder_worker.cjs && node tests/test_dashboard.cjs && node tests/test_storage_migration.cjs && node tests/test_ios_bridge.cjs",
+    "test:android": "gradle -p android :app:testDebugUnitTest --console=plain",
+    "test:content": "python3 tests/test_licensed_content.py && python3 tests/test_components.py"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.0.0",

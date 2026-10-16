@@ -7,7 +7,7 @@
     window.webkit.messageHandlers.pengo.postMessage({ method, args: args || [] });
   }
   window.PengoIOSUpdateReminders = function (value) { settings = value; };
-  window.KnowKanjiNative = {
+  window.PengoNative = {
     getPlatform: () => 'ios',
     getVersion: () => '1.0.0',
     exportJson: (name, text) => send('exportJson', [name, text]),

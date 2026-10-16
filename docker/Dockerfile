@@ -21,4 +21,9 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY . .
-RUN python3 scripts/build_apk.py
+ARG BUILD_TYPE=debug
+RUN case "$BUILD_TYPE" in \
+      debug) python3 scripts/build_apk.py ;; \
+      release) python3 scripts/build_apk.py --release ;; \
+      *) echo "BUILD_TYPE must be debug or release" >&2; exit 2 ;; \
+    esac

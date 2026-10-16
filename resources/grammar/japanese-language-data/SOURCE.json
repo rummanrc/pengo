@@ -1,0 +1,16 @@
+{
+  "project": "Japanese Language Data",
+  "author": "Justin Kindrix and contributors",
+  "url": "https://github.com/jkindrix/japanese-language-data",
+  "commit": "04014e06019fc9d4af76e6dbb64ec709fe863c4d",
+  "license": "CC-BY-SA-4.0",
+  "reviewStatus": "draft",
+  "files": {
+    "n1.json": "e8aa1aa96ce39030db45074e542948645f68c6fbc8993c2b2ec73f6f24b02501",
+    "n2.json": "6e8a67c92ed732ed26afa5006d9b2c723bca7a56311dcd4ec80e9ae3cf2fc1a0",
+    "n3.json": "1e789d0052c0b9b0be3df0055424e320e7797b7e912cfae042e1ca830b633604",
+    "n4.json": "09840904aa8dcad14105f611f4f5e7768604d1540147524c6e0ddd8ffb65b32e",
+    "n5.json": "169b7882b824e67d6771b79f54a26cf90986ae574f45b8b26124fc0023f8c57c"
+  },
+  "preservedLegacyIds": 141
+}

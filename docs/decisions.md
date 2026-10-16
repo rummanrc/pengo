@@ -18,7 +18,7 @@ Content transformation happens offline; the runtime loads JSON normally and a du
 
 **Evidence:** `STORE_KEY`, `defaultStore()`, `save()`, direct store backup.
 
-Most user state is serialized into `knowkanji:v1`, with the onboarding flag separate. This makes offline export/import straightforward. The cost is whole-object writes, origin-specific storage, no conflict resolution/server recovery, whole-store write costs despite a visible failure notice, and shallow migration/validation. A future cloud feature must define merge semantics and privacy rather than assuming backups already provide sync.
+Most user state is serialized into `pengo:v1`, with the onboarding flag separate. This makes offline export/import straightforward. The cost is whole-object writes, origin-specific storage, no conflict resolution/server recovery, whole-store write costs despite a visible failure notice, and shallow migration/validation. A future cloud feature must define merge semantics and privacy rather than assuming backups already provide sync.
 
 ## D-04: Pure course module over shared content/state
 

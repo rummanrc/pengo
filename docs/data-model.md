@@ -6,12 +6,12 @@
 | --- | --- | --- |
 | Kanji | Character, e.g. `一` | `DB.byChar[k] = { item, level }` |
 | Vocabulary | Level/JMdict sequence/occurrence, e.g. `N5-1198180-0` | `DB.vById[id] = record` |
-| Grammar | Level/ordinal, e.g. `N5-001` | `DB.gById[id] = record` |
+| Grammar | Preserved legacy ID or level/source slug, e.g. `N5-jld-desu-polite-copula` | `DB.gById[id] = record` |
 | Course item | `{ type: "kanji" | "vocab" | "grammar", id }` | Resolved through those indexes |
 
 Kanji lists overlap: this snapshot has 2,616 rows and 2,211 distinct characters. `byChar` is assigned in N5→N1 order, so later levels overwrite earlier records. Learned/favorite/note/SRS state is character-wide; per-level totals count rows in that level.
 
-Vocabulary IDs depend on level, sequence, and occurrence order within a sequence. Grammar IDs depend on source-note order after same-level duplicate grouping. Neither is guaranteed stable under arbitrary source reordering/insertion. Preserve or migrate IDs when refreshing sources; otherwise existing backups may reference different or missing records.
+Vocabulary IDs depend on level, sequence, and occurrence order within a sequence. The replacement grammar source uses stable slugs, with 141 matched legacy IDs retained; source ordering does not change those IDs. Vocabulary IDs are not guaranteed stable under arbitrary source reordering/insertion. Preserve or migrate IDs when refreshing sources; otherwise existing backups may reference different or missing records.
 
 ## Kanji record: `data/n5.json` through `n1.json`
 
@@ -57,14 +57,15 @@ Example identifiers are actual data shapes; missing examples are allowed and not
 
 | Field | Shape | Meaning |
 | --- | --- | --- |
-| `id` | string | Level/three-digit ordinal |
+| `id` | string | Stable source slug with level prefix, or a retained legacy ordinal |
 | `point`, `jlpt`, `frequency`, `meaning` | strings | Display point, level, frequency category, meaning |
-| `sections` | `{ label, html }[]` | Explanation sections; generator allows `b`, `i`, `br` markup |
+| `sections` | `{ label, html }[]` | Escaped source explanations, with generated `br` separators |
 | `examples` | `{ jp, furi, en }[]` | Aligned source examples; can contain emphasis markup |
 | `related` | string[] | Point names matched in related explanations, not IDs |
-| `sourceNotes` | number[] | Zero-based processed source-note positions |
+| `sourceId`, `reviewStatus` | strings | Pinned upstream identifier and draft/review status |
+| `blankForms` | string[] | Japanese fragments from the source pattern, used only when found in an example |
 
-Frequency ranking recognizes `Core Grammar`, `Common`, `JLPT-Focused`, and `Literary`. Other values sort after those; this snapshot includes a combined `Literary/JLPT-Focused` value treated as unknown by that ranker.
+The replacement source has no frequency ranking; `frequency` is empty rather than inventing categories. Related links store display point names, which the runtime resolves to IDs. Unmatched retired grammar progress is retained in backups without being applied to new notes.
 
 ## Metadata and fallback bundle
 
@@ -82,7 +83,9 @@ Bundle keys are `levels`, `meta`, `radicals`, `vocab`, `vocab_meta`, `grammar`, 
 
 ## Main local store
 
-`STORE_KEY = "knowkanji:v1"`. Export is the serialized store itself, with no separate envelope/schema-version field.
+`STORE_KEY = "pengo:v1"`. Export is the serialized store itself, with no separate envelope/schema-version field.
+
+On the same browser origin, startup migrates the previous `knowkanji:v1` key only when the Pengo key is absent. It validates the JSON object, writes the new key before deleting the old one, and retains the loaded progress in memory if persistence fails. An existing Pengo key takes precedence, including after an erase. The backup JSON shape and study item IDs are unchanged. This migration cannot cross native application sandboxes: export/import is required when moving from the old Android/iOS app ID to the new one.
 
 | Fields | Shape/default | Purpose |
 | --- | --- | --- |
@@ -170,7 +173,7 @@ Completion clears the active session and appends an ID-deduplicated summary to b
 
 `pengo:reminders:v1` stores browser `{ enabled, time, lastDate }`, normalized to off/`19:00`/empty by default. `time` must be `HH:MM`; `lastDate` is the last local date with a daily alert. Android's private SharedPreferences `pengo_reminders` instead stores `enabled`, `time`, `lastDate`, `goalDate`, `nextAt`, and `permissionAsked`. The native bridge is authoritative on Android; browser preferences do not schedule native alarms.
 
-Reminder preferences are outside `knowkanji:v1` and its progress exports. Import preserves this device's opt-in/time and updates native goal suppression from imported practice. Confirmed erase resets device reminder preferences and cancels native scheduling, without changing OS permission or removing imported external calendar events. Android's existing platform backup policy still applies. See [design and reminders](design-and-reminders.md).
+Reminder preferences are outside `pengo:v1` and its progress exports. Import preserves this device's opt-in/time and updates native goal suppression from imported practice. Confirmed erase resets device reminder preferences and cancels native scheduling, without changing OS permission or removing imported external calendar events. Android's existing platform backup policy still applies. See [design and reminders](design-and-reminders.md).
 
 ## Backup and migration semantics
 

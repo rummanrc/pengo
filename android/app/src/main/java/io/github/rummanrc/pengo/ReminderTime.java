@@ -1,4 +1,4 @@
-package com.knowkanji.app;
+package io.github.rummanrc.pengo;
 
 import java.util.Calendar;
 import java.util.TimeZone;

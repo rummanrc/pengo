@@ -21,7 +21,7 @@ Pengo is a static JavaScript Japanese-learning app plus a Java Android WebView s
 
 - No npm install/build is needed for web or checked-in native staging. Do not introduce a server/framework without task scope.
 - Classic script order is Platform → onboarding → tutorial → Course → Practice → component data → components → recall UI → practice UI → Reminders → Dashboard → design → app. `DB`/`store` are lexical globals; do not assume `window.DB`.
-- `knowkanji:v1`, `com.knowkanji.app`, npm name `knowkanji`, and legacy `KK*` hooks remain compatibility identifiers despite Pengo branding.
+- Current identifiers are `pengo:v1`, Android release ID `io.github.rummanrc.pengo` (debug adds `.debug`), npm name `pengo`, and native bridge `PengoNative`. Only the explicit legacy storage migration retains the previous name. Keep these stable after release. Internal `KK*` hooks remain unchanged.
 - Kanji progress is by character across overlapping level lists; global details resolve the last indexed occurrence.
 - Vocab/grammar IDs can change if sources are reordered. Review ID→record mappings before regeneration.
 - Learn contains the full quiz setup; quiz answers grade SRS/activity. Learning cards at `#/flashcards` record learning confidence without changing test accuracy/mistakes. Old Review/practice routes are aliases.
@@ -29,7 +29,7 @@ Pengo is a static JavaScript Japanese-learning app plus a Java Android WebView s
 - Main backup replaces state and excludes onboarding/content/device reminders. It is not a cloud-sync merge format.
 - Hosted web has a notification-only worker after opt-in, with no offline caching or closed-page push. Native offline behavior depends on a complete packaged runtime.
 - Reminders default off and permission requests require explicit Enable. Preserve goal/duplicate suppression and device-preference isolation from imported progress.
-- Raw vocab/Tatoeba/grammar builder inputs are absent here. Existing data can run/package without them.
+- Raw vocabulary/Tatoeba builder inputs are absent here. Grammar uses the pinned, licensed JSON under `resources/grammar/`. Existing data can run/package without regeneration.
 - `resources/` is ordinary tracked content in this checkout, not a configured submodule.
 
 ## Change boundaries
@@ -38,7 +38,7 @@ Edit root runtime sources, not ignored `www/`/native staged assets. Preserve res
 
 Keep Course pure and ES5-compatible with dukpy; put browser persistence/DOM in app integration. Browse input handling updates results without rebuilding focused inputs. Escape ordinary content; only trusted generated markup should enter raw HTML paths.
 
-Do not treat optional Capacitor declarations as a fully working alternative native project. No complete wrapper or production signing pipeline is present. Missing dukpy exits the test script successfully with `SKIP`; inspect its output.
+Do not treat optional Capacitor declarations as a fully working alternative native project. The release builder produces an unsigned APK for F-Droid to sign; see `docs/fdroid.md` for submission requirements. Missing dukpy exits the test script successfully with `SKIP`; inspect its output.
 
 ## Validation and reporting
 

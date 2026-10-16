@@ -3,10 +3,12 @@
    Data: data/n5..n1.json + data/radicals.json + data/meta.json (see scripts/build_data.py).
    Vocab: data/vocab_n5..n1.json + data/vocab_meta.json (see scripts/build_vocab.py).
    Grammar: data/grammar_n5..n1.json + data/grammar_meta.json (see scripts/build_grammar.py).
-   Pengo progress: localStorage key "knowkanji:v1". */
+   Pengo progress: localStorage key "pengo:v1". */
 
 const LEVELS = ["N5", "N4", "N3", "N2", "N1"];
-const STORE_KEY = "knowkanji:v1";
+const STORE_KEY = "pengo:v1";
+// Read only to migrate progress saved before the Pengo rename on the same origin.
+const LEGACY_STORE_KEY = "knowkanji:v1";
 const STROKE_BASE = "resources/stroke-order/kanjivg/";
 
 const DB = { levels: {}, byChar: {}, vocab: {}, vById: {}, grammar: {}, gById: {}, meta: null, vocabMeta: null, grammarMeta: null, radicals: [], loaded: false };
@@ -17,8 +19,21 @@ const defaultStore = () => ({ learned: {}, fav: [], notes: {}, srs: {}, vLearned
 
 let store = defaultStore();
 try {
-  const raw = localStorage.getItem(STORE_KEY);
-  if (raw) store = Object.assign(defaultStore(), JSON.parse(raw));
+  let raw = localStorage.getItem(STORE_KEY);
+  const migrate = raw === null;
+  if (migrate) raw = localStorage.getItem(LEGACY_STORE_KEY);
+  if (raw) {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid progress");
+    store = Object.assign(defaultStore(), parsed);
+    if (migrate) {
+      // Keep progress usable in memory even if storage is full or unavailable.
+      try {
+        localStorage.setItem(STORE_KEY, raw);
+        localStorage.removeItem(LEGACY_STORE_KEY);
+      } catch (e) { /* save() will report a persistent storage failure */ }
+    }
+  }
 } catch (e) { /* fresh start */ }
 store.settings = Object.assign(defaultStore().settings, store.settings || {});
 store.settings.dailyGoal = Practice.goal(store.settings.dailyGoal);
@@ -128,8 +143,8 @@ window.addEventListener("pagehide", flushStudyTime);
 
 function exportBackup() {
   const text = JSON.stringify(store);
-  if (window.KnowKanjiNative && typeof window.KnowKanjiNative.exportJson === "function") {
-    window.KnowKanjiNative.exportJson("pengo-backup.json", text);
+  if (window.PengoNative && typeof window.PengoNative.exportJson === "function") {
+    window.PengoNative.exportJson("pengo-backup.json", text);
     return;
   }
   if (window.Platform && window.Platform.exportJson) { window.Platform.exportJson("pengo-backup.json", text); return; }
@@ -143,7 +158,7 @@ function exportBackup() {
 }
 function importBackupText(text) {
   const message = function (text) {
-    if (window.KnowKanjiNative && typeof window.KnowKanjiNative.showMessage === "function") window.KnowKanjiNative.showMessage(text);
+    if (window.PengoNative && typeof window.PengoNative.showMessage === "function") window.PengoNative.showMessage(text);
     else alert(text);
   };
   try {
@@ -1146,7 +1161,9 @@ function renderSettings(view) {
     '<p class="explain">KanjiVG supplies stroke-order diagrams and component shapes. Component data is adapted from its SVG hierarchy with grouped parts and partial-breakdown labels; it retains the same license.</p>' +
     "<p class=\"explain\">Kanji facts: KANJIDIC2 + curated JLPT files. Components: KanjiVG hierarchy; EDRDG KRADFILE fallback. " +
     "Stroke art: KanjiVG (" + (DB.meta ? LEVELS.map(l => DB.meta.levels[l].stroke + "/" + DB.meta.levels[l].count + " " + l).join(" · ") : "") + "). " +
-    "Sentences: Tanaka Corpus + CSV set. Accents: Kanjium. Loader: " + (DB.source || "?") + ". Vocab: JLPT lists (" + (DB.vocabMeta ? DB.vocabMeta.total : vAll().length) + " words) + Tatoeba sentences (" + (DB.vocabMeta ? DB.vocabMeta.withSentences : 0) + " with matches). Grammar: Anki deck ‘Japanese Core Grammar JLPT N5-N1’ (" + (DB.grammarMeta ? DB.grammarMeta.total : gAll().length) + " points, text only, no audio used, no licence stated). <a href=\"resources/CREDITS.md\">Full credits and licenses</a>.</p></details>" +
+    "Dictionary facts: EDRDG, CC BY-SA 4.0. JLPT lists: Jonathan Waller. Sentences: Tatoeba contributors, CC BY 2.0 FR. Accents: Uros O. / Kanjium, CC BY-SA 4.0. Radical names: Kanji alive, CC BY 4.0. " +
+    "Grammar: <a href=\"https://github.com/jkindrix/japanese-language-data\">Japanese Language Data</a> by Justin Kindrix and contributors, CC BY-SA 4.0 (" + (DB.grammarMeta ? DB.grammarMeta.total : gAll().length) + " adapted points). These community grammar notes are drafts and may contain errors. " +
+    "<a href=\"resources/CREDITS.md\">Full credits and licenses</a>. <a href=\"LICENSE\">Application license: Apache-2.0</a>.</p></details>" +
     "<div class=\"card\"><h2>About this app</h2>" +
     "<p><button class=\"btn soft\" id=\"sIntro\">Replay intro</button></p>" + 
     "<p class=\"explain\">Pengo " + (window.APP_VERSION || "1.0.0") + " runs fully offline: all kanji, vocabulary and grammar data (incl. example sentences) plus stroke diagrams are bundled, with no account or network needed. Sources: KANJIDIC2, KRADFILE (EDRDG), KanjiVG, Tanaka Corpus, Kanjium. See resources/CREDITS.md for full attribution.</p></div></div></div></div>";
@@ -1162,7 +1179,7 @@ function renderSettings(view) {
     exportBackup();
   });
   $("#sImportButton").addEventListener("click", () => {
-    if (window.KnowKanjiNative && typeof window.KnowKanjiNative.importJson === "function") window.KnowKanjiNative.importJson();
+    if (window.PengoNative && typeof window.PengoNative.importJson === "function") window.PengoNative.importJson();
     else $("#sImport").click();
   });
   $("#sImport").addEventListener("change", e => {
@@ -1188,6 +1205,7 @@ function renderSettings(view) {
       Reminders.resetDevice();
       store = defaultStore(); save(); applyTheme();
       Reminders.syncGoal();
+      try { localStorage.removeItem(LEGACY_STORE_KEY); } catch (e) {}
       try { localStorage.removeItem(ONBOARD_KEY); } catch (e) {}
       render();
     });
@@ -1692,7 +1710,7 @@ function renderGrammarDetail(view, id) {
     "</div></div></div>" +
     (secs ? "<div class=\"card\"><h2>Explanation</h2>" + secs + "</div>" : "") +
     "<div class=\"card\"><h2>Examples</h2><ul class=\"sent-list\">" + exHtml + "</ul>" +
-    "<p class=\"explain\">Examples: Anki deck &lsquo;Japanese Core Grammar JLPT N5-N1&rsquo; (text only, no audio). Tap a translation to reveal it.</p></div>" +
+    "<p class=\"explain\">Grammar and examples: Japanese Language Data, Justin Kindrix and contributors, CC BY-SA 4.0. Community draft notes; tap a translation to reveal it.</p></div>" +
     (rel ? "<div class=\"card\"><h2>Related grammar</h2><p>" + rel + "</p></div>" : "") +
     "<div class=\"card\"><h2>Kanji in these examples</h2><p>" + klinks + "</p>" +
     "<h2>Vocabulary in these examples</h2><p>" + vlinks + "</p>" +
@@ -1733,12 +1751,14 @@ function renderGReview(view, q) {
   renderGQuiz(document.querySelector("#revBody"), q);
 }
 function blankForm(g) {
-  const base = String(g.point || "").replace(/^\u301c/, "");
-  if (!base) return null;
-  for (const e of (g.examples || [])) {
-    const jp = e.jp || "";
-    const i = jp.indexOf(base);
-    if (i >= 0) return { ex: e, blanked: jp.slice(0, i) + "＿＿" + jp.slice(i + base.length) };
+  const forms = g.blankForms || [String(g.point || "").replace(/^\u301c/, "")];
+  for (const base of forms) {
+    if (!base) continue;
+    for (const e of (g.examples || [])) {
+      const jp = e.jp || "";
+      const i = jp.indexOf(base);
+      if (i >= 0) return { ex: e, blanked: jp.slice(0, i) + "＿＿" + jp.slice(i + base.length) };
+    }
   }
   return null;
 }

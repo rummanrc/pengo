@@ -95,7 +95,7 @@ Constants are mutable objects/arrays; there is no freeze or supported live confi
 | Interface | Contract |
 | --- | --- |
 | `Platform.version` | App version string |
-| `Platform.isNative` | Presence of `KnowKanjiNative` at initialization |
+| `Platform.isNative` | Presence of `PengoNative` at initialization |
 | `Platform.isCapacitor` | Capacitor native-platform detection at initialization |
 | `Platform.nativePlatform` | `ios` from the iOS bridge, `android` for the legacy Java bridge, Capacitor's platform, or `web` |
 | `Platform.isNativeApp` | Getter combining native/Capacitor flags; controls native first-launch onboarding |
@@ -114,7 +114,7 @@ Native bridge detection occurs during script initialization; late bridge injecti
 
 ## Native Java bridge
 
-The Java activity installs `NativeBridge` through `addJavascriptInterface(..., "KnowKanjiNative")` before navigation.
+The Java activity installs `NativeBridge` through `addJavascriptInterface(..., "PengoNative")` before navigation.
 
 | Method | JavaScript arguments/result | Native behavior |
 | --- | --- | --- |
@@ -136,7 +136,7 @@ Notification permission uses request code 4103. Results invoke `window.PengoRemi
 
 ## Native iOS bridge
 
-`ios/Pengo/bridge.js` is injected before page scripts in the main frame. It supplies the same `KnowKanjiNative` method names plus `getPlatform()` returning `ios`. Calls post structured messages to `WebViewController`; only the bundled `pengo://app` main frame can invoke native methods. Import/export uses Files pickers, `showMessage` uses an alert, and theme changes update the status bar/background. The shell implements JavaScript alert/confirm dialogs.
+`ios/Pengo/bridge.js` is injected before page scripts in the main frame. It supplies the same `PengoNative` method names plus `getPlatform()` returning `ios`. Calls post structured messages to `WebViewController`; only the bundled `pengo://app` main frame can invoke native methods. Import/export uses Files pickers, `showMessage` uses an alert, and theme changes update the status bar/background. The shell implements JavaScript alert/confirm dialogs.
 
 `getReminderSettings()` synchronously serializes a cache with `enabled`, `time`, `lastDate`, and `permission`. Native permission refresh/configuration publishes that cache through `PengoIOSUpdateReminders`, then invokes the existing `PengoReminderResult` callback. iOS notifications use a rolling 60-day plan refreshed on activation, with today's known goal omitted. See [iOS setup and acceptance](ios.md) for limitations and device checks.
 

@@ -44,7 +44,7 @@ let checks=0;function check(ok,label){assert.ok(ok,label);checks++;}
   await route('#/');check(await page.locator('.ob-root,.tour-root').count()===0,'web does not auto-start intro');
   // Android detection uses the same first-launch gate as the native shell.
   const native=await browser.newContext({viewport:{width:390,height:844}});
-  await native.addInitScript(()=>{window.KnowKanjiNative={getPlatform:()=> 'android',setDarkTheme:()=>{}};});
+  await native.addInitScript(()=>{window.PengoNative={getPlatform:()=> 'android',setDarkTheme:()=>{}};});
   const android=await native.newPage();await android.goto(base);await android.waitForSelector('.ob-root');
   check(await android.evaluate(()=>Platform.isAndroidApp),'Android first-launch detection');
   await android.locator('.ob-cta').click();await android.locator('.ob-cta').click();await android.waitForSelector('.tour-target');

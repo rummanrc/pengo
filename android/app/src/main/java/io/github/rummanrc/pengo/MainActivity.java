@@ -1,4 +1,4 @@
-package com.knowkanji.app;
+package io.github.rummanrc.pengo;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -136,7 +136,7 @@ public class MainActivity extends Activity {
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
 
-        web.addJavascriptInterface(new NativeBridge(), "KnowKanjiNative");
+        web.addJavascriptInterface(new NativeBridge(), "PengoNative");
         web.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {

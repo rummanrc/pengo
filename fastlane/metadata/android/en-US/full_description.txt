@@ -1,0 +1,13 @@
+Build a daily Japanese study habit with Pengo, an offline companion for JLPT N5–N1.
+
+• Explore kanji meanings, readings, components and animated stroke order.
+• Study vocabulary and grammar with example sentences and furigana where available.
+• Reveal learning cards and practice with short quizzes.
+• Choose a study plan, revisit mistakes and review items with spaced repetition.
+• Track your learning activity and continue saved sessions.
+• Set optional daily reminders that work while the app is closed.
+• Choose a light or dark theme and export or import progress backups.
+
+Study content is included in the app. No account, advertising, analytics or internet connection is required. Progress is stored on your device; export a backup before uninstalling or moving to another device.
+
+Dictionary, sentence and stroke-order credits are available in Settings → Credits & data sources.

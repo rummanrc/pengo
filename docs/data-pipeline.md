@@ -4,7 +4,7 @@ Runtime uses prebuilt `data/` and KanjiVG SVGs; it does not parse CSVs, corpora,
 
 ## Input availability
 
-Checked on 2026-10-07:
+Checked on 2026-10-16:
 
 | Input | Used by | Available in this checkout? |
 | --- | --- | --- |
@@ -13,14 +13,14 @@ Checked on 2026-10-07:
 | `resources/radicals/radicals_metadata.csv`, `kradfile` | Kanji components/radicals | Yes |
 | `resources/compounds/jlpt-compounds-n{1-5}.json` | Embedded kanji compounds | Yes |
 | `resources/sentences/jed-kanji-sentences.json` | Kanji examples | Yes |
-| `resources/mnemonics.csv` | Curated memory aids | Yes |
+| Pengo templates in `scripts/build_data.py` | Original memory aids | Yes |
 | `resources/stroke-order/kanjivg/*.svg` | Coverage and runtime art | Yes; 2,383 SVGs |
 | `resources/vocab/n{1-5}.csv` | Vocabulary builder | **No** |
 | `resources/vocab/sentence_tatoeba/jp-eng-sentence-pairs.tsv` | Vocabulary examples | **No** |
-| `resources/grammar/Japanese_Core_Grammar_JLPT_N5-N1_waudio.apkg` | Grammar builder | **No** |
+| `resources/grammar/japanese-language-data/n*.json` | Grammar builder | Yes; pinned CC BY-SA 4.0 source |
 | Existing `data/` JSON and `bundle.js` | Runtime, furigana dictionary, packaging | Yes |
 
-The missing raw vocab/grammar inputs do not prevent running or packaging the prebuilt app. They do prevent full source regeneration. The repository does not provide a downloader or exact pinned source artifact for those inputs; obtain the correct files and provenance before rebuilding. Do not use empty substitutes.
+The missing raw vocabulary inputs do not prevent running or packaging the prebuilt app. They do prevent full vocabulary regeneration. The repository does not provide a downloader or exact pinned source artifact for those inputs; obtain the correct files and provenance before rebuilding. Do not use empty substitutes.
 
 `resources/` is tracked as ordinary files here. There is no root `.gitmodules` despite comments/upstream docs referring to a submodule.
 
@@ -28,9 +28,9 @@ The missing raw vocab/grammar inputs do not prevent running or packaging the pre
 
 ```mermaid
 flowchart TD
-    K["Kanji CSVs, metadata, radicals, compounds, sentences, mnemonics"] --> BK["build_data.py"]
+    K["Kanji CSVs, metadata, radicals, compounds, sentences, original templates"] --> BK["build_data.py"]
     V["Vocab CSVs and Tatoeba TSV: missing here"] --> BV["build_vocab.py"]
-    G["Grammar Anki deck: missing here"] --> BG["build_grammar.py"]
+    G["Pinned licensed grammar JSON"] --> BG["build_grammar.py"]
     BK --> Data["data JSON and metadata"]
     BV --> Data
     BG --> Data
@@ -50,13 +50,12 @@ Kanji/vocab builders opportunistically use the furigana lookup from existing gen
 | --- | --- | --- |
 | `build_data.py` | Merge kanji CSV/metadata and supporting resource files | Overwrites `n*.json`, `radicals.json`, `meta.json` |
 | `build_vocab.py` | Normalize vocab CSV; match corpus sentences | Overwrites `vocab_n*.json`, `vocab_meta.json`; requires missing inputs |
-| `build_grammar.py` | Read Anki ZIP/SQLite fields; sanitize/group | Overwrites `grammar_n*.json`, `grammar_meta.json`; requires missing deck |
+| `build_grammar.py` | Verify pinned licensed JSON; convert and annotate | Overwrites `grammar_n*.json`, `grammar_meta.json`; no network or missing deck |
 | `furigana.py` | Dictionary from existing vocab, embedded compounds, grammar ruby | Rewrites kanji/vocab sentences and grammar example furigana; `--check` reports without writing |
 | `sudachi_furigana.py` | Tokenizer supplements uncovered vocabulary readings | Rewrites only vocab JSON; `--check` simulates/report only |
 | `build_bundle.py` | Read generated JSON | Overwrites `data/bundle.js`; top-level script executes on import |
 | `build_strokes.py` | Read bundled KanjiVG SVGs unchanged | Writes lazy `data/strokes/*.js` chunks with original notices; rerun after SVG updates; also invoked by staging |
 | `sync_kanji_data.py` | Fetch upstream metadata and compare | Default reports only; `--write` replaces vendored metadata |
-| `wk_radicals.py` | Map WaniKani mnemonic part labels | Helper module, not a standalone rebuild pipeline; current kanji builder does not import it |
 | `sync_www.py` | Copy runtime inventory | Stage `www/` or directory supplied through `--out` |
 | `build_apk.py` | Stage runtime, copy native assets, invoke Gradle | Debug APK; `--assets-only` skips Gradle |
 | `build_apk_docker.py` | Build image and extract APK | Docker image/container operations, `dist/pengo-debug.apk` |
@@ -105,7 +104,7 @@ Rows become IDs `{level}-{sequence-or-x}-{occurrence}`. Meaning strings split in
 
 ### Grammar
 
-The Anki source is read without modification. Fields are split into aligned examples; bracket readings become ruby; explanation markup is restricted to `b`, `i`, and `br`. Same-level duplicate points merge examples and retain the first explanation. Related entries store matched point names. IDs follow source order within each level. Audio is excluded. Existing metadata records 400 source notes becoming 399 grammar records and 525 examples.
+Grammar is rebuilt from the pinned Japanese Language Data `grammar-curated` snapshot (CC BY-SA 4.0, Justin Kindrix and contributors). Source SHA-256 hashes are checked before conversion. The builder escapes HTML, adds dictionary-based furigana and converts related links. It preserves 141 matched old IDs; new notes use stable source-derived IDs. There are 595 notes and 1,787 examples. Upstream labels these notes as community drafts. Unmatched retired progress remains in exports rather than being assigned to unrelated material.
 
 ### Dictionary furigana
 
@@ -119,6 +118,6 @@ Optional-file failures may leave empty sections while reporting source `fetch`; 
 
 ## Provenance and attribution
 
-Keep [resource credits](../resources/CREDITS.md) with packaged content. They cover KANJIDIC2/KRADFILE and related EDRDG data, KanjiVG, Tanaka, Kanjium, JLPT vocab/Tatoeba, tokenizer-derived readings, and the grammar deck. The credits record unresolved terms for some sources, particularly the grammar package. This document reports repository notices; it does not independently verify current licenses.
+Keep [resource credits](../resources/CREDITS.md) with packaged content. They cover KANJIDIC2/KRADFILE and related EDRDG data, KanjiVG, Tanaka, Kanjium, JLPT vocab/Tatoeba, tokenizer-derived readings, and the pinned licensed grammar source. The former unlicensed mnemonic CSV, grammar-deck text and WaniKani fields have been removed from the release. See `docs/fdroid.md` for historical-source publication status.
 
 Do not rewrite upstream `resources/README.md` as if it only described Pengo: it also describes other consumers. Record app-specific transformations here. Before source refresh, preserve IDs/provenance and review compatibility with existing progress.

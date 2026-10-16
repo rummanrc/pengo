@@ -1,180 +1,139 @@
-# Credits & data attribution
+# Credits and licenses
 
-## JMdict / KANJIDIC2 (`kanji/kanji_metadata.json`, `kanji/kanji_n{1-5}.csv`)
+Pengo's original application code, documentation, example text and project-authored
+branding are licensed under **Apache-2.0**; see [LICENSE](../LICENSE) and
+[NOTICE](../NOTICE). The third-party works below retain their own terms. The
+application license does not relicense the bundled dictionaries or artwork.
 
-> This project uses the JMdict, KANJIDIC and related dictionary files. These
-> files are the property of the [Electronic Dictionary Research and
-> Development Group (EDRDG)](https://www.edrdg.org/), and are used in
-> conformance with the Group's licence.
+## Dictionary facts and decomposition: EDRDG — CC BY-SA 4.0
 
-- Copyright © Electronic Dictionary Research and Development Group.
-- Licence: **Creative Commons Attribution-ShareAlike 4.0 International
-  (CC BY-SA 4.0)** — <https://creativecommons.org/licenses/by-sa/4.0/>
-- EDRDG licence statement: <https://www.edrdg.org/edrdg/licence.html>
-- KANJIDIC project: <https://www.edrdg.org/wiki/index.php/KANJIDIC_Project>
+This project uses the JMdict, KANJIDIC and related dictionary files. These files
+are the property of the Electronic Dictionary Research and Development Group
+and are used in conformance with the Group's licence.
 
-`kanji_metadata.json` additionally carries WaniKani-style level/meaning/
-reading/radical fields (`wk_*`) layered on top of the KANJIDIC2 facts.
-"WaniKani" is a product of [Tofugu / WaniKani](https://www.wanikani.com/);
-this data is used for educational, non-commercial study purposes and this
-project is not affiliated with or endorsed by WaniKani.
+- Copyright James William Breen and the Electronic Dictionary Research and Development Group.
+- Source and licence: <https://www.edrdg.org/edrdg/licence.html>.
+- Licence: <https://creativecommons.org/licenses/by-sa/4.0/>; local text:
+  [CC-BY-SA-4.0](licenses/CC-BY-SA-4.0.txt).
+- Files: dictionary-derived parts of `resources/kanji/`, `resources/words/`,
+  `resources/compounds/`, `resources/radicals/kradfile`, `data/n1.json`–`n5.json`,
+  `data/vocab_n1.json`–`vocab_n5.json`, and their bundled representations.
+- Changes: JLPT filtering, schema conversion, reading selection, component links,
+  dictionary-based furigana and deterministic Pengo memory-story templates.
+- KRADFILE decomposition was originally compiled by Jim Rose / Kanji Cafe and is
+  maintained by EDRDG: <https://www.edrdg.org/krad/kradinf.html>.
 
-Because this data is CC BY-SA, redistributing it (or derived works) must
-keep this attribution and remain under a compatible share-alike licence.
+The metadata distribution is from David Luz Gouveia's
+<https://github.com/davidluzgouveia/kanji-data>. Only dictionary facts and JLPT
+classification are retained. All `wk_*` enrichment has been removed; Pengo does
+not distribute WaniKani meanings, labels, readings or level data. Some grade/word
+resources were retrieved through <https://kanjiapi.dev/>; underlying dictionary
+terms remain EDRDG's. Dictionaries and derived dictionary data retain share-alike
+terms independently of the Apache-licensed application.
 
-## KRADFILE (`radicals/kradfile`)
+## JLPT classification: Jonathan Waller — CC BY
 
-Kanji-to-radical decomposition table, originally compiled by Jim Rose at
-Kanji Cafe (`KRADFILE2`), now maintained by EDRDG.
+Kanji/vocabulary level assignments and Waller-derived vocabulary glosses come
+from Jonathan Waller's JLPT Resources: <https://www.tanos.co.uk/jlpt/>;
+sharing terms: <https://www.tanos.co.uk/jlpt/sharing/>. These community study lists
+are not official JLPT vocabulary/kanji lists.
 
-- Licence: EDRDG licence (as above), CC BY-SA 4.0-compatible.
-- <https://www.edrdg.org/krad/kradinf.html>
+Vocabulary source distribution and JMdict entry-ID alignment:
+<https://github.com/stephenmk/yomitan-jlpt-vocab> (`original_data/n1.csv`–`n5.csv`).
+The upstream attribution identifies Waller's Creative Commons Attribution terms.
+Pengo preserves that attribution; dictionary-derived vocabulary remains subject
+to EDRDG's CC BY-SA 4.0. Stable vocabulary IDs are not changed by the license cleanup.
 
-## Tanaka Corpus (`sentences/examples.utf`)
+## Sentences: Tanaka Corpus and Tatoeba contributors — CC BY 2.0 FR
 
-Indexed example sentences, originally from the Tanaka Corpus
-(<https://tatoeba.org/>), distributed by EDRDG as part of
-`JMdict_e_examp.xml`. Used here in its original per-word-indexed form to
-back the `sentence`/`kana`/`translation` columns in `kanji/kanji_n{1-5}.csv`.
+Japanese/English example sentences come from the Tanaka Corpus / Tatoeba Project,
+<https://tatoeba.org/>, including sentences distributed in EDRDG example files.
+Copyright belongs to the respective Tatoeba contributors.
 
-- Licence: EDRDG licence (as above), CC BY-SA 4.0-compatible.
+- Licence: <https://creativecommons.org/licenses/by/2.0/fr/>.
+- Files: `resources/sentences/examples.utf`,
+  `resources/sentences/jed-kanji-sentences.json`, sentence fields in the kanji
+  CSVs, and Tatoeba-derived examples in runtime kanji/vocabulary JSON.
+- Some kanji examples and furigana were obtained through
+  <https://github.com/bagustris/jed>. Sentence copyright and attribution remain
+  with the corpus contributors. Dictionary indexing/annotations retain EDRDG terms.
+- Changes: selection, schema conversion, whitespace normalization and generated
+  furigana. The original sentence data files are retained as available source.
+- `resources/sentences/kyoiku-sentences*.json` contains project-authored examples
+  under Apache-2.0, rather than extracts from textbooks.
 
-## Kanjium pitch-accent database (`compounds/accents_kanjium.txt`)
+## Kanji alive — CC BY 4.0
 
-Word/reading → pitch-accent-kernel-position data, from the
-[Kanjium](https://github.com/mifunetoshiro/kanjium) project by
-mifunetoshiro. Used by `scripts/add_pitch_accent.py` to annotate compound
-readings in `kanji/kanji_n{1-5}.csv` with their pitch accent. Kanjium does
-not publish a formal licence file; it's widely reused by other
-Japanese-study tooling (e.g. Yomichan/Yomitan) on an attribution basis —
-verify current terms at the source repo before any redistribution beyond
-this project's own apps.
+Copyright Kanji alive, <https://kanjialive.com/>. Data source and licence:
+<https://github.com/kanjialive/kanji-data-media>, `LICENSE.md`.
+Licence: <https://creativecommons.org/licenses/by/4.0/>; local text:
+[CC-BY-4.0](licenses/CC-BY-4.0.txt).
 
-## JMdict / KANJIDIC via kanjiapi.dev (`kanji/kyoiku-grade{1-9}.json`, `words/kyoiku-words{1-9}.json`)
+Some examples in `resources/kanji/kyoiku-grade*.json` are from
+`language-data/ka_data.csv`. Radical names/readings in
+`resources/radicals/radicals_metadata.csv` are from
+`language-data/japanese-radicals.csv`; the pinned source and transformations are
+recorded in `resources/radicals/SOURCE.json`. Changes: selected columns and
+compatibility field names. Kanji alive fonts, audio and animations are not bundled.
 
-> This project uses the JMdict, KANJIDIC and related dictionary files. These
-> files are the property of the [Electronic Dictionary Research and
-> Development Group (EDRDG)](https://www.edrdg.org/), and are used in
-> conformance with the Group's licence.
+## Pitch accent: Kanjium — CC BY-SA 4.0
 
-- Copyright © Electronic Dictionary Research and Development Group.
-- Licence: CC BY-SA 4.0 (as above).
-- Fetched via the free [kanjiapi.dev](https://kanjiapi.dev/) service, which
-  redistributes JMdict/KANJIDIC under the same licence — see
-  `scripts/kyoiku/audit-readings.js`, `audit-words.js`,
-  `fetch-example-words.js`.
+Pitch-accent additions are by Uros O. (mifunetoshiro), provided through the free
+Kanjium database: <https://github.com/mifunetoshiro/kanjium>. Upstream README and
+`LICENSE.txt` specify CC BY-SA 4.0. Underlying EDRDG and Tatoeba material retains
+its attribution. Local licence: [CC-BY-SA-4.0](licenses/CC-BY-SA-4.0.txt).
 
-## Kanji alive (some example words, `kanji/kyoiku-grade{1-9}.json`)
+Files: `resources/compounds/accents_kanjium.txt`, pitch-accent fields in kanji CSV
+compounds. Changes: matching entries by word/reading and formatting accent values.
 
-Where JMdict-based curation hadn't reached a kanji yet, its `examples` were
-backfilled from the [Kanji alive](https://kanjialive.com) project's
-language-data CSV via `scripts/kyoiku/fetch-examples-kanjialive.js`.
+## Stroke diagrams and structural components: KanjiVG — CC BY-SA 3.0
 
-- Source: <https://github.com/kanjialive/kanji-data-media>
-  (`language-data/ka_data.csv`)
-- Copyright © Kanji alive.
-- Licence: CC BY 4.0 — <https://creativecommons.org/licenses/by/4.0/>
-  (attribution-only, unlike JMdict/KANJIDIC's share-alike above).
+Copyright Ulrich Apel and KanjiVG contributors, <https://kanjivg.tagaini.net/>;
+source: <https://github.com/KanjiVG/kanjivg>. Licence:
+<https://creativecommons.org/licenses/by-sa/3.0/>; local text:
+[CC-BY-SA-3.0](licenses/CC-BY-SA-3.0.txt).
 
-## Original content (`sentences/kyoiku-sentences{1-9}.json`)
+Files: all 2,383 SVGs in `resources/stroke-order/kanjivg/`, lazy script wrappers
+in `data/strokes/`, and the structural trees/names in `data/components.js`.
+Original SVG copyright/license comments are preserved. 2,136 SVGs were obtained
+through the jed mirror and 247 directly from KanjiVG. Changes: lossless script
+wrapping, hierarchy extraction, disconnected-group merging and dictionary fact
+annotations. Structural derived data retains share-alike terms.
 
-Example sentences are original content written for this project, not
-excerpts from any commercial textbook or dictionary corpus — each sentence
-was written from scratch specifically to demonstrate its target kanji/word.
+The former mnemonic CSV had no documented redistribution license and is removed.
+Its text and story-reference labels are not in the release. Current memory
+stories are generated from Pengo's own templates and licensed dictionary facts;
+those stories are memory aids, not historical character etymologies.
 
-## KanjiVG (`stroke-order/kanjivg/`)
+## Grammar: Japanese Language Data — CC BY-SA 4.0
 
-Stroke-order SVG diagrams. 2,136 of the 2,383 files here are mirrored from
-the [jed](https://github.com/bagustris/jed) app's own data (jōyō kanji
-only); the other 247 are fetched directly from
-[KanjiVG upstream](https://github.com/KanjiVG/kanjivg) to cover JLPT N1's
-non-jōyō (mostly 人名用漢字) kanji — same source and licence either way, not
-KanjiVG's full ~11,000-character set.
+Copyright 2026 Justin Kindrix and contributors. Data from the Japanese Language
+Data project, <https://github.com/jkindrix/japanese-language-data>, released under
+<https://creativecommons.org/licenses/by-sa/4.0/>. Local licence:
+[CC-BY-SA-4.0](licenses/CC-BY-SA-4.0.txt).
 
-The lazy `data/strokes/*.js` fallback chunks are generated by `scripts/build_strokes.py` from these SVGs without changing their contents. Every original copyright/license notice is retained.
+Only the project's original `grammar-curated/n1.json`–`n5.json` are used, not its
+other aggregated datasets. The 595 notes and 1,787 Japanese/English example pairs
+replace the former Anki deck, whose redistribution terms could not be established.
+Source commit, SHA-256 hashes, upstream license and methodology are in
+`resources/grammar/japanese-language-data/`. Runtime files are
+`data/grammar_n1.json`–`grammar_n5.json` plus metadata and the offline bundle.
 
-- Copyright © Ulrich Apel — <https://kanjivg.tagaini.net/>
-- Licence: **Creative Commons Attribution-ShareAlike 3.0 (CC BY-SA 3.0)**
-  — <https://creativecommons.org/licenses/by-sa/3.0/>
+Changes: schema conversion, HTML escaping, dictionary-based furigana, related-ID
+conversion and preservation of 141 unambiguously matched legacy IDs. Remaining
+notes use new stable IDs; unmatched old progress stays in backups and is not
+assigned to a different grammar point. The source notes are **community drafts**,
+not independently certified grammar references. Converting them is not expert review.
+The former deck's explanatory text, examples and audio are not distributed.
 
-## Tanaka Corpus + furigana (`sentences/jed-kanji-sentences.json`)
+## Build-time reading tools
 
-Per-kanji example sentences, mirrored here from jed's own data. Sourced
-from EDRDG's `JMdict_e_examp.xml` (Tanaka Corpus, same family as
-`sentences/examples.utf` above), with furigana readings added by jed's
-`tools/build_furigana.py` from EDRDG's `examples.utf`.
+Some existing vocabulary readings were generated using SudachiPy and SudachiDict
+Core. Neither the tokenizer nor its dictionary is shipped in the app. Source and
+license information: <https://github.com/WorksApplications/SudachiPy> and
+<https://github.com/WorksApplications/SudachiDict#licenses>. The new grammar builder
+uses only checked-in dictionary/corpus readings with the repository's own helper.
 
-- Licence: EDRDG licence (as above), CC BY-SA 4.0-compatible.
-
-## What is NOT from any workbook
-
-Kanji readings, meanings, and JLPT-level/grade assignments are language
-facts taken from the dictionaries above (or MEXT's 学年別漢字配当表 for grade
-assignments), not transcribed from any commercial workbook or app.
-
-## License note
-
-Any redistribution of this repo's `kanji/`, `radicals/`, `words/`,
-`compounds/`, `sentences/`, or `stroke-order/` directories should carry
-this file along with it.
-
-## JLPT vocabulary lists (`vocab/n{1-5}.csv`)
-
-Word/reading/meaning rows keyed by JMdict sequence number with a
-Waller-style English gloss column (`jmdict_seq,kana,kanji,waller_definition`).
-
-- JMdict-derived word data: EDRDG licence (CC BY-SA 4.0, as above).
-- Normalized (never hand-edited) into `data/vocab_n{1-5}.json` by
-  `scripts/build_vocab.py`; IDs are stable (`{JLPT}-{jmdict_seq}-{n}`).
-
-## Tatoeba example sentences (`vocab/sentence_tatoeba/jp-eng-sentence-pairs.tsv`)
-
-Japanese-English sentence pairs (`jp_id, jp, en_id, en`) from the
-[Tatoeba](https://tatoeba.org/) project. Used to attach up to 3 short,
-pre-matched example sentences to each vocabulary word at build time
-(exact surface-form match; kana-only words only when 3+ characters to
-avoid noise). Words without a match keep an empty list — the app never
-invents sentences.
-
-- Licence: **Creative Commons Attribution 2.0 France (CC BY 2.0 FR)**
-  — <https://creativecommons.org/licenses/by/2.0/fr/>
-- Please keep this attribution when redistributing the app or its data.
-- `resources/vocab/kanji_alive/` stubs (`ka_data.csv`, `audio-mp3.zip`) are
-  placeholders only and are NOT bundled into the app.
-
-## Vocabulary example sentence furigana (`data/vocab_n{1-5}.json`)
-
-Missing readings in vocabulary example sentences are generated at build time
-with SudachiPy and SudachiDict Core. Existing ruby readings are preserved.
-The tokenizer and dictionary are used only by `scripts/sudachi_furigana.py`
-and are not included in the app bundle.
-
-- SudachiDict is published by Works Applications under Apache 2.0 and includes
-  UniDic and part of NEologd; see the upstream [license notes](https://github.com/WorksApplications/SudachiDict#licenses).
-- UniDic publishes its contemporary dictionary under a GPL/LGPL/New BSD
-  triple license; review the bundled notices for the exact dictionary version
-  used when redistributing build outputs: <https://clrd.ninjal.ac.jp/unidic/en/>.
-- Build command (the versions used for this data refresh):
-  `pip install sudachipy==0.6.11 sudachidict_core==20260723`, then
-  `python scripts/sudachi_furigana.py`.
-
-## Derived KanjiVG component hierarchy (`data/components.js`)
-
-Generated by `scripts/build_components.py` from the bundled Japanese KanjiVG SVG group metadata. Copyright © Ulrich Apel / KanjiVG, licensed under **CC BY-SA 3.0**: <https://creativecommons.org/licenses/by-sa/3.0/>. Source: <https://kanjivg.tagaini.net/> and <https://github.com/KanjiVG/kanjivg>. Modifications: nested character extraction, nonconsecutive part grouping, completeness annotations, and app display facts. The derived structural data is distributed under CC BY-SA 3.0; attribution is retained in its header and Settings → Credits & data sources. Existing mnemonic references are extracted from `mnemonics.csv` and retain that source’s existing attribution.
-
-## JLPT grammar deck (`grammar/Japanese_Core_Grammar_JLPT_N5-N1_waudio.apkg`)
-
-Anki package "Japanese Core Grammar JLPT N5-N1" (400 notes, 1 note type).
-Only the textual fields are used: grammar point, JLPT level, frequency,
-example sentences + readings + translations, and the explanation sections.
-Normalized (never hand-edited) into `data/grammar_n{1-5}.json` by
-`scripts/build_grammar.py` (399 entries: N5 79, N4 95, N3 100, N2 61,
-N1 64; the single same-level duplicate point was merged).
-
-- The 399 `hypertts-*.mp3` TTS audio files inside the package are
-  intentionally NOT bundled into the app (text only, keeps the APK small).
-- No author or licence statement was found inside the package; the deck is
-  attributed by name here and in the app Settings. Verify redistribution
-  terms with the deck author before redistributing beyond this project.
-- The `.apkg` itself stays in `resources/` as a read-only build source and
-  is never parsed at runtime or shipped to the app.
+Keep this file, the referenced license texts, original SVG notices and the grammar
+source notice when redistributing the corresponding data. Store descriptions and
+credit links do not replace the original authors' licenses or imply endorsement.

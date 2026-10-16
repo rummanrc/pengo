@@ -2,10 +2,10 @@
 const APP_VERSION = "1.0.0";
 const Platform = {
   version: APP_VERSION,
-  isNative: typeof window !== "undefined" && !!window.KnowKanjiNative,
+  isNative: typeof window !== "undefined" && !!window.PengoNative,
   isCapacitor: typeof window !== "undefined" && !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()),
   get nativePlatform() {
-    if (this.isNative) return typeof window.KnowKanjiNative.getPlatform === "function" ? window.KnowKanjiNative.getPlatform() : "android";
+    if (this.isNative) return typeof window.PengoNative.getPlatform === "function" ? window.PengoNative.getPlatform() : "android";
     return this.isCapacitor && window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : "web";
   },
   get isNativeApp() { return this.isNative || this.isCapacitor; },
@@ -17,8 +17,8 @@ const Platform = {
       : "Progress is stored privately in this browser (localStorage). Export a backup before switching devices.";
   },
   async exportJson(filename, text) {
-    if (window.KnowKanjiNative && typeof window.KnowKanjiNative.exportJson === "function") {
-      window.KnowKanjiNative.exportJson(filename, text);
+    if (window.PengoNative && typeof window.PengoNative.exportJson === "function") {
+      window.PengoNative.exportJson(filename, text);
       return true;
     }
     try {
@@ -40,8 +40,8 @@ const Platform = {
     if (typeof window.importBackupText === "function") window.importBackupText(text);
   },
   setDarkTheme(dark) {
-    if (window.KnowKanjiNative && typeof window.KnowKanjiNative.setDarkTheme === "function") {
-      window.KnowKanjiNative.setDarkTheme(!!dark);
+    if (window.PengoNative && typeof window.PengoNative.setDarkTheme === "function") {
+      window.PengoNative.setDarkTheme(!!dark);
     }
   },
   handleBackPress() {

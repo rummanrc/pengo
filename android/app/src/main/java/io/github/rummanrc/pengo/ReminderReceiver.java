@@ -1,4 +1,4 @@
-package com.knowkanji.app;
+package io.github.rummanrc.pengo;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

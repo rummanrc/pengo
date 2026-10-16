@@ -2,7 +2,7 @@
 
 Upstream: https://github.com/davidluzgouveia/kanji-data (kanji.json:
 KANJIDIC + JLPT levels + WaniKani radicals/meanings/readings).
-Local copy: resources/kanji/kanji_metadata.json (byte-identical layout).
+Local copy: resources/kanji/kanji_metadata.json (WaniKani fields excluded).
 
 Usage:
     python scripts/sync_kanji_data.py          # report only (no changes)
@@ -30,9 +30,14 @@ def summarize(data):
     return {"kanji": len(data), "with_wk_radicals": wk}
 
 
+def without_proprietary_enrichment(data):
+    return {char: {key: value for key, value in fields.items() if not key.startswith("wk_")}
+            for char, fields in data.items()}
+
+
 def main():
     raw = fetch_upstream()
-    upstream = json.loads(raw.decode("utf-8"))
+    upstream = without_proprietary_enrichment(json.loads(raw.decode("utf-8")))
     local = json.loads(LOCAL.read_text(encoding="utf-8"))
     print("upstream:", UPSTREAM)
     print("upstream sha256:", hashlib.sha256(raw).hexdigest())
@@ -45,14 +50,14 @@ def main():
         only_local = sorted(set(local) - set(upstream))[:10]
         print("only upstream:", only_up)
         print("only local:", only_local)
-    if raw.decode("utf-8-sig") == LOCAL.read_text(encoding="utf-8"):
+    if upstream == local:
         print("vendored copy is already up to date.")
         return
     print("vendored copy DIFFERS from upstream.")
     if "--write" not in sys.argv:
         print("re-run with --write to refresh it.")
         return
-    LOCAL.write_text(raw.decode("utf-8"), encoding="utf-8")
+    LOCAL.write_text(json.dumps(upstream, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("refreshed", LOCAL)
 
 

@@ -1,4 +1,4 @@
-"""Build KnowKanji web data files from resources/ (kanji-data submodule).
+"""Build Pengo web data files from resources/ (kanji-data submodule).
 
 Reads JLPT CSVs, kanji_metadata.json, kradfile, radicals_metadata.csv,
 jlpt-compounds-*.json and jed-kanji-sentences.json, then writes
@@ -142,26 +142,6 @@ def strip_mnemonic_html(text):
     return re.sub(r"\s+", " ", text).strip()
 
 
-def load_mnemonics():
-    path = RES / "mnemonics.csv"
-    out = {}
-    try:
-        f = open(path, encoding="utf-8-sig")
-    except OSError:
-        return out
-    with f:
-        for row in csv.DictReader(f):
-            ch = (row.get("CHARACTER") or "").strip()
-            raw = (row.get("MNEMONIC") or "").strip()
-            if len(ch) != 1 or not raw or raw == "-":
-                continue
-            clean = strip_mnemonic_html(raw)
-            if clean and ch not in out:
-                out[ch] = clean
-    print("loaded mnemonics.csv: %d entries" % len(out))
-    return out
-
-
 def clean_meaning(text):
     text = (text or "").strip().lower()
     text = re.sub(r",?\s*[^,()]*\bradical\b[^,()]*(\([^)]*\))?", "", text)
@@ -284,7 +264,7 @@ def component_info(c, dataset, metadata, radicals):
         "variantOf": parent,
     }
 
-def build_level(level, metadata, radicals, krad, compounds, sentences, dataset, mnemonics=None):
+def build_level(level, metadata, radicals, krad, compounds, sentences, dataset):
     path = RES / "kanji" / ("kanji_%s.csv" % level.lower())
     out = []
     with open(path, encoding="utf-8-sig") as f:
@@ -332,7 +312,7 @@ def build_level(level, metadata, radicals, krad, compounds, sentences, dataset, 
                 "confusables": confus,
                 "hasStroke": (STROKE_DIR / (cp + ".svg")).exists(),
                 "cp": cp,
-                "mnemonic": (mnemonics.get(k) if mnemonics and mnemonics.get(k) else make_mnemonic(k, primary, comp_meanings, on, kun)),
+                "mnemonic": make_mnemonic(k, primary, comp_meanings, on, kun),
             })
     return out
 
@@ -343,7 +323,6 @@ def main():
     krad = load_kradfile()
     compounds = load_compounds()
     sentences = load_sentences()
-    mnemonics = load_mnemonics()
     dataset = {}
     for lv in LEVELS:
         path = RES / "kanji" / ("kanji_%s.csv" % lv.lower())
@@ -356,7 +335,7 @@ def main():
     OUT.mkdir(exist_ok=True)
     meta = {"levels": {}, "total": 0, "strokeCoverage": {}}
     for lv in LEVELS:
-        items = build_level(lv, metadata, radicals, krad, compounds, sentences, dataset, mnemonics)
+        items = build_level(lv, metadata, radicals, krad, compounds, sentences, dataset)
         with open(OUT / ("%s.json" % lv.lower()), "w", encoding="utf-8") as f:
             json.dump(items, f, ensure_ascii=False)
         covered = sum(1 for it in items if it["hasStroke"])

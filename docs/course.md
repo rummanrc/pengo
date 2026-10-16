@@ -1,6 +1,6 @@
 # Study-plan design
 
-The plan references existing kanji/vocabulary/grammar IDs. It shares learned and SRS maps with the reference app and stores only configuration/history under `store.course` in `knowkanji:v1`. `course.js` is pure logic; `app.js` owns views, persistence, and grading integration.
+The plan references existing kanji/vocabulary/grammar IDs. It shares learned and SRS maps with the reference app and stores only configuration/history under `store.course` in `pengo:v1`. `course.js` is pure logic; `app.js` owns views, persistence, and grading integration.
 
 ## Responsibilities and entry points
 

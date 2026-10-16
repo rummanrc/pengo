@@ -1,5 +1,5 @@
 {
-  "appId": "com.knowkanji.app",
+  "appId": "io.github.rummanrc.pengo",
   "appName": "Pengo",
   "webDir": "www",
   "server": { "androidScheme": "https" },

@@ -17,3 +17,10 @@ ios/build/
 ios/**/xcuserdata/
 *.xcuserstate
 .DS_Store
+# Local signing material must never enter source control.
+*.jks
+*.keystore
+keystore.properties
+*.pem
+*.p12
+__pycache__/

@@ -58,7 +58,7 @@ function check(value,label){assert.ok(value,label);checks++;}
   check(await page.evaluate(()=>!recallDetailsHTML({type:'kanji',head:DB.byChar['社'].item}).includes('#2028980')),'card examples exclude corpus index markup');
   await route('#/k/語');
   check(await page.evaluate(()=>learningComponents(DB.byChar['語'].item).map(c=>c.c).join(''))==='言吾','larger structural chunks preserved');
-  check(await page.evaluate(()=>storyComponents(DB.byChar['語'].item).map(c=>c.c).join(''))==='吾言','story references match existing mnemonic');
+  check(await page.evaluate(()=>storyComponents(DB.byChar['語'].item).map(c=>c.c).join(''))==='言口五','story parts match the new dictionary-based mnemonic');
   await page.locator('summary').filter({hasText:'Inside 吾'}).click();
   check(await page.locator('.component-inside[open]').textContent().then(s=>s.includes('五')&&s.includes('口')),'second-level breakdown expands independently');
   for(const width of [320,390,768,1280]){

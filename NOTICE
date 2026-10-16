@@ -1,0 +1,15 @@
+Pengo
+Copyright 2026 Pengo contributors
+https://github.com/rummanrc/pengo
+
+Pengo's original application code, documentation and project-authored branding
+are licensed under the Apache License, Version 2.0; see LICENSE.
+
+Bundled dictionaries, sentences, stroke diagrams, component data and grammar
+notes are separate works with their own licenses. The application license does
+not replace their copyright notices or share-alike requirements.
+See resources/CREDITS.md and resources/licenses/ for their attribution and terms.
+
+Grammar notes include adapted data from the Japanese Language Data project by
+Justin Kindrix and contributors, CC BY-SA 4.0. The source commit, integrity
+hashes and Pengo's transformations are recorded in resources/grammar/.

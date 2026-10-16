@@ -49,7 +49,7 @@ Daily browser alerts require Pengo to remain open, possibly in a background tab.
 
 ## Storage and privacy
 
-Browser device preferences use `pengo:reminders:v1` (`enabled`, `time`, `lastDate`). Android uses private SharedPreferences `pengo_reminders`, with permission/schedule/delivery and goal-date state. These preferences are separate from transferable `knowkanji:v1` progress backups. Importing progress does not enable reminders on a new device or replace its reminder time; it does update native goal suppression. Confirmed erasure turns off Pengo reminders, cancels the native alarm, and resets device preferences. OS permission remains the OS's choice.
+Browser device preferences use `pengo:reminders:v1` (`enabled`, `time`, `lastDate`). Android uses private SharedPreferences `pengo_reminders`, with permission/schedule/delivery and goal-date state. These preferences are separate from transferable `pengo:v1` progress backups. Importing progress does not enable reminders on a new device or replace its reminder time; it does update native goal suppression. Confirmed erasure turns off Pengo reminders, cancels the native alarm, and resets device preferences. OS permission remains the OS's choice.
 
 No account, analytics, remote push server, or notification credential is introduced. Android's existing platform backup setting still applies; “outside progress backups” does not mean excluded from OS backups.
 

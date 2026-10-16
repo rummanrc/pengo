@@ -40,7 +40,7 @@ let checks=0;function check(ok,label){assert.ok(ok,label);checks++;}
   await route('#/k/語');
   assert.deepEqual(await page.locator('.detail-title .stat-row .badge').allTextContents(),['JLPT N5']);checks++;
   assert.deepEqual(await page.locator('.structural-parts > .comp-list > .comp > .cchar,.structural-parts > .comp-list > .component-branch > .comp > .cchar').allTextContents(),['言','吾']);checks++;
-  assert.deepEqual(await page.locator('.mnemonic-parts [lang=ja]').allTextContents(),['吾','言']);checks++;
+  assert.deepEqual(await page.locator('.mnemonic-parts [lang=ja]').allTextContents(),['言','口','五']);checks++;
   check(await page.locator('.mnemonic-card .comp,.mnemonic-card .badge,.comp-col .badge').count()===0,'story parts are compact; components have no badges');
   check(!/LARGER SHAPES|Keep useful|Kangxi #|True Kangxi|Learning component|PARTS IN YOUR MEMORY STORY|Based on:/.test(await page.locator('#view').textContent()),'retired detail labels removed');
   check((await page.locator('.mnemonic-card').textContent()).includes('not the kanji’s origin'),'plain-language memory warning remains');

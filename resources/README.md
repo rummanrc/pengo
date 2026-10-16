@@ -1,3 +1,7 @@
+# Pengo distribution note (2026-10-16)
+
+The inventory below documents the original resource collection. Pengo now excludes WaniKani enrichment, the unlicensed mnemonic CSV and the former Anki grammar text. See [current credits](CREDITS.md) for the actual distributed sources and licenses. Grammar comes from the pinned CC BY-SA 4.0 snapshot under `grammar/japanese-language-data/`.
+
 # kanji-data
 
 Canonical kanji/vocab data shared across a family of Japanese-study apps

@@ -3,15 +3,16 @@ plugins {
 }
 
 android {
-    namespace "com.knowkanji.app"
+    namespace "io.github.rummanrc.pengo"
     compileSdk 34
+    buildToolsVersion "34.0.0"
 
     buildFeatures {
         buildConfig = true
     }
 
     defaultConfig {
-        applicationId "com.knowkanji.app"
+        applicationId "io.github.rummanrc.pengo"
         minSdk 24
         targetSdk 34
         versionCode 1
@@ -20,9 +21,13 @@ android {
 
     buildTypes {
         release {
+            // F-Droid supplies its own signing configuration after building.
+            debuggable false
             minifyEnabled false
         }
         debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
         }
     }
 

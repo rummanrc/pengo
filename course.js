@@ -5,7 +5,7 @@
      kanji      -> the kanji character itself (DB.byChar key)
      vocabulary -> vocab record id, e.g. "N5-1198180-0" (DB.vById key)
      grammar    -> grammar record id (DB.gById key)
-   Persistence lives inside the existing store (localStorage "knowkanji:v1")
+   Persistence lives inside the existing store (localStorage "pengo:v1")
    as store.course, so export/import backup keeps working untouched.
    Written in ES5 style so it runs in the app WebView and under tests. */
 var Course = (function () {

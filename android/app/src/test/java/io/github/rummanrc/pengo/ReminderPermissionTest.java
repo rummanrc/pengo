@@ -1,4 +1,4 @@
-package com.knowkanji.app;
+package io.github.rummanrc.pengo;
 
 import android.Manifest;
 import android.app.AlarmManager;

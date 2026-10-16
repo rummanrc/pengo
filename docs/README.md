@@ -20,6 +20,7 @@ For a new engineer, read [product](product.md), [architecture](architecture.md),
 | [Interfaces](interfaces.md) | JavaScript API and native bridge | Course, Platform, Java activity |
 | [Testing](testing.md) | Automated checks and manual acceptance matrix | Existing test drivers and runtime |
 | [Deployment](deployment.md) | Web staging, APK builds, release/rollback | Packaging, Gradle, Docker |
+| [F-Droid release](fdroid.md) | Unsigned release builds, app identity, store metadata and submission requirements | F-Droid, licensing, updates |
 | [iOS debug builds](ios.md) | iPhone/simulator setup, signing, native behavior and acceptance | Swift WKWebView shell, Xcode, iOS builder |
 | [Security](security.md) | Privacy and trust boundaries | Rendering, storage, native bridge |
 | [Maintenance](maintenance.md) | Troubleshooting and confirmed gaps | All implementation |

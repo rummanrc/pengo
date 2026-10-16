@@ -8,3 +8,12 @@ android/local.properties
 android/app/src/main/assets/www/
 node_modules/
 .git/
+*.jks
+*.keystore
+**/*.jks
+**/*.keystore
+**/keystore.properties
+*.pem
+*.p12
+ios/build/
+ios/Pengo/www/

@@ -42,7 +42,7 @@ This register retains original IDs and now identifies fixes from the daily pract
 | ID | Gap | Practical impact | Suggested next step |
 | --- | --- | --- | --- |
 | K-01 | Raw vocab CSVs/Tatoeba TSV/grammar Anki source absent | Full content rebuild cannot be reproduced | Recover exact inputs and provenance; preserve ID compatibility |
-| K-02 | Source credits report unresolved terms; no root application license | Company distribution has unresolved ownership/permission questions | Assign content/application rights review before public release |
+| K-02 | Original code now Apache-2.0; release content replaced/attributed; historical copies still need sanitizing | Public Git history would expose retired unlicensed content | Obtain history-sanitization authorization before changing repository visibility; see `fdroid.md` |
 | K-03 | Debug-only automated APK flow; incomplete wrapper | No ready production signing/distribution pipeline | Define release identity/signing and complete reproducible toolchain |
 | K-04 | Shallow backup validation remains; storage failures now show a notice | Malformed nested imports can still break unrelated views | Add versioned deep validation/limits; practice sessions already validate content references |
 | K-05 | Fixed: all quizzes grade SRS and due-only practice is available | Due counts lead to actionable practice | Covered by practice unit/browser checks |

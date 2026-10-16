@@ -1,4 +1,4 @@
-package com.knowkanji.app;
+package io.github.rummanrc.pengo;
 
 import org.junit.Test;
 import java.time.ZonedDateTime;

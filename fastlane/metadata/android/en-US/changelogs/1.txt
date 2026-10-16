@@ -1,0 +1,1 @@
+First Pengo release prepared for F-Droid: offline JLPT N5–N1 kanji, vocabulary and grammar, learning cards, quizzes, study plans, progress backups, stroke order, dark mode and optional daily reminders.

@@ -30,7 +30,7 @@ Serve only for local development. For public hosting, stage the runtime inventor
 | Docker APK | Python 3, Docker daemon/CLI | `scripts/build_apk_docker.py` |
 | Capacitor experiments | Node/npm and optional package dev dependencies | Separate integration work required |
 
-`package.json` declares only optional Capacitor dev dependencies, with `^6.0.0` ranges. There is no lockfile or frontend build script. `npm test` runs dependency-free Node course/practice/reminder/worker checks (Python 3 is needed to extract the existing course drivers). `npm install` is not part of the native Java shell build. Native reminder tests use test-only JUnit/Robolectric Gradle dependencies; see [testing](testing.md#native-reminder-tests).
+`package.json` declares only optional Capacitor dev dependencies, with `^6.0.0` ranges. Optional development dependencies are pinned in `package-lock.json`; there is no frontend build script. `npm test` runs dependency-free Node course/practice/reminder/worker checks (Python 3 is needed to extract the existing course drivers). `npm install` is not part of the native Java shell build. Native reminder tests use test-only JUnit/Robolectric Gradle dependencies; see [testing](testing.md#native-reminder-tests).
 
 ## Test environment
 
@@ -75,7 +75,7 @@ Export a backup from a disposable profile before experimenting. Check old-backup
 
 ## Debugging
 
-In browser developer tools, inspect `DB.loaded`, `DB.source`, the data indexes, and `store` as lexical bindings. `window.DB`/`window.store` need not exist. `localStorage.getItem('knowkanji:v1')` reads persisted JSON. `window.KKDiag.stroke` reports the last stroke loader diagnostic.
+In browser developer tools, inspect `DB.loaded`, `DB.source`, the data indexes, and `store` as lexical bindings. `window.DB`/`window.store` need not exist. `localStorage.getItem('pengo:v1')` reads persisted JSON. `window.KKDiag.stroke` reports the last stroke loader diagnostic.
 
 Preserve backups before deleting local data. Storage is origin-scoped: switching port, hostname, scheme, browser profile, or native runtime can make an existing store appear missing. See [maintenance](maintenance.md) for symptoms and recovery.
 

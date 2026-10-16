@@ -1,4 +1,4 @@
-package com.knowkanji.app;
+package io.github.rummanrc.pengo;
 
 import android.Manifest;
 import android.app.AlarmManager;
@@ -22,7 +22,7 @@ final class StudyReminders {
     static final String PREFS = "pengo_reminders";
     static final String CHANNEL = "pengo_daily_practice";
     static final int ALARM_ID = 5201, NOTIFICATION_ID = 5202, TEST_ID = 5203;
-    static final String ACTION = "com.knowkanji.app.DAILY_REMINDER";
+    static final String ACTION = "io.github.rummanrc.pengo.DAILY_REMINDER";
 
     static SharedPreferences prefs(Context context) { return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE); }
     static void createChannel(Context context) {
