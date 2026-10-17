@@ -1,5 +1,13 @@
 # F-Droid inclusion request
 
+Follow-up on 2026-10-18: [packaging MR !52973](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52973)
+targets `v1.0.1` (version code `2`, commit
+`8938efde22da0e580ae221f07cc3a742396fd695`). The Gradle checksum warning is fixed.
+Public-tag local metadata lint, source scanning and APK assembly passed. Fork CI
+is blocked by GitLab account verification; the MR asks F-Droid maintainers to run CI.
+
+The original request text below records the initial `v1.0.0` submission.
+
 Submitted on 2026-10-16: [F-Droid request #4582](https://gitlab.com/fdroid/rfp/-/work_items/4582).
 Publication status and historical-source cleanup are recorded in `docs/fdroid.md`.
 

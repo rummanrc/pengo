@@ -46,6 +46,24 @@ Historical content sanitization is complete, preserving all 44 commits and their
 parent relationships. Only the approved bundled-content paths changed; the release
 tree remained identical. The sanitized source is now public.
 
+## F-Droid checksum follow-up — 2026-10-18
+
+Gradle 8.7's binary-distribution SHA-256 was fetched from its official service and
+pinned in the wrapper properties. Android/shared runtime version is `1.0.1`,
+version code `2`. The `v1.0.0` tag remains unchanged.
+
+`fdroidserver` 2.4.5 metadata parsing/lint, source scanning and release assembly
+passed using a clone of the public `v1.0.1` tag, commit
+`8938efde22da0e580ae221f07cc3a742396fd695`. All 2,520 APK runtime/notice files match
+source. The unsigned APK has SHA-256
+`b78e63015b56d4d98fe8c4ece42ee28d3c3d7b9b1c79aa8333cb170a56bc1234`.
+APK metadata confirms the expected application ID, version, SDK range and no
+internet permission. The canonical full-hash recipe with author attribution
+also passes metadata lint. No behavior changes or new physical-device test are
+claimed. Fork CI was blocked by GitLab identity verification before jobs ran;
+[MR !52973](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52973) requests
+maintainer-run CI. Official store acceptance remains pending.
+
 ## Coverage today
 
 `tests/test_course.py` evaluates the actual `course.js` plus two JavaScript drivers in dukpy. This snapshot executes **97 assertions**, covering dates/exam generation, pace, daily splits, curriculum coverage, unlocking, streaks, sampling, progress, milestones, defaults, ordering, schedule states, and greetings.

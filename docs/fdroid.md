@@ -83,6 +83,16 @@ match the source. APK inspection confirms application ID `io.github.rummanrc.pen
 version `1.0.1`/`2`, SDK 24–34 and no internet permission. These remain local
 validation results, not an official F-Droid build-server result.
 
+The [packaging merge request !52973](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52973) has been
+submitted to `fdroid/fdroiddata`, using a public fork and a dedicated branch.
+It adds only the app metadata, including author attribution and the full source
+commit hash. The original RFP has a follow-up linking the MR and checksum fix.
+
+GitLab blocked fork CI before running jobs with an account identity-verification
+requirement. Following F-Droid's inclusion template, the MR requests maintainers
+to trigger CI using F-Droid runners. No phone or payment information was submitted.
+Official CI, maintainer acceptance and the signed repository listing remain pending.
+
 ## Updating after release
 
 Keep the release application ID and F-Droid signing lineage stable. Increase
