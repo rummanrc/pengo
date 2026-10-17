@@ -76,6 +76,13 @@ The RFP bot flagged the missing `distributionSha256Sum`. Version `1.0.1`
 https://services.gradle.org/distributions/gradle-8.7-bin.zip.sha256. The `v1.0.0`
 release tag is preserved. The current packaging recipe targets `v1.0.1`.
 
+The updated recipe passed `fdroidserver` 2.4.5 metadata parsing/lint, source
+scanning and a complete release build cloned from the public `v1.0.1` tag at
+`8938efde22da0e580ae221f07cc3a742396fd695`. All 2,520 packaged runtime/notice files
+match the source. APK inspection confirms application ID `io.github.rummanrc.pengo`,
+version `1.0.1`/`2`, SDK 24–34 and no internet permission. These remain local
+validation results, not an official F-Droid build-server result.
+
 ## Updating after release
 
 Keep the release application ID and F-Droid signing lineage stable. Increase
