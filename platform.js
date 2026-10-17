@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.0.1";
 const Platform = {
   version: APP_VERSION,
   isNative: typeof window !== "undefined" && !!window.PengoNative,

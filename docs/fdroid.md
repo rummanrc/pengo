@@ -5,7 +5,7 @@
 The Android release application ID and namespace are `io.github.rummanrc.pengo`.
 Debug installs use `io.github.rummanrc.pengo.debug` so a debug certificate cannot
 block installation of the F-Droid-signed app. Native bridge methods are exposed
-through `PengoNative`. Current release version: `1.0.0`, version code `1`.
+through `PengoNative`. Current release version: `1.0.1`, version code `2`.
 
 Build an **unsigned** release with JDK 17, Android SDK 34/build tools and Gradle 8.7:
 
@@ -58,7 +58,7 @@ source-snapshot build with Gradle 8.7. This is local validation, not an official
 F-Droid build-server run or acceptance.
 
 The proposed recipe is `fdroid/metadata/io.github.rummanrc.pengo.yml`, and
-`fdroid/submission.md` contains the inclusion-request text for `v1.0.0`.
+`fdroid/submission.md` contains the original inclusion-request text for `v1.0.0`.
 The [F-Droid inclusion request #4582](https://gitlab.com/fdroid/rfp/-/work_items/4582) was
 submitted on 2026-10-16 for the public
 [Pengo 1.0.0 source release](https://github.com/rummanrc/pengo/releases/tag/v1.0.0).
@@ -68,6 +68,13 @@ installable F-Droid release.
 
 Physical Android acceptance and a two-version signed native upgrade remain
 separate verification. Browser/Robolectric tests do not prove device behavior.
+
+## Packaging follow-up — 2026-10-18
+
+The RFP bot flagged the missing `distributionSha256Sum`. Version `1.0.1`
+(version code `2`) pins the Gradle 8.7 binary distribution checksum from
+https://services.gradle.org/distributions/gradle-8.7-bin.zip.sha256. The `v1.0.0`
+release tag is preserved. The current packaging recipe targets `v1.0.1`.
 
 ## Updating after release
 

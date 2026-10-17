@@ -1,0 +1,1 @@
+Pin the official Gradle 8.7 download checksum for verified build-tool downloads. Prepare the F-Droid source-build recipe for review. Study features and saved progress remain compatible.
