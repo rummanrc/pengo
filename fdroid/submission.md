@@ -3,8 +3,10 @@
 Follow-up on 2026-10-18: [packaging MR !52973](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52973)
 targets `v1.0.1` (version code `2`, commit
 `8938efde22da0e580ae221f07cc3a742396fd695`). The Gradle checksum warning is fixed.
-Public-tag local metadata lint, source scanning and APK assembly passed. Fork CI
-is blocked by GitLab account verification; the MR asks F-Droid maintainers to run CI.
+Public-tag local metadata lint, source scanning and APK assembly passed.
+Account verification is now complete. The recipe's automatic-update mode was
+corrected to `Version`; [pipeline #2959785745](https://gitlab.com/snowski/fdroiddata/-/pipelines/2959785745) passed all nine jobs.
+Maintainer acceptance and the signed F-Droid listing remain pending.
 
 The original request text below records the initial `v1.0.0` submission.
 

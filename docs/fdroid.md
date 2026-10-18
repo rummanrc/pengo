@@ -88,10 +88,17 @@ submitted to `fdroid/fdroiddata`, using a public fork and a dedicated branch.
 It adds only the app metadata, including author attribution and the full source
 commit hash. The original RFP has a follow-up linking the MR and checksum fix.
 
-GitLab blocked fork CI before running jobs with an account identity-verification
-requirement. Following F-Droid's inclusion template, the MR requests maintainers
-to trigger CI using F-Droid runners. No phone or payment information was submitted.
-Official CI, maintainer acceptance and the signed repository listing remain pending.
+GitLab initially blocked fork CI before running jobs with an account identity-
+verification requirement. After the owner completed verification, a fresh run
+found a schema error in `AutoUpdateMode`. The recipe now uses `AutoUpdateMode:
+Version`, and passes the exact CI schema locally.
+
+[MR pipeline #2959785745](https://gitlab.com/snowski/fdroiddata/-/pipelines/2959785745) passed all nine jobs
+on 2026-10-18, using metadata commit `96fbf7928e19f8f308cd9498678044e7d16e7e91`:
+F-Droid build, APK inspection, source checks, update checks, metadata lint/rewrite,
+Git redirect, schema validation and script checks. Earlier zero-job failed runs
+remain historical records. Maintainer acceptance, official repository signing
+and listing remain pending; green fork CI is not publication in F-Droid.
 
 ## Updating after release
 

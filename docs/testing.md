@@ -60,9 +60,12 @@ source. The unsigned APK has SHA-256
 APK metadata confirms the expected application ID, version, SDK range and no
 internet permission. The canonical full-hash recipe with author attribution
 also passes metadata lint. No behavior changes or new physical-device test are
-claimed. Fork CI was blocked by GitLab identity verification before jobs ran;
-[MR !52973](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52973) requests
-maintainer-run CI. Official store acceptance remains pending.
+claimed. After account verification, the first runnable pipeline exposed a schema
+error in `AutoUpdateMode`. The corrected `AutoUpdateMode: Version` passes the
+schema from the failing CI revision and local lint. [Pipeline #2959785745](https://gitlab.com/snowski/fdroiddata/-/pipelines/2959785745)
+then passed all nine jobs, including APK assembly/inspection, schema validation,
+metadata checks and source checks, for metadata commit
+`96fbf7928e19f8f308cd9498678044e7d16e7e91`. Official store acceptance remains pending.
 
 ## Coverage today
 
