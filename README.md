@@ -1,6 +1,6 @@
 # Pengo
 
-Pengo is a Japanese study app for JLPT N5–N1: kanji, vocabulary, grammar, quizzes, progress, and daily study plans. The web runtime is static HTML, CSS, JavaScript, and prebuilt data. Android and iOS wrap those same files in an offline WebView. The new iOS shell still needs full Xcode compilation and device acceptance; see [iOS setup](docs/ios.md).
+Pengo is a Japanese study app for JLPT N5–N1: kanji, vocabulary, grammar, quizzes, progress, and daily study plans. The web runtime is static HTML, CSS, JavaScript, and prebuilt data. Android and iOS wrap those same files in an offline WebView. The iOS shell builds with full Xcode; simulator launch and device acceptance remain to be checked. See [iOS setup](docs/ios.md).
 
 ## Run the web app
 
@@ -154,6 +154,8 @@ open ios/Pengo.xcodeproj
 ```
 
 Select your signing team and connected iPhone, then press Run. A free Apple Account supports personal-device debug installation with seven-day signing; simulator builds need no signing account. `npm run build:ios` builds a simulator app; `npm run test:ios` checks the native date/path logic and JavaScript bridge using macOS command-line tools. See [iOS debug builds](docs/ios.md) for signing, reminders, and the remaining device checks.
+
+For SideStore or AltStore Classic, run `npm run build:ipa` to produce `dist/pengo-ios-unsigned.ipa`. The sideloader signs this device build using your Apple Account and can refresh its signing before expiry. See [personal sideloading setup](docs/ios.md#personal-installation-with-sidestore-or-altstore-classic) for requirements and refresh limitations.
 
 ## Content and attribution
 

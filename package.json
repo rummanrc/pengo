@@ -14,6 +14,7 @@
     "build:fdroid:docker": "python3 scripts/build_apk_docker.py --release",
     "sync:ios-assets": "python3 scripts/build_ios.py --assets-only",
     "build:ios": "python3 scripts/build_ios.py",
+    "build:ipa": "python3 scripts/build_ios.py --ipa",
     "test:ios": "python3 scripts/test_ios.py",
     "test": "node tests/test_course.cjs && node tests/test_practice.cjs && node tests/test_reminders.cjs && node tests/test_reminder_worker.cjs && node tests/test_dashboard.cjs && node tests/test_storage_migration.cjs && node tests/test_ios_bridge.cjs",
     "test:android": "gradle -p android :app:testDebugUnitTest --console=plain",
