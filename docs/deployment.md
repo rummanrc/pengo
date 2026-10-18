@@ -1,5 +1,9 @@
 # Deployment and releases
 
+Launcher and store artwork share the opaque master `assets/pengo-icon.png`.
+See [app icon regeneration and acceptance](app-icon.md) when updating branding;
+Android exports are checked in, while iOS staging regenerates its app icon.
+
 Voice/audio assets are retired. Run `python3 scripts/build_components.py` after updating KanjiVG SVGs or mnemonics. Ship `data/components.js` and `data/strokes/*.js` with the runtime; staging regenerates the stroke fallback chunks before copying assets; `sync_www.py` removes legacy audio and pronunciation files from an existing staging directory. No synthesis/model dependencies are required.
 
 ## Static web staging

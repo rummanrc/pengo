@@ -9,7 +9,6 @@
   "theme_color": "#137b68",
   "description": "Learn Japanese with Pengo the penguin: offline JLPT kanji, vocabulary and grammar with SRS review.",
   "icons": [
-    { "src": "assets/pengo-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "assets/pengo-icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
   ]
 }
