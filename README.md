@@ -44,6 +44,7 @@ Start with the [documentation index](docs/README.md). The engineering docs use M
 
 - Search vocabulary across every JLPT level by Japanese word, reading or whole English words/phrases; Learn browsers search the chosen level. Explore related items outside the plan in read-only detail pages; use Back buttons to return.
 - Kanji readings, components, memory aids, examples, notes, similar characters, and animated KanjiVG stroke diagrams.
+- Guided kanji writing practice with finger, stylus, or mouse: trace numbered stroke guides, get direction/order/shape feedback, undo or restart, and see a completion result. Works offline in Android and iOS packages.
 - Animated tap-to-flip discovery cards with meanings, readings, memory stories and nested components. Choose “Got it” or “Still learning”, then swipe or tap to advance. Return from full details to the same card.
 - Text-only learning: pronunciation clips, voice controls and native TTS have been removed to reduce app size.
 - Vocabulary and grammar examples with available furigana and links to related content.

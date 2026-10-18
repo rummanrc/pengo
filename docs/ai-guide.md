@@ -20,7 +20,7 @@ Pengo is a static JavaScript Japanese-learning app plus a Java Android WebView s
 ## Facts to preserve
 
 - No npm install/build is needed for web or checked-in native staging. Do not introduce a server/framework without task scope.
-- Classic script order is Platform → onboarding → tutorial → Course → Practice → component data → components → recall UI → practice UI → Reminders → Dashboard → design → app. `DB`/`store` are lexical globals; do not assume `window.DB`.
+- Classic script order is Platform → onboarding → tutorial → Course → Practice → component data → components → recall UI → practice UI → Writing → writing UI → Reminders → Dashboard → design → app. `DB`/`store` are lexical globals; do not assume `window.DB`.
 - Current identifiers are `pengo:v1`, Android release ID `io.github.rummanrc.pengo` (debug adds `.debug`), npm name `pengo`, and native bridge `PengoNative`. Only the explicit legacy storage migration retains the previous name. Keep these stable after release. Internal `KK*` hooks remain unchanged.
 - Kanji progress is by character across overlapping level lists; global details resolve the last indexed occurrence.
 - Vocab/grammar IDs can change if sources are reordered. Review ID→record mappings before regeneration.

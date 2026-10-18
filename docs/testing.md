@@ -1,5 +1,46 @@
 # Testing and acceptance
 
+## Guided kanji writing — 2026-10-18
+
+`npm test` includes 22 geometry assertions in `tests/test_writing.cjs`: uneven
+input frequency/finger jitter, reversed strokes (including tiny dots), incomplete
+and oversized strokes, incorrect placement, curved hooks, shortcuts, scribbles
+and malformed input. The real-browser suite uses bundled 三/永/一 paths rather
+than fixture drawings:
+
+```sh
+python3 scripts/sync_www.py
+# Serve the root at http://127.0.0.1:8000 in a separate terminal.
+NODE_PATH=/tmp/pengo-qa/node_modules node tests/test_writing_browser.cjs
+NODE_PATH=/tmp/pengo-qa/node_modules PENGO_TEST_ENGINE=webkit PENGO_TEST_ARTIFACTS=/tmp/pengo-writing-webkit-qa node tests/test_writing_browser.cjs
+```
+
+Use an external Playwright install with Chrome and the Playwright WebKit browser.
+The suite checks real touch and pen input in Chrome, mouse drawing in both
+engines, order/direction/partial-stroke rejection, undo/restart/close, cancellation,
+multiple pointers, rotation, final grading, unchanged study state, exploration
+outside the plan, navigation reset, reduced motion, missing diagrams and fallback
+loading. It inspects overflow at 320/390/768/1440px in both themes and saves card
+screenshots. Native packages include both new runtime scripts through the shared
+staging inventory. Desktop WebKit blocks `file://` JSON reads; this test explicitly
+allows those known access-control reports and verifies successful tracing through
+the script fallback. The iOS app uses its existing `pengo://` origin instead.
+
+Verified on 2026-10-18: the complete npm suite passed, including 22 writing
+geometry checks; Chrome and WebKit each passed 37 writing checks, and the
+existing search/stroke suite passed 72 checks. Light/dark card screenshots were
+inspected. Android Docker debug assembly, iOS simulator and unsigned device IPA
+builds passed; the iOS bridge/Foundation suite passed 31 Foundation checks.
+The five changed runtime files match source bytes in both native staging trees,
+the APK, the simulator app and the IPA. Physical-device tracing was not tested.
+
+Physical Android/iOS finger/stylus acceptance remains separate: open any kanji,
+tap Writing practice, trace from the numbered start, intentionally reverse and
+skip strokes, undo/restart, rotate, and finish the character in airplane mode.
+Check that ordinary scrolling works outside the square and that existing
+learning/quiz progress is unchanged. Grading checks approximate guided shape;
+it is not freehand handwriting recognition or a calligraphy assessment.
+
 ## Pengo rename and F-Droid preparation — 2026-10-16
 
 `npm test` now also exercises real startup storage migration and the renamed

@@ -20,7 +20,7 @@ The default output is ignored `www/`. Upload its contents to a static host, reta
 
 | Inventory | Paths |
 | --- | --- |
-| Root files | `index.html`, `app.js`, `onboarding.js`, `tutorial.js`, `course.js`, `practice.js`, `practice-ui.js`, `components.js`, `recall-ui.js`, `dashboard.js`, `reminders.js`, `reminder-worker.js`, `design.js`, `platform.js`, `styles.css`, `manifest.webmanifest` |
+| Root files | `index.html`, `app.js`, `onboarding.js`, `tutorial.js`, `course.js`, `practice.js`, `practice-ui.js`, `writing.js`, `writing-ui.js`, `components.js`, `recall-ui.js`, `dashboard.js`, `reminders.js`, `reminder-worker.js`, `design.js`, `platform.js`, `styles.css`, `manifest.webmanifest` |
 | Full directories | `assets/`, `data/` |
 | Resource subset | `resources/stroke-order/`, `resources/CREDITS.md` |
 

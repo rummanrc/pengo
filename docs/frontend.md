@@ -72,6 +72,27 @@ Details link existing records from every level and navigate previous/next record
 
 ## Stroke diagrams
 
+Kanji details also render `WritingUI.html()` below stroke order. Once the same
+offline-capable SVG loader succeeds, `WritingUI.ready()` enables **Writing
+practice**. A separate SVG drawing board shows faint reference strokes, a blue
+next stroke, its numbered start and a direction arrow. Pointer capture tracks a
+single finger, pen or mouse; `touch-action: none` is limited to the board.
+Cancellation discards the active stroke; resizing uses fresh coordinate transforms.
+Accepted user ink stays green; rejected ink is dashed red with a text explanation
+and is replaced by the next attempt. Undo, restart and close are explicit buttons.
+Finishing every stroke displays a correctness result and retry count.
+
+`writing.js` grades equal arc-length samples in the normalized 109-unit KanjiVG
+square. It checks minimum/maximum length, endpoints, direction, mean path error
+and worst path error. `writing-ui.js` samples original SVG paths, including nested
+transforms, and identifies attempts matching a different stroke. This is tolerant
+guided tracing, not handwriting recognition or a calligraphy assessment. Practice
+is available when exploring other levels and does not mutate the plan, learned
+state, SRS, activity ledger or quiz accuracy. Ink/results live only in the current
+detail view; navigating away resets them. Missing/invalid art disables practice
+with an explanation. Existing Settings attribution and bundled KanjiVG notices
+cover the reused guides; original source SVGs remain unchanged.
+
 `initStrokeOrder()` loads `resources/stroke-order/kanjivg/<cp>.svg` through fetch, with XMLHttpRequest fallback. If both requests fail or return no SVG, it loads the matching classic-script chunk from `data/strokes/<cp-without-last-two-digits>.js`. Direct `file://` pages use the script path immediately. Chunk loads are shared and cached, failed loads can retry, and detached pages discard stale results. It finds stroke paths by ID containing `-s`, adds `.kvg-stroke`, and animates dash offsets. Stroke duration is 450 ms with 120 ms spacing; number visibility and replay are controls. Autoplay follows settings.
 
 Reduced motion displays completed strokes/numbers immediately. Loading, missing art and failures disable playback/number controls. Failures show a plain-language message; `window.KKDiag.stroke` retains technical fetch/XHR/script/length diagnostics. The fallback scripts preserve the original SVG text and notices, so full animation and number controls work in direct-file browsers.

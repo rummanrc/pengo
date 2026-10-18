@@ -41,6 +41,7 @@ flowchart TD
 | `app.js` | Loading/indexing, routes, rendering, persistence, quiz/SRS integration | DOM, Course, Platform, onboarding, local files |
 | `course.js` | Dates, pace, order, batches, sampling, streaks, milestones | Built-ins and state callbacks |
 | `practice.js` | Pure practice selection, grading, validation, goals, badges | Course and built-ins |
+| `writing.js`, `writing-ui.js` | Pure stroke geometry checks and ephemeral guided touch/pen/mouse practice | Bundled KanjiVG paths, SVG and Pointer Events; no storage/native bridge |
 | `components.js`, `data/components.js` | KanjiVG hierarchy and existing story-reference views | Generated component data, app facts |
 | `recall-ui.js` | Resumable tap-to-flip player, learning confidence and swipe navigation | Practice, Course, activity ledger |
 | `dashboard.js` | Pure daily subject totals, rotating challenges and date-based discovery | Course, Practice, activity ledger |
@@ -59,7 +60,7 @@ flowchart TD
 
 ## Startup
 
-Script order is `platform.js` → `onboarding.js` → `tutorial.js` → `course.js` → `practice.js` → `data/components.js` → `components.js` → `recall-ui.js` → `practice-ui.js` → `reminders.js` → `dashboard.js` → `design.js` → `app.js`. These are classic scripts, not ES modules. UI/reminder functions access app globals only after initialization. Top-level `const`/`let` such as `DB` and `store` are global lexical bindings, not necessarily properties on `window`. Course uses `var`; Platform and APP_VERSION are explicitly exported on `window`.
+Script order is `platform.js` → `onboarding.js` → `tutorial.js` → `course.js` → `practice.js` → `data/components.js` → `components.js` → `recall-ui.js` → `practice-ui.js` → `writing.js` → `writing-ui.js` → `reminders.js` → `dashboard.js` → `design.js` → `app.js`. These are classic scripts, not ES modules. UI/reminder functions access app globals only after initialization. Top-level `const`/`let` such as `DB` and `store` are global lexical bindings, not necessarily properties on `window`. Course uses `var`; Platform and APP_VERSION are explicitly exported on `window`.
 
 ```mermaid
 sequenceDiagram

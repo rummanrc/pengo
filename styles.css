@@ -212,6 +212,38 @@ a.comp:hover { border-color: var(--accent); }
 .stroke-svg path.kvg-stroke { fill: none; stroke: var(--ink); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
 .stroke-svg path.kvg-stroke.done { stroke: var(--accent); }
 .stroke-ctrl { display: flex; flex-direction: column; gap: .5rem; }
+.writing-card { --writing-guide: #2867c1; }
+[data-theme="dark"] .writing-card { --writing-guide: #91bfff; }
+.writing-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .8rem; }
+.writing-heading h2 { margin: 0; }
+.writing-heading p { margin: .3rem 0 0; }
+.writing-layout { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 1.4rem; margin-top: 1rem; }
+.writing-board-wrap { min-width: 0; }
+.writing-board { display: block; width: 100%; aspect-ratio: 1; background: var(--bg); border: 2px solid var(--line); border-radius: 16px;
+  touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; }
+.writing-board path { fill: none; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.writing-board .writing-grid { stroke: var(--line); stroke-width: .4; stroke-dasharray: 2 2; }
+.writing-board .writing-guide { stroke: var(--ink-soft); stroke-opacity: .23; stroke-width: 2.6; }
+.writing-board .writing-next { stroke: var(--writing-guide); stroke-opacity: .65; stroke-width: 3.2; }
+.writing-board .writing-ink { stroke: var(--ink); stroke-width: 2.8; }
+.writing-board .writing-accepted { stroke: var(--green); }
+.writing-board .writing-error { stroke: #c33d4f; stroke-dasharray: 1 1; }
+.writing-marker { pointer-events: none; }
+.writing-marker circle { fill: var(--writing-guide); stroke: var(--card); stroke-width: .7; }
+.writing-marker text { fill: var(--card); font-size: 4.8px; font-weight: 800; }
+.writing-board .writing-arrow { stroke: var(--ink); stroke-width: 1; }
+.writing-count { font-size: 1.15rem; font-weight: 800; margin: 0; }
+.writing-feedback { padding: .8rem; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); min-height: 5rem; }
+.writing-feedback[data-kind="success"] { background: var(--green-soft); border-color: var(--green); }
+.writing-feedback[data-kind="retry"] { border-color: #c33d4f; }
+.writing-controls { display: flex; flex-wrap: wrap; gap: .6rem; }
+[data-theme="dark"] .writing-board .writing-error { stroke: #ff93a3; }
+[data-theme="dark"] .writing-feedback[data-kind="retry"] { border-color: #ff93a3; }
+@media (max-width: 600px) {
+  .writing-layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .writing-board-wrap { width: min(100%, 340px); margin: 0 auto; }
+  .writing-feedback { min-height: 0; }
+}
 .stroke-comp { display: flex; gap: 1.5rem; align-items: flex-start; }
 .stroke-col { flex: 0 1 320px; min-width: 0; }
 .comp-col { flex: 1 1 280px; min-width: min(100%, 260px); }

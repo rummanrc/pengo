@@ -781,6 +781,7 @@ function renderDetail(view, ch) {
     "<label class=\"explain\"><input type=\"checkbox\" id=\"strokeNums\" checked> show stroke numbers</label></div></div></div>" +
     "<div class=\"comp-col\"><h3>Components</h3>" +
     componentsHTML(it) + "</div></div></div>" +
+    WritingUI.html() +
     "<div class=\"card mnemonic-card\"><h2>Mnemonic</h2>" + storyComponentsHTML(it) + "<p class=\"mnemonic\">" + esc(mn.text) + "</p>" +
     "<p class=\"explain\">" + esc(mn.notice) + "</p></div>" +
     "<div class=\"card\"><h2>Vocabulary</h2><ul class=\"vocab-list\">" + vocab + "</ul>" + vocabLinksForKanji(ch) + "</div>" +
@@ -838,11 +839,16 @@ function loadStrokeFallback(cp) {
 async function initStrokeOrder(it) {
   const box = $("#strokeBox");
   if (!box) return;
+  const writingHost = $("#writingCard");
+  function unavailable(message) {
+    box.innerHTML = '<p class="explain">' + message + '</p>';
+    WritingUI.unavailable(writingHost, 'Writing practice needs a stroke-order diagram. ' + message);
+  }
   const playButton = $("#strokePlay"), numbersToggle = $("#strokeNums");
   if (playButton) playButton.disabled = true;
   if (numbersToggle) numbersToggle.disabled = true;
   if (!it.hasStroke) {
-    box.innerHTML = "<p class=\"explain\">No stroke-order diagram in the data for this kanji.</p>";
+    unavailable('No stroke-order diagram in the data for this kanji.');
     return;
   }
   const svgUrl = STROKE_BASE + it.cp + ".svg";
@@ -881,18 +887,20 @@ async function initStrokeOrder(it) {
   window.KKDiag = window.KKDiag || {};
   window.KKDiag.stroke = diag + "len" + svgText.length;
   if (!svgText || svgText.indexOf("<svg") < 0) {
-    box.innerHTML = "<p class=\"explain\">Could not load the stroke-order diagram. Try reopening this kanji.</p>";
+    unavailable('Could not load the stroke-order diagram. Try reopening this kanji.');
     return;
   }
   const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
   const svg = doc.querySelector("svg");
-  if (!svg || doc.querySelector("parsererror")) { box.innerHTML = "<p class=\"explain\">Could not parse the diagram.</p>"; return; }
+  if (!svg || doc.querySelector("parsererror")) { unavailable('Could not parse the diagram.'); return; }
   svg.removeAttribute("width"); svg.removeAttribute("height");
   const strokes = Array.from(svg.querySelectorAll("path")).filter(p => (p.getAttribute("id") || "").indexOf("-s") >= 0);
+  if (!strokes.length) { unavailable('No stroke paths in this diagram.'); return; }
   strokes.forEach(p => p.classList.add("kvg-stroke"));
   const nums = Array.from(svg.querySelectorAll("text"));
   box.innerHTML = "";
   box.appendChild(svg);
+  WritingUI.ready(writingHost, svg, strokes, it.k);
   const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function play() {
     stopStrokeTimers();

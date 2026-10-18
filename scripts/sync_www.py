@@ -16,7 +16,7 @@ from build_strokes import main as build_strokes
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / (sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv else "www")
 
-FILES = ["index.html", "app.js", "onboarding.js", "tutorial.js", "course.js", "practice.js", "practice-ui.js", "components.js", "recall-ui.js", "reminders.js", "reminder-worker.js", "dashboard.js", "design.js", "platform.js", "styles.css", "manifest.webmanifest"]
+FILES = ["index.html", "app.js", "onboarding.js", "tutorial.js", "course.js", "practice.js", "practice-ui.js", "writing.js", "writing-ui.js", "components.js", "recall-ui.js", "reminders.js", "reminder-worker.js", "dashboard.js", "design.js", "platform.js", "styles.css", "manifest.webmanifest"]
 DIRS = ["assets", "data"]
 EXTRA = [
     ("resources/stroke-order", "resources/stroke-order"),
