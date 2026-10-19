@@ -107,8 +107,8 @@ Version `1.0.2` (version code `3`) includes the current `master` changes through
 refreshed launcher artwork, the studying Home mascot and clearer introduction
 copy. The shared runtime, npm manifest/lockfile and Android versions agree.
 The new Fastlane changelog is `3.txt`; the store description includes writing.
-Existing `v1.0.0` and `v1.0.1` tags are preserved. The existing packaging MR will
-be updated to the full `v1.0.2` source hash after the tag is published.
+Existing `v1.0.0` and `v1.0.1` tags are preserved. The existing packaging MR now pins the full `v1.0.2` source hash
+`c4af6fe594f1f88edae492564fed2b17f70c4750`.
 
 Local release assembly, all 26 Android unit tests and release lint pass (zero
 errors, seven warnings). Core/content suites and 97 Chrome browser checks
@@ -116,8 +116,17 @@ errors, seven warnings). Core/content suites and 97 Chrome browser checks
 Inspection confirms `io.github.rummanrc.pengo`, version `1.0.2`/`3`, SDK 24–34,
 no internet permission and an unsigned release. The exact CI metadata schema
 also passes. Physical-device and signed two-version upgrade acceptance remain
-unverified. Public-tag recipe validation and updated GitLab CI are recorded
-below when complete.
+unverified. Public-tag recipe validation also passed: `fdroid lint`, `rewritemeta`,
+source scanning and a complete build from the public tag. The resulting APK
+is byte-identical to the local build (SHA-256
+`fd23b87df021e7a60d9a95f397684f6d6a398cca7704e7af7a7d4f9e89debd33`).
+[Pipeline #2964120855](https://gitlab.com/snowski/fdroiddata/-/pipelines/2964120855)
+passed all nine jobs for metadata commit
+`2e0f735f9247e21a2b05d8a5a9d631463748b983` on 2026-10-20
+(4 minutes 39 seconds): build, APK inspection, source checks, update checks,
+lint/rewrite, Git redirect, schema validation and script checks. The existing
+MR description records the new version and passing result. Maintainer review,
+official repository signing and listing remain pending.
 
 ## Updating after release
 

@@ -14,7 +14,7 @@ Repo: https://github.com/rummanrc/pengo.git
 Builds:
   - versionName: 1.0.2
     versionCode: 3
-    commit: v1.0.2
+    commit: c4af6fe594f1f88edae492564fed2b17f70c4750
     subdir: android
     gradle:
       - yes

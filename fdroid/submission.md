@@ -1,5 +1,16 @@
 # F-Droid inclusion request
 
+Follow-up on 2026-10-20: the existing [packaging MR !52973](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52973)
+now targets [v1.0.2](https://github.com/rummanrc/pengo/releases/tag/v1.0.2),
+version code `3`, source commit `c4af6fe594f1f88edae492564fed2b17f70c4750`.
+This includes guided writing, the refreshed launcher icon, studying Home mascot
+and introduction copy. Local public-tag metadata lint, source scanning and
+release build passed, with 2,522 packaged files verified. The new MR metadata
+commit is `2e0f735f9247e21a2b05d8a5a9d631463748b983`;
+[pipeline #2964120855](https://gitlab.com/snowski/fdroiddata/-/pipelines/2964120855)
+passed all nine jobs. The MR description now reflects this release and result.
+Acceptance and official F-Droid publication remain pending.
+
 Follow-up on 2026-10-18: [packaging MR !52973](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52973)
 targets `v1.0.1` (version code `2`, commit
 `8938efde22da0e580ae221f07cc3a742396fd695`). The Gradle checksum warning is fixed.
