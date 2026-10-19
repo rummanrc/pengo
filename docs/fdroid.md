@@ -5,7 +5,7 @@
 The Android release application ID and namespace are `io.github.rummanrc.pengo`.
 Debug installs use `io.github.rummanrc.pengo.debug` so a debug certificate cannot
 block installation of the F-Droid-signed app. Native bridge methods are exposed
-through `PengoNative`. Current release version: `1.0.1`, version code `2`.
+through `PengoNative`. Current release version: `1.0.2`, version code `3`.
 
 Build an **unsigned** release with JDK 17, Android SDK 34/build tools and Gradle 8.7:
 
@@ -74,7 +74,7 @@ separate verification. Browser/Robolectric tests do not prove device behavior.
 The RFP bot flagged the missing `distributionSha256Sum`. Version `1.0.1`
 (version code `2`) pins the Gradle 8.7 binary distribution checksum from
 https://services.gradle.org/distributions/gradle-8.7-bin.zip.sha256. The `v1.0.0`
-release tag is preserved. The current packaging recipe targets `v1.0.1`.
+release tag is preserved. That packaging revision targeted `v1.0.1`.
 
 The updated recipe passed `fdroidserver` 2.4.5 metadata parsing/lint, source
 scanning and a complete release build cloned from the public `v1.0.1` tag at
@@ -99,6 +99,25 @@ F-Droid build, APK inspection, source checks, update checks, metadata lint/rewri
 Git redirect, schema validation and script checks. Earlier zero-job failed runs
 remain historical records. Maintainer acceptance, official repository signing
 and listing remain pending; green fork CI is not publication in F-Droid.
+
+## Version 1.0.2 — 2026-10-20
+
+Version `1.0.2` (version code `3`) includes the current `master` changes through
+`fab60d17762560ca7b983c987fc21c67f005016a`: offline guided kanji writing,
+refreshed launcher artwork, the studying Home mascot and clearer introduction
+copy. The shared runtime, npm manifest/lockfile and Android versions agree.
+The new Fastlane changelog is `3.txt`; the store description includes writing.
+Existing `v1.0.0` and `v1.0.1` tags are preserved. The existing packaging MR will
+be updated to the full `v1.0.2` source hash after the tag is published.
+
+Local release assembly, all 26 Android unit tests and release lint pass (zero
+errors, seven warnings). Core/content suites and 97 Chrome browser checks
+(writing: 37, Home: 60) pass. All 2,522 staged runtime/notice files match the APK.
+Inspection confirms `io.github.rummanrc.pengo`, version `1.0.2`/`3`, SDK 24–34,
+no internet permission and an unsigned release. The exact CI metadata schema
+also passes. Physical-device and signed two-version upgrade acceptance remain
+unverified. Public-tag recipe validation and updated GitLab CI are recorded
+below when complete.
 
 ## Updating after release
 

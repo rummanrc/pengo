@@ -90,7 +90,7 @@ Constants are mutable objects/arrays; there is no freeze or supported live confi
 
 ## Platform and browser hooks
 
-`Platform` and `APP_VERSION` are explicitly on `window`; `APP_VERSION` is currently `1.0.0`.
+`Platform` and `APP_VERSION` are explicitly on `window`; `APP_VERSION` is currently `1.0.2`.
 
 | Interface | Contract |
 | --- | --- |

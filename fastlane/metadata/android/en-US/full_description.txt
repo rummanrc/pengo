@@ -1,6 +1,7 @@
 Build a daily Japanese study habit with Pengo, an offline companion for JLPT N5–N1.
 
 • Explore kanji meanings, readings, components and animated stroke order.
+• Practice writing kanji offline with guided stroke direction, order and shape feedback.
 • Study vocabulary and grammar with example sentences and furigana where available.
 • Reveal learning cards and practice with short quizzes.
 • Choose a study plan, revisit mistakes and review items with spaced repetition.

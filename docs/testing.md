@@ -1,5 +1,17 @@
 # Testing and acceptance
 
+## Android 1.0.2 release — 2026-10-20
+
+The latest master snapshot passed `npm test`, `npm run test:content`, 37 Chrome
+writing checks and 60 Home checks. Docker unsigned release assembly, all 26
+Android JUnit/Robolectric tests and `lintRelease` passed; lint has zero errors
+and seven warnings. APK inspection confirms stable application identity,
+version `1.0.2`/`3`, min/target SDK 24/34 and no internet permission. All 2,522
+staged runtime/notice files match packaged bytes. Exact F-Droid CI metadata
+schema validation passed. Public-tag source-recipe and GitLab CI results are
+recorded in [F-Droid release status](fdroid.md). Physical-device and signed
+upgrade acceptance remain separate.
+
 ## Guided kanji writing — 2026-10-18
 
 `npm test` includes 22 geometry assertions in `tests/test_writing.cjs`: uneven

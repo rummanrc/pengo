@@ -1174,7 +1174,7 @@ function renderSettings(view) {
     "<a href=\"resources/CREDITS.md\">Full credits and licenses</a>. <a href=\"LICENSE\">Application license: Apache-2.0</a>.</p></details>" +
     "<div class=\"card\"><h2>About this app</h2>" +
     "<p><button class=\"btn soft\" id=\"sIntro\">Replay intro</button></p>" + 
-    "<p class=\"explain\">Pengo " + (window.APP_VERSION || "1.0.1") + " runs fully offline: all kanji, vocabulary and grammar data (incl. example sentences) plus stroke diagrams are bundled, with no account or network needed. Sources: KANJIDIC2, KRADFILE (EDRDG), KanjiVG, Tanaka Corpus, Kanjium. See resources/CREDITS.md for full attribution.</p></div></div></div></div>";
+    "<p class=\"explain\">Pengo " + (window.APP_VERSION || "1.0.2") + " runs fully offline: all kanji, vocabulary and grammar data (incl. example sentences) plus stroke diagrams are bundled, with no account or network needed. Sources: KANJIDIC2, KRADFILE (EDRDG), KanjiVG, Tanaka Corpus, Kanjium. See resources/CREDITS.md for full attribution.</p></div></div></div></div>";
   bindReminderSettings(view);
   $("#sTheme").addEventListener("click", e => {
     s.theme = s.theme === "dark" ? "light" : "dark";

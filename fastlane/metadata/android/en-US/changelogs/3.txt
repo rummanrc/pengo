@@ -1,0 +1,1 @@
+Add offline guided kanji writing practice with stroke direction, order and shape feedback. Refresh the Pengo app icon and adaptive Android launcher artwork. Update the Home studying mascot and clarify the introduction action. Existing study progress and backups remain compatible.
