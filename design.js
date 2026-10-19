@@ -30,7 +30,7 @@ function pengoHeroHTML(hasPlan) {
     (session ? 'Continue learning' : stats.goalMet ? 'Learn more' : 'Start learning') + pengoIcon('arrow') + '</a>' +
     '<span class="hero-footnote">' + (session ? 'Pick up right where you left off' : stats.goalMet ? 'Another small discovery awaits' : 'Your daily cards, ready when you are') + '</span></div>' +
     '<div class="hero-art"><span class="hero-orbit orbit-one" aria-hidden="true">あ</span><span class="hero-orbit orbit-two" aria-hidden="true">' + pengoIcon('spark') + '</span>' +
-    '<img class="hero-pengo" src="assets/pengo-adventure.png" width="250" height="270" alt="Pengo waving, ready for your next learning adventure"></div></section>';
+    '<img class="hero-pengo" src="assets/pengo-studying.png" width="1254" height="1254" alt="Pengo studying hard, writing in an open notebook"></div></section>';
 }
 function dailyPracticeCardHTML() {
   var stats = practiceStats(), pct = Math.min(100, Math.round(stats.done / stats.goal * 100));

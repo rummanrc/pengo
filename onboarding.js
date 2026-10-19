@@ -62,7 +62,7 @@ function showOnboarding(onDone) {
       "<div class=\"ob-feats\">" + rows + "</div></div>";
   }
   function ctaLabel() {
-    if (idx === 0) return "See how it works &#x2192;";
+    if (idx === 0) return "Explore the features &#x2192;";
     return "Try the guided tour &#x2192;";
   }
   function draw() {
