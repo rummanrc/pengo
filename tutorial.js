@@ -9,11 +9,7 @@ var OnboardingTour = (function () {
     { page: 'home', selector: '.hero-start', title: 'Start with a little discovery', text: 'Tap Start learning to open your flashcards. If you have a saved deck, this button says Continue learning.' },
     { page: 'flashcards', selector: '#practiceReveal', title: 'Think, then flip', text: 'Try guessing the meaning, then tap the card to reveal it.' },
     { page: 'flashcards', selector: '#practiceRemembered', title: 'Choose how it feels', text: 'Got it moves you ahead; Still learning gives you another look. Tap Got it to try it. This preview won’t mark anything as learned.' },
-    { page: 'flashcards', selector: nav('#/'), title: 'Come back to your day', text: 'Tap Home to find today’s word and your daily steps.' },
-    { page: 'home', selector: '#dailyWordReveal', title: 'A word waiting for you', text: 'Tap Today’s word to reveal a small discovery. There’s a new one each day.' },
-    { page: 'home', selector: '#dailyWordContent', title: 'Your daily discovery', text: 'Here are the word, its reading, and its meaning. Explore word opens more examples whenever you want.', info: true },
-    { page: 'home', selector: '.today-overview a[href="#/today"]', title: 'Your day, in little steps', text: 'This card counts the different kanji, words, and grammar you study or practice today. Tap View items to see the list.' },
-    { page: 'today', selector: nav('#/'), title: 'Your learning, gathered here', text: 'Today’s items keeps your discoveries together. Tap Home to see your daily challenges.' },
+    { page: 'flashcards', selector: nav('#/'), title: 'Come back to your day', text: 'Tap Home to see your daily challenges.' },
     { page: 'home', selector: '.challenge-list a, .daily-challenges', title: 'Little goals to aim for', text: 'Daily challenges give you small goals: practice a few items, focus on one subject, or flip a few kanji. Tap a challenge to preview its cards.' },
     { selector: nav('#/learn'), title: 'Quizzes live in Learn', text: 'Challenges open a focused flashcard deck. Whenever you want to check what you remember, tap Learn.' },
     { page: 'learn', selector: '.quiz-choice[data-quiz-kind="mixed"]', title: 'A quiz whenever you’re ready', text: 'Choose All subjects, Kanji, Vocabulary, or Grammar for a short quiz. Tap All subjects to try a preview.' },
@@ -78,7 +74,7 @@ var OnboardingTour = (function () {
   }
   function draw() {
     var step = steps[stepIndex], last = stepIndex === steps.length - 1;
-    var completedChallenges = stepIndex === 8 && target && target.classList.contains('daily-challenges');
+    var completedChallenges = step.page === 'home' && target && target.classList.contains('daily-challenges');
     panel.innerHTML = '<div class="tour-heading"><span class="eyebrow">PENGO’S GUIDED TOUR · ' + (stepIndex + 1) + ' / ' + steps.length +
       '</span><button type="button" class="tour-skip">Skip tour</button></div><h2 id="tourTitle">' + esc(step.title) +
       '</h2><p id="tourText">' + esc(completedChallenges ? 'You’ve finished today’s challenges! On a new day, tap an unfinished challenge to open a focused deck of cards.' : step.text) +
@@ -127,7 +123,7 @@ var OnboardingTour = (function () {
     if (!api.active || root.contains(event.target)) return;
     var step = steps[stepIndex];
     var allowed = target && target.contains(event.target) && !step.info &&
-      !(stepIndex === 8 && target.classList.contains('daily-challenges')) &&
+      !(step.page === 'home' && target.classList.contains('daily-challenges')) &&
       (!step.action || event.target.closest(step.action));
     if (!allowed || moving) { event.preventDefault(); event.stopImmediatePropagation(); return; }
     var link = event.target.closest('a[href^="#/"]');

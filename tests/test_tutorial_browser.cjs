@@ -29,12 +29,12 @@ let checks=0;function check(ok,label){assert.ok(ok,label);checks++;}
   }
   async function walkthrough(label,screenshots){
    const historyLength=await page.evaluate(()=>history.length);
-   for(let n=1;n<=14;n++){
+   for(let n=1;n<=10;n++){
     await step(n);
     check(await page.locator('.tour-panel').evaluate(el=>{const r=el.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;}),label+' step '+n+' guide fits');
     check(await page.evaluate(()=>{const r=document.querySelector('.tour-ring').getBoundingClientRect(),p=document.querySelector('.tour-panel').getBoundingClientRect();return r.width>20&&r.height>20&&!(r.left<p.right&&r.right>p.left&&r.top<p.bottom&&r.bottom>p.top);}),label+' step '+n+' guide does not cover target');
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),label+' step '+n+' no horizontal overflow');
-    if(screenshots&&[1,2,3,5,7,9,11,12,14].includes(n))await page.screenshot({path:artifacts+'/'+label+'-'+n+'.png',animations:'disabled'});
+    if(screenshots&&[1,2,3,4,5,7,8,10].includes(n))await page.screenshot({path:artifacts+'/'+label+'-'+n+'.png',animations:'disabled'});
     await tap();
    }
    await page.waitForFunction(()=>!OnboardingTour.active);
@@ -86,7 +86,7 @@ let checks=0;function check(ok,label){assert.ok(ok,label);checks++;}
    for(const [kind,rows] of [['kanji',DB.levels.N5],['vocab',DB.vocab.N5],['grammar',DB.grammar.N5]])rows.slice(0,5).forEach(r=>{const key=kind+':'+(r.k||r.id);day.practiced[key]=true;if(kind==='kanji')day.recalled[key]=true;});
    save();OnboardingTour.start({replay:true});
   });
-  for(let n=1;n<=8;n++){await step(n);await tap();}await step(9);
+  for(let n=1;n<=4;n++){await step(n);await tap();}await step(5);
   check(await page.locator('.tour-next').count()===1&&(await page.locator('#tourText').textContent()).includes('finished today’s challenges'),'completed challenges have a useful fallback');
   await page.keyboard.press('Escape');await page.waitForFunction(()=>!OnboardingTour.active);
   // Reloading a preview leaves it safely; it cannot create or replace a real session.
